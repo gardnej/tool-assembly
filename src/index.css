@@ -1,0 +1,135 @@
+/* Fusion shell tokens (My Prototype / Weave manufacture chrome) */
+@font-face {
+  font-family: ArtifaktElement;
+  src: url("https://swc.autodesk.com/pharmacopeia/fonts/ArtifaktElement/v1.0/WOFF2/Artifakt%20Element%20Regular.woff2")
+    format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: ArtifaktElement;
+  src: url("https://swc.autodesk.com/pharmacopeia/fonts/ArtifaktElement/v1.0/WOFF2/Artifakt%20Element%20Semi%20Bold.woff2")
+    format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: ArtifaktElement;
+  src: url("https://swc.autodesk.com/pharmacopeia/fonts/ArtifaktElement/v1.0/WOFF2/Artifakt%20Element%20Bold.woff2")
+    format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  --weave-font-family: "Artifakt Element", ArtifaktElement, system-ui, -apple-system, "Segoe UI",
+    Roboto, sans-serif;
+  --weave-surface-l1: #535353;
+  --weave-surface-l2: #474747;
+  --weave-surface-l2-5: #373737;
+  --weave-surface-l3: #2a2a2a;
+  --weave-text-high: rgb(239 246 253 / 0.96);
+  --weave-text-medium: rgb(229 237 246 / 0.78);
+  --weave-text-low: rgb(200 210 220 / 0.62);
+  --weave-border-subtle: rgb(255 255 255 / 0.08);
+  --weave-border-default: #1f2226;
+  --weave-indicator: #2273c9;
+  --weave-selection-bg: rgb(34 115 201 / 0.28);
+  --weave-tree-row-height: 24px;
+  --weave-spacing-xs: 4px;
+  --weave-spacing-s: 8px;
+  --weave-spacing-m: 12px;
+  --weave-subtitle2-size: 0.8125rem;
+  --weave-subtitle2-weight: 600;
+  --weave-subtitle2-leading: 1.43;
+  --weave-subtitle2-tracking: 0.009375em;
+  --weave-body2-size: 0.75rem;
+  --weave-body2-leading: 1.33;
+
+  --chrome-panel-bg: rgb(52 58 67);
+  --chrome-panel-header: rgb(44 51 60);
+  --chrome-panel-border: rgb(32 38 46);
+  --chrome-border-subtle: rgb(255 255 255 / 0.06);
+  --chrome-ribbon-shell: linear-gradient(
+    180deg,
+    rgb(54 61 71) 0%,
+    rgb(46 53 62) 12%,
+    rgb(52 58 67) 100%
+  );
+  --chrome-ribbon-top-bg: linear-gradient(180deg, rgb(52 59 69) 0%, rgb(44 51 60) 100%);
+  --chrome-ribbon-toolbar-bg: rgb(48 55 66 / 0.5);
+  --chrome-ribbon-border-top: rgb(74 82 94);
+  --chrome-doc-tabs-bg: rgb(44 51 60);
+
+  --fusion-app: var(--weave-surface-l3);
+  --fusion-panel: var(--chrome-panel-bg);
+  --fusion-panel-raised: #464646;
+  --fusion-border: var(--chrome-panel-border);
+  --fusion-border-light: rgb(255 255 255 / 0.14);
+  --fusion-viewport: #000;
+  --fusion-accent: #e07020;
+  --fusion-accent-soft: rgba(224, 112, 32, 0.18);
+  --fusion-text: var(--weave-text-high);
+  --fusion-text-muted: var(--weave-text-medium);
+  --fusion-selection: var(--weave-selection-bg);
+  --font-ui: var(--weave-font-family);
+  --ribbon-height: 158px;
+  --titlebar-height: 30px;
+  --tab-doc-height: 28px;
+  --fusion-sidebar-width: 260px;
+  --fusion-sidebar-width-compact: 200px;
+  --fusion-inspector-width: 280px;
+  --fusion-inspector-width-compact: 220px;
+  --fusion-browser-max-height-stacked: 180px;
+  --fusion-properties-max-height-stacked: 220px;
+  --fusion-shell-min-height: 480px;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  font-family: var(--font-ui);
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--fusion-text);
+  background: var(--fusion-app);
+  -webkit-font-smoothing: antialiased;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+}
+
+:focus-visible {
+  outline: 2px solid var(--fusion-accent);
+  outline-offset: 1px;
+}
+
+/* Tool library dialogue inputs (Fusion Dark Blue) */
+input,
+select,
+textarea {
+  color: #d1d5db;
+}
+
+select option {
+  background: #2a3039;
+  color: #d1d5db;
+}

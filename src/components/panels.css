@@ -1,0 +1,274 @@
+/* Docked side panels + browser tree (Weave Panel + Tree view) */
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  background: var(--chrome-panel-bg);
+  color: var(--weave-text-medium);
+  font-family: var(--weave-font-family);
+}
+
+.panel__header {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 0 var(--weave-spacing-m);
+  font-family: inherit;
+  font-size: var(--weave-subtitle2-size);
+  font-weight: var(--weave-subtitle2-weight);
+  line-height: var(--weave-subtitle2-leading);
+  letter-spacing: var(--weave-subtitle2-tracking);
+  color: var(--weave-text-high);
+  text-transform: none;
+  background: var(--chrome-panel-header);
+  border-bottom: 1px solid var(--chrome-border-subtle);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.04);
+}
+
+.panel__body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: var(--weave-spacing-xs) 0;
+  background: var(--chrome-panel-bg);
+}
+
+.browser-tree {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-family: inherit;
+  font-size: var(--weave-body2-size);
+  line-height: var(--weave-body2-leading);
+}
+
+.browser-tree ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.browser-tree > li > ul,
+.browser-tree ul ul {
+  padding-left: var(--weave-spacing-m);
+  margin-left: var(--weave-spacing-xs);
+  border-left: 1px solid var(--chrome-border-subtle);
+}
+
+.browser-tree__row {
+  display: flex;
+  align-items: center;
+  gap: var(--weave-spacing-xs);
+  min-height: var(--weave-tree-row-height);
+  padding: 0 var(--weave-spacing-s);
+  margin: 0 var(--weave-spacing-xs);
+  border-radius: 2px;
+  cursor: pointer;
+  color: var(--weave-text-medium);
+  user-select: none;
+}
+
+.browser-tree__row:hover {
+  background: rgb(255 255 255 / 0.06);
+  color: var(--weave-text-high);
+}
+
+.browser-tree__row:focus-visible {
+  outline: 2px solid var(--weave-indicator);
+  outline-offset: -2px;
+}
+
+.browser-tree__row--selected {
+  background: var(--weave-selection-bg);
+  color: var(--weave-text-high);
+  box-shadow: inset 2px 0 0 var(--weave-indicator);
+}
+
+.browser-tree__chevron {
+  flex-shrink: 0;
+  width: 16px;
+  text-align: center;
+  font-size: 9px;
+  line-height: 1;
+  color: var(--weave-text-low);
+}
+
+.browser-tree__row:hover .browser-tree__chevron,
+.browser-tree__row--selected .browser-tree__chevron {
+  color: var(--weave-text-medium);
+}
+
+.browser-tree__label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.viewport {
+  position: relative;
+  height: 100%;
+  overflow: hidden;
+  background: #000;
+}
+
+.viewport__grid {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  display: flex;
+  align-items: stretch;
+  justify-content: stretch;
+  padding: 0;
+  pointer-events: auto;
+}
+
+.viewport__grid::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+  background-size: 24px 24px;
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+.viewport__block {
+  position: relative;
+  z-index: 1;
+  width: auto;
+  height: auto;
+  flex-shrink: 0;
+  line-height: 0;
+  overflow: visible;
+  border-radius: 0;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  transition: box-shadow 0.2s ease, outline-color 0.2s ease;
+}
+
+.viewport .viewport__part-img {
+  display: block;
+  max-width: min(94vw, 720px);
+  max-height: min(78vh, 560px);
+  width: auto;
+  height: auto;
+}
+
+.viewport__block--glb {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  flex: 1 1 auto;
+  align-self: stretch;
+  line-height: normal;
+  border-radius: 0;
+}
+
+.viewport__model-viewer {
+  display: block;
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  min-height: 240px;
+  background: #000;
+  --poster-color: #000;
+}
+
+.viewport__block--emph-body {
+  box-shadow:
+    0 12px 40px rgba(0, 0, 0, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 0 0 2px rgba(224, 112, 32, 0.45);
+}
+
+.viewport__block--emph-profile {
+  border-color: rgba(224, 160, 80, 0.5);
+  box-shadow:
+    0 12px 40px rgba(0, 0, 0, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 0 0 2px rgba(224, 160, 80, 0.35);
+}
+
+.viewport__block--emph-groove {
+  border-color: rgba(80, 160, 255, 0.55);
+  box-shadow:
+    0 12px 40px rgba(0, 0, 0, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 0 0 3px rgba(80, 160, 255, 0.4);
+}
+
+.viewport__block--emph-hole {
+  border-color: rgba(240, 192, 72, 0.5);
+  box-shadow:
+    0 12px 40px rgba(0, 0, 0, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 0 0 2px rgba(240, 192, 72, 0.35);
+}
+
+.viewport__block--emph-slot {
+  border-color: rgba(120, 220, 180, 0.45);
+  box-shadow:
+    0 12px 40px rgba(0, 0, 0, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 0 0 2px rgba(120, 220, 180, 0.3);
+}
+
+.viewport__block--emph-pocket {
+  border-color: rgba(200, 140, 255, 0.45);
+  box-shadow:
+    0 12px 40px rgba(0, 0, 0, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 0 0 2px rgba(200, 140, 255, 0.28);
+}
+
+.viewport__block--emph-shoulder {
+  border-color: rgba(180, 180, 200, 0.5);
+  box-shadow:
+    0 12px 40px rgba(0, 0, 0, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 0 0 2px rgba(180, 180, 200, 0.35);
+}
+
+.viewport__block--emph-thread {
+  border-color: rgba(255, 120, 100, 0.45);
+  box-shadow:
+    0 12px 40px rgba(0, 0, 0, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 0 0 2px rgba(255, 120, 100, 0.28);
+}
+
+.viewport__gizmo {
+  position: absolute;
+  bottom: 16px;
+  left: 16px;
+  width: 56px;
+  height: 56px;
+  z-index: 2;
+  opacity: 0.85;
+}
+
+.viewport__toolbar-hint {
+  position: absolute;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2;
+  font-size: var(--weave-body2-size);
+  color: var(--weave-text-low);
+  background: rgb(0 0 0 / 0.45);
+  padding: var(--weave-spacing-xs) var(--weave-spacing-m);
+  border-radius: 3px;
+  border: 1px solid var(--weave-border-subtle);
+  max-width: min(92vw, 520px);
+  text-align: center;
+}

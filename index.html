@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tool Library — Turning Tool Holder</title>
+    <script
+      type="module"
+      src="https://ajax.googleapis.com/ajax/libs/model-viewer/4.0.0/model-viewer.min.js"
+    ></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['"Artifakt Element"', "ArtifaktElement", "system-ui", "sans-serif"],
+            },
+            colors: {
+              /* Fusion Dark Blue — manufacture tool library dialogue */
+              "weave-text": "#d1d5db",
+              "weave-text-active": "#ffffff",
+              "weave-text-placeholder": "#8b95a5",
+              "weave-focus": "#3a9ad9",
+              "weave-focus-halo": "rgb(58 154 217 / 0.35)",
+              "weave-selected": "rgb(58 154 217 / 0.22)",
+              "weave-header": "#353b48",
+              "weave-dialog": "#4f5868",
+              "weave-tab-bar": "#3a4150",
+              "weave-tab-active": "#6d7686",
+              "weave-surface-100": "#4f5868",
+              "weave-surface-250": "#3d4554",
+              "weave-surface-300": "#636d7e",
+              "weave-panel-border": "#3a4150",
+              "weave-divider": "rgb(255 255 255 / 0.06)",
+              "weave-divider-heavy": "rgb(255 255 255 / 0.1)",
+              "weave-input": "#2a3039",
+              "weave-input-border": "rgb(255 255 255 / 0.06)",
+              "weave-primary": "#3a9ad9",
+              "weave-primary-hover": "#2f8ec9",
+              "weave-viewport": "#5d6778",
+              "weave-viewport-grid": "rgb(140 190 230 / 0.22)",
+              "weave-tool-fill": "#9aa5b5",
+              "weave-warning": "#f0b429",
+              "weave-warning-bg": "rgb(240 180 41 / 0.12)",
+              "weave-warning-text": "#ffd666",
+              "weave-success": "#5cb85c",
+              "weave-success-bg": "rgb(92 184 92 / 0.12)",
+              "weave-error-bg": "rgb(220 53 69 / 0.15)",
+              "weave-error-text": "#ff9a9a",
+              "weave-error-border": "rgb(220 53 69 / 0.35)",
+            },
+          },
+        },
+      };
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

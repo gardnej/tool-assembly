@@ -1,0 +1,368 @@
+.menu-bar {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: var(--titlebar-height);
+  padding: 0 8px;
+  background: linear-gradient(180deg, #3a3a3d 0%, #2f2f32 100%);
+  border-bottom: 1px solid var(--fusion-border);
+  font-size: 11px;
+  color: var(--fusion-text-muted);
+}
+
+.menu-bar__item {
+  padding: 4px 10px;
+  border-radius: 2px;
+  border: none;
+  background: transparent;
+  cursor: default;
+}
+
+.menu-bar__item:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--fusion-text);
+}
+
+.menu-bar__spacer {
+  flex: 1;
+}
+
+.menu-bar__hint {
+  font-size: 10px;
+  opacity: 0.65;
+}
+
+.doc-tabs {
+  display: flex;
+  align-items: flex-end;
+  height: var(--tab-doc-height);
+  padding: 0 6px;
+  background: var(--chrome-doc-tabs-bg, #353538);
+  gap: 2px;
+}
+
+.doc-tabs__tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 14px 6px;
+  border: 1px solid transparent;
+  border-bottom: none;
+  border-radius: 3px 3px 0 0;
+  background: transparent;
+  color: var(--fusion-text-muted);
+  font-size: 11px;
+  cursor: default;
+}
+
+.doc-tabs__tab--active {
+  background: var(--fusion-panel);
+  color: var(--fusion-text);
+  border-color: var(--fusion-border);
+  border-bottom-color: var(--fusion-panel);
+  margin-bottom: -1px;
+  padding-bottom: 7px;
+}
+
+.doc-tabs__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--fusion-accent);
+  opacity: 0.9;
+}
+
+.ribbon {
+  background: var(--chrome-ribbon-shell);
+  padding: 0;
+  border-top: 1px solid var(--chrome-ribbon-border-top);
+}
+
+/** Top seam: contextual tab strip only */
+.ribbon__top {
+  display: flex;
+  align-items: flex-end;
+  gap: 0;
+  flex-wrap: nowrap;
+  min-height: 42px;
+  padding: 0 4px;
+  border-bottom: 1px solid var(--chrome-panel-border);
+  background: var(--chrome-ribbon-top-bg);
+  box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.04);
+}
+
+/** Workspace launcher — lives on command toolbar row, left of Create group */
+.ribbon__workspace-slot {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.ribbon__workspace-slot--toolbar {
+  position: relative;
+  z-index: 40;
+  align-self: stretch;
+  padding: 5px 10px 5px 6px;
+  margin-right: 2px;
+  border-right: 1px solid rgb(36 43 52);
+}
+
+.ribbon__workspace {
+  position: relative;
+  z-index: 2;
+}
+
+.ribbon__workspace-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-width: 7.25rem;
+  height: 32px;
+  margin: 0;
+  padding: 0 14px;
+  border: 1px solid rgb(132 140 152 / 0.55);
+  border-radius: 3px;
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.065em;
+  text-transform: uppercase;
+  color: #f4f7fb;
+  background: linear-gradient(180deg, rgb(76 84 94) 0%, rgb(58 67 79) 100%);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.14),
+    0 1px 2px rgb(0 0 0 / 0.2);
+  outline: none;
+}
+
+.ribbon__workspace-trigger:hover {
+  filter: brightness(1.06);
+}
+
+.ribbon__workspace-trigger--open,
+.ribbon__workspace-trigger:focus-visible {
+  border-color: rgb(168 178 192 / 0.75);
+  box-shadow:
+    inset 0 0 0 1px rgb(255 255 255 / 0.22),
+    0 0 0 1px rgb(24 28 34 / 0.5),
+    0 2px 4px rgb(0 0 0 / 0.28);
+}
+
+.ribbon__workspace-name {
+  max-width: 10rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ribbon__workspace-chevron {
+  opacity: 0.9;
+  font-size: 10px;
+  line-height: 1;
+}
+
+.ribbon__workspace-dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  margin: 0;
+  padding: 4px 0;
+  list-style: none;
+  min-width: 236px;
+  z-index: 200;
+  background: rgb(62 62 62);
+  border: 1px solid rgb(28 28 28);
+  border-radius: 2px;
+  box-shadow:
+    0 10px 28px rgb(0 0 0 / 0.45),
+    0 2px 0 rgb(92 92 92 / 0.15) inset;
+}
+
+.ribbon__workspace-opt {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  width: calc(100% - 16px);
+  margin: 0 8px 2px;
+  padding: 8px 10px;
+  border: none;
+  border-radius: 2px;
+  background: transparent;
+  color: #eee;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+}
+
+.ribbon__workspace-opt:hover {
+  background: rgb(227 138 73 / 0.22);
+}
+
+.ribbon__workspace-opt--current {
+  background: rgb(227 138 73 / 0.18);
+}
+
+.ribbon__workspace-opt-label {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+
+.ribbon__workspace-opt-hint {
+  font-size: 10px;
+  color: #bfc6ce;
+  margin-top: 2px;
+}
+
+/** Contextual tabs — separate from workspace launcher button */
+.ribbon__tabs-strip {
+  flex: 1;
+  display: flex;
+  align-items: flex-end;
+  gap: 0;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  padding-left: 2px;
+}
+
+.ribbon__tab {
+  flex-shrink: 0;
+  padding: 10px 14px;
+  padding-bottom: 8px;
+  border: none;
+  border-radius: 0;
+  border-bottom: 3px solid transparent;
+  margin-bottom: 0;
+  background: transparent;
+  color: rgb(206 212 222);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: none;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.ribbon__tab:hover {
+  color: #fff;
+}
+
+.ribbon__tab--active {
+  padding-bottom: 6px;
+  color: #fff;
+  border-bottom-width: 4px;
+  border-bottom-color: #f2f6fc;
+  background: rgb(68 76 88 / 0.38);
+}
+
+/** Command toolbar (panels) — workspace button + groups */
+.ribbon__toolbar {
+  display: flex;
+  gap: 0;
+  align-items: stretch;
+  flex-wrap: nowrap;
+  overflow: visible;
+  padding: 4px 6px 5px 0;
+  min-height: 62px;
+  background: var(--chrome-ribbon-toolbar-bg);
+  border-top: 1px solid rgb(72 82 94 / 0.45);
+}
+
+.ribbon__toolbar-groups {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  align-items: stretch;
+  flex-wrap: nowrap;
+  gap: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: thin;
+}
+
+.ribbon__toolbar > .ribbon__workspace-slot--toolbar .ribbon__workspace-trigger {
+  height: 36px;
+  align-self: center;
+}
+
+.ribbon {
+  position: relative;
+  z-index: 1;
+}
+
+.ribbon__group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 3px 12px 5px;
+  border-right: 1px solid rgb(36 43 52);
+  min-width: fit-content;
+}
+
+.ribbon__group:last-child {
+  border-right: none;
+}
+
+.ribbon__group-label {
+  font-size: 9px;
+  color: rgb(178 188 198);
+  margin-top: 3px;
+  text-transform: uppercase;
+  letter-spacing: 0.065em;
+}
+
+.ribbon__icons {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 1px;
+  align-items: center;
+  max-width: none;
+}
+
+.ribbon__icon-btn {
+  width: 36px;
+  height: 36px;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--fusion-text);
+  padding: 2px;
+}
+
+.ribbon__icon-img {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+  display: block;
+  pointer-events: none;
+  flex-shrink: 0;
+}
+
+.ribbon__icon-fallback {
+  width: 32px;
+  height: 32px;
+  display: block;
+}
+
+.ribbon__icon-btn:hover {
+  background: var(--fusion-panel-raised);
+  border-color: var(--fusion-border-light);
+}
+
+.ribbon__icon-btn--active {
+  background: var(--fusion-accent-soft);
+  border-color: rgba(224, 112, 32, 0.45);
+}
+
+.ribbon__placeholder {
+  font-size: 10px;
+  color: var(--fusion-text-muted);
+  padding: 8px;
+}

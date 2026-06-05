@@ -1,0 +1,35 @@
+.tl-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10050;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgb(0 0 0 / 0.5);
+}
+
+.tl-dialog {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  width: min(1187px, 100%);
+  height: min(900px, 100%);
+  border-radius: 4px;
+  background: #4f5868;
+  box-shadow: 0 4px 24px 0 rgb(0 0 0 / 0.45);
+}
+
+.tl-dialog__body {
+  display: flex;
+  min-height: 0;
+  flex: 1;
+}
+
+.tl-dialog__panel {
+  min-height: 0;
+}
+
+.tl-dialog__footer {
+  flex-shrink: 0;
+}
