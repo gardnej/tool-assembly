@@ -10,6 +10,11 @@
   backdrop-filter: blur(2px);
 }
 
+/* Opened from inside the tool holder dialog (z-index 10050), so it must stack above it. */
+.tlb-overlay--picker {
+  z-index: 10075;
+}
+
 .tlb-shell {
   --tlb-bg: #2c323c;
   --tlb-panel: #252a32;
@@ -412,4 +417,32 @@
 
 .tlb-footer__close:hover {
   background: #525a68;
+}
+
+.tlb-footer__actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tlb-footer__select {
+  padding: 4px 16px;
+  border: 1px solid #3a9ad9;
+  border-radius: 2px;
+  background: #3a9ad9;
+  color: #ffffff;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.tlb-footer__select:hover:not(:disabled) {
+  background: #2f8ec9;
+}
+
+.tlb-footer__select:disabled {
+  border-color: var(--tlb-border);
+  background: #464c5a;
+  color: var(--tlb-muted);
+  cursor: default;
 }

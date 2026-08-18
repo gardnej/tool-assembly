@@ -1,4 +1,7 @@
+import { useState } from "react";
 import type { MouseEvent } from "react";
+import { LIBRARIES } from "../data/realLibrary";
+import type { ComponentRole } from "../types";
 import { AssemblyGrid } from "./AssemblyGrid";
 import { ConfigurationPanel } from "./ConfigurationPanel";
 import { DialogTabs } from "./DialogTabs";
@@ -7,6 +10,7 @@ import { Header } from "./Header";
 import { PanelResizeHandle } from "./PanelResizeHandle";
 import { ReviewPanel } from "./ReviewPanel";
 import { ToolAssemblyCanvas } from "./ToolAssemblyCanvas";
+import { ToolLibraryDialog } from "./ToolLibraryDialog";
 import { ValidationPanel } from "./ValidationPanel";
 import { PrimaryButton } from "./buttons/PrimaryButton";
 import { SecondaryButton } from "./buttons/SecondaryButton";
@@ -22,24 +26,30 @@ interface ToolHolderDialogProps {
 export function ToolHolderDialog({ open, onClose }: ToolHolderDialogProps) {
   const {
     state,
-    holderRow,
-    selectedAssemblyComponent,
-    assemblyComponents,
-    selectAssemblyItem,
+    rows,
+    measuredStackUpMm,
+    availableBlocks,
+    availableTools,
+    selectedTool,
+    selectLibrary,
+    selectRow,
+    selectToolBlock,
+    selectCuttingTool,
     setActiveTab,
     updateConfig,
     updateGeneralInfo,
-    addToAssembly,
     runValidate,
     goToStep,
+    advanceStep,
     resetWorkflow,
   } = useToolAssemblyWorkflow();
 
-  const configComponent = selectedAssemblyComponent;
+  /** Which row the library picker is filling, or null when it is closed. */
+  const [pickerRole, setPickerRole] = useState<ComponentRole | null>(null);
+
   const showReview = state.currentStep === "review";
   const showValidation =
     state.currentStep === "validate" || state.validationIssues.length > 0;
-  const selectedPreviewId = selectedAssemblyComponent?.id;
 
   const {
     containerRef,
@@ -100,16 +110,23 @@ export function ToolHolderDialog({ open, onClose }: ToolHolderDialogProps) {
             {state.activeTab === "assembly" && (
               <div className="space-y-4">
                 <AssemblyGrid
-                  holderRow={holderRow}
-                  slots={state.slots}
-                  selectedId={state.selectedAssemblyId}
-                  onSelectRow={selectAssemblyItem}
-                  onSelectSlot={selectAssemblyItem}
+                  rows={rows}
+                  selectedId={state.selectedRowId}
+                  measuredStackUpMm={measuredStackUpMm}
+                  libraries={LIBRARIES}
+                  libraryId={state.libraryId}
+                  availableBlocks={availableBlocks}
+                  availableTools={availableTools}
+                  onSelectRow={selectRow}
+                  onSelectLibrary={selectLibrary}
+                  onSelectToolBlock={selectToolBlock}
+                  onSelectCuttingTool={selectCuttingTool}
+                  onBrowseLibrary={setPickerRole}
                 />
 
                 {!showReview && (
                   <ConfigurationPanel
-                    component={configComponent}
+                    tool={selectedTool}
                     config={state.config}
                     onConfigChange={updateConfig}
                     readOnly={state.currentStep === "review"}
@@ -127,10 +144,9 @@ export function ToolHolderDialog({ open, onClose }: ToolHolderDialogProps) {
 
                 {showReview && (
                   <ReviewPanel
-                    holderRow={holderRow}
-                    slots={state.slots}
+                    rows={rows}
                     config={state.config}
-                    components={assemblyComponents}
+                    measuredStackUpMm={measuredStackUpMm}
                   />
                 )}
               </div>
@@ -159,11 +175,9 @@ export function ToolHolderDialog({ open, onClose }: ToolHolderDialogProps) {
           />
 
           <ToolAssemblyCanvas
-            components={assemblyComponents}
-            selectedComponentId={selectedPreviewId}
-            highlightSlots={
-              state.currentStep === "add-insert" || state.currentStep === "configure"
-            }
+            rows={rows}
+            selectedRole={state.selectedRowId}
+            measuredStackUpMm={measuredStackUpMm}
           />
         </div>
 
@@ -181,7 +195,7 @@ export function ToolHolderDialog({ open, onClose }: ToolHolderDialogProps) {
                   alert("Assembly saved to tool library (prototype).");
                   onClose();
                 } else {
-                  addToAssembly();
+                  advanceStep();
                 }
               }}
             >
@@ -191,6 +205,25 @@ export function ToolHolderDialog({ open, onClose }: ToolHolderDialogProps) {
           </div>
         </footer>
       </section>
+
+      {pickerRole !== null && (
+        <ToolLibraryDialog
+          open
+          picker
+          initialLibraryId={state.libraryId}
+          // A block seats against the turret; anything else is a cutting tool.
+          pickKind={pickerRole === "block" ? "block" : "tool"}
+          onPick={(toolId) => {
+            if (pickerRole === "block") {
+              selectToolBlock(toolId);
+            } else {
+              selectCuttingTool(toolId);
+            }
+            setPickerRole(null);
+          }}
+          onClose={() => setPickerRole(null)}
+        />
+      )}
     </div>
   );
 }

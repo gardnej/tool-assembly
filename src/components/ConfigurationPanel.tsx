@@ -1,23 +1,39 @@
 import type { ReactNode } from "react";
-import type { AssemblyConfig, Orientation, ToolComponent } from "../types";
+import { displayName, type LibraryToolRecord } from "../data/realLibrary";
+import type { AssemblyConfig, Orientation } from "../types";
 
 interface ConfigurationPanelProps {
-  component: ToolComponent | undefined;
+  tool: LibraryToolRecord | undefined;
   config: AssemblyConfig;
   onConfigChange: (patch: Partial<AssemblyConfig>) => void;
   readOnly?: boolean;
 }
 
+/** Real geometry keys worth showing, with the labels Fusion uses. */
+const GEOMETRY_LABELS: Record<string, string> = {
+  OAL: "Overall length",
+  RE: "Corner radius",
+  SC: "Shape code",
+  INSD: "Insert size",
+  S: "Thickness",
+  DC: "Diameter",
+  LCF: "Flute length",
+  NOF: "Flutes",
+  adaptiveItemSize: "Adaptive item size",
+};
+
 export function ConfigurationPanel({
-  component,
+  tool,
   config,
   onConfigChange,
   readOnly = false,
 }: ConfigurationPanelProps) {
   const title =
-    component !== undefined
-      ? `${component.type} properties`
-      : "Tool block properties";
+    tool !== undefined ? `${tool.type} properties` : "Tool block properties";
+
+  const geometryEntries = Object.entries(tool?.geometry ?? {})
+    .filter(([key]) => key in GEOMETRY_LABELS)
+    .slice(0, 6);
 
   return (
     <section className="py-2">
@@ -33,12 +49,12 @@ export function ConfigurationPanel({
         </button>
       </div>
 
-      {component !== undefined && (
+      {tool !== undefined && (
         <FormRow label="Model">
           <div className="flex items-center gap-1">
             <input
               readOnly
-              value={component.model ?? component.name}
+              value={tool.productId !== "" ? tool.productId : displayName(tool)}
               className="h-6 min-w-0 flex-1 border-0 bg-weave-input px-2 text-xs font-semibold"
             />
             <IconButton label="Browse" />
@@ -64,47 +80,20 @@ export function ConfigurationPanel({
         />
       </FormRow>
 
-      <FormRow label="Machine connection type">
+      <FormRow label="Machine side connection">
         <SelectField
-          value={config.machineConnectionType}
-          options={["Unspecified", "VDI 16", "VDI 25", "HSK-A63"]}
-          onChange={(v) => onConfigChange({ machineConnectionType: v })}
+          value={config.machineSideConnectionType}
+          options={["Unspecified", "VDI 16", "VDI 25", "VDI 30", "VDI 40", "HSK-A63"]}
+          onChange={(v) => onConfigChange({ machineSideConnectionType: v })}
           disabled={readOnly}
         />
       </FormRow>
 
-      <FormRow label="Tool connection type">
-        <SelectField
-          value={config.toolConnectionType}
-          options={["ER16 MF", "ER20 MF", "Unspecified"]}
-          onChange={(v) => onConfigChange({ toolConnectionType: v })}
-          disabled={readOnly}
-        />
-      </FormRow>
-
-      <FormRow label="Size">
-        <SelectField
-          value={config.size}
-          options={["Unspecified", "16 mm", "20 mm", "25 mm"]}
-          onChange={(v) => onConfigChange({ size: v })}
-          disabled={readOnly}
-        />
-      </FormRow>
-
-      <FormRow label="Stick out">
+      <FormRow label="Adaptive item size">
         <NumericField
-          value={config.stickOut}
+          value={config.adaptiveItemSize}
           suffix="mm"
-          onChange={(v) => onConfigChange({ stickOut: v })}
-          disabled={readOnly}
-        />
-      </FormRow>
-
-      <FormRow label="Total length">
-        <NumericField
-          value={config.totalLength}
-          suffix="mm"
-          onChange={(v) => onConfigChange({ totalLength: v })}
+          onChange={(v) => onConfigChange({ adaptiveItemSize: v })}
           disabled={readOnly}
         />
       </FormRow>
@@ -115,18 +104,56 @@ export function ConfigurationPanel({
           onChange={(v) => onConfigChange({ numberOfTools: v })}
           disabled={readOnly}
           min={1}
-          max={4}
+          max={8}
         />
       </FormRow>
 
-      {component?.cuttingParameters !== undefined && (
+      <FormRow label="Attachment points">
+        <NumericField
+          value={config.numberOfAttachmentPoints}
+          onChange={(v) => onConfigChange({ numberOfAttachmentPoints: v })}
+          disabled={readOnly}
+          min={0}
+          max={12}
+        />
+      </FormRow>
+
+      <FormRow label="Turret station">
+        <NumericField
+          value={config.stationNumber ?? 0}
+          onChange={(v) => onConfigChange({ stationNumber: v })}
+          disabled={readOnly}
+          min={0}
+          max={99}
+        />
+      </FormRow>
+
+      <FormRow label="Half index">
+        <label className="inline-flex cursor-pointer items-center gap-1.5 py-1 text-xs">
+          <input
+            type="checkbox"
+            checked={config.halfIndex}
+            disabled={readOnly}
+            onChange={(event) => onConfigChange({ halfIndex: event.target.checked })}
+            className="accent-weave-primary"
+          />
+          Station offset by half an index
+        </label>
+      </FormRow>
+
+      {geometryEntries.length > 0 && (
         <div className="mt-3 border-t border-weave-divider pt-3">
-          <p className="mb-2 text-xs font-semibold text-weave-text">Cutting parameters</p>
+          <p className="mb-2 text-xs font-semibold text-weave-text">
+            Library geometry
+          </p>
           <div className="grid grid-cols-2 gap-2 text-[11px]">
-            <Metric label="Surface speed" value={`${component.cuttingParameters.surfaceSpeed} m/min`} />
-            <Metric label="Feed / rev" value={`${component.cuttingParameters.feedPerRev} mm`} />
-            <Metric label="Depth of cut" value={`${component.cuttingParameters.depthOfCut} mm`} />
-            <Metric label="Material" value={component.cuttingParameters.material} />
+            {geometryEntries.map(([key, value]) => (
+              <Metric
+                key={key}
+                label={GEOMETRY_LABELS[key]}
+                value={typeof value === "number" ? `${value} mm` : String(value)}
+              />
+            ))}
           </div>
         </div>
       )}

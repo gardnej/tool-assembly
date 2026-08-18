@@ -1,0 +1,6376 @@
+{
+  "generatedAt": "2026-08-18T09:02:44Z",
+  "source": "Fusion local tool libraries",
+  "libraries": [
+    {
+      "id": "frontlefthub-v5-v1",
+      "name": "FrontleftHub v5 v1",
+      "folder": null,
+      "breadcrumb": "Local > FrontleftHub v5 v1",
+      "version": 36,
+      "toolCount": 25,
+      "blockCount": 0,
+      "assemblyCount": 0
+    },
+    {
+      "id": "haas-tool-library",
+      "name": "HAAS tool library",
+      "folder": null,
+      "breadcrumb": "Local > HAAS tool library",
+      "version": 19,
+      "toolCount": 23,
+      "blockCount": 0,
+      "assemblyCount": 0
+    },
+    {
+      "id": "jk",
+      "name": "jk",
+      "folder": null,
+      "breadcrumb": "Local > jk",
+      "version": 36,
+      "toolCount": 1,
+      "blockCount": 0,
+      "assemblyCount": 0
+    },
+    {
+      "id": "machine-1",
+      "name": "Machine 1",
+      "folder": null,
+      "breadcrumb": "Local > Machine 1",
+      "version": 19,
+      "toolCount": 21,
+      "blockCount": 0,
+      "assemblyCount": 0
+    },
+    {
+      "id": "maritool-maritool-holders",
+      "name": "Maritool-Maritool - Holders",
+      "folder": null,
+      "breadcrumb": "Local > Maritool-Maritool - Holders",
+      "version": 18,
+      "toolCount": 114,
+      "blockCount": 0,
+      "assemblyCount": 0
+    },
+    {
+      "id": "test-piece-2",
+      "name": "Test Piece 2",
+      "folder": null,
+      "breadcrumb": "Local > Test Piece 2",
+      "version": 15,
+      "toolCount": 31,
+      "blockCount": 0,
+      "assemblyCount": 0
+    },
+    {
+      "id": "toolsand-blocks-toolsandblocks",
+      "name": "ToolsandBlocks",
+      "folder": "Toolsand Blocks",
+      "breadcrumb": "Local > Toolsand Blocks > ToolsandBlocks",
+      "version": 37,
+      "toolCount": 8,
+      "blockCount": 1,
+      "assemblyCount": 4
+    }
+  ],
+  "tools": [
+    {
+      "id": "2879bdfd-1e21-4c76-84e5-6e749dc814ef",
+      "libraryId": "frontlefthub-v5-v1",
+      "type": "turning general",
+      "description": "main",
+      "vendor": "",
+      "productId": "",
+      "unit": "millimeters",
+      "geometry": {
+        "OAL": 30,
+        "RE": 0.4,
+        "SC": "V",
+        "SCTY": "T",
+        "TC": "M",
+        "INSD": 11.0709,
+        "S": 4.7625,
+        "EPSR": 0,
+        "RA": 5,
+        "LH": 0
+      },
+      "holder": {
+        "OAL": 125,
+        "CW": 25,
+        "H": 20,
+        "W": 20,
+        "LH": 32,
+        "HAND": "L",
+        "MTP": "D",
+        "THSC": "L"
+      },
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": 25,
+        "turret": 0,
+        "compensationOffset": 25,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "4601b9c7-e542-4825-8753-6d61231f4b47",
+      "libraryId": "frontlefthub-v5-v1",
+      "type": "drill",
+      "description": "",
+      "vendor": "",
+      "productId": "",
+      "unit": "millimeters",
+      "geometry": {
+        "OAL": 135,
+        "RE": 0,
+        "DC": 40,
+        "LCF": 135,
+        "NOF": 3,
+        "TP": 0,
+        "SIG": 180
+      },
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": 34,
+        "turret": 0,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "4a577663-2282-4255-8422-3d1be9fe00a5",
+      "libraryId": "frontlefthub-v5-v1",
+      "type": "turning grooving",
+      "description": "",
+      "vendor": "",
+      "productId": "",
+      "unit": "millimeters",
+      "geometry": {
+        "OAL": 33,
+        "RE": 0,
+        "SC": "groove round",
+        "SCTY": "T",
+        "TC": "M",
+        "INSD": 10,
+        "S": 3.96875,
+        "EPSR": 0,
+        "RA": 0,
+        "LH": 0
+      },
+      "holder": {
+        "OAL": 125,
+        "CW": 20,
+        "H": 20,
+        "W": 20,
+        "LH": 32,
+        "HAND": "L",
+        "MTP": "D",
+        "THSC": "groove external"
+      },
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": 21,
+        "turret": 0,
+        "compensationOffset": 21,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "6b537d49-d761-422a-a6e8-62022aa4519b",
+      "libraryId": "frontlefthub-v5-v1",
+      "type": "turning boring",
+      "description": "",
+      "vendor": "",
+      "productId": "",
+      "unit": "millimeters",
+      "geometry": {
+        "OAL": 30,
+        "RE": 0.8,
+        "SC": "C",
+        "SCTY": "G",
+        "TC": "M",
+        "INSD": 12.8959,
+        "S": 4.7625,
+        "EPSR": 0,
+        "RA": 0,
+        "LH": 0
+      },
+      "holder": {
+        "OAL": 125,
+        "CW": 25,
+        "H": 20,
+        "W": 20,
+        "LH": 32,
+        "HAND": "R",
+        "MTP": "D",
+        "THSC": "boring bar f"
+      },
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": 35,
+        "turret": 0,
+        "compensationOffset": 35,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "791b3eb3-50ca-4715-bc68-48fa82b5cb93",
+      "libraryId": "frontlefthub-v5-v1",
+      "type": "drill",
+      "description": "",
+      "vendor": "",
+      "productId": "",
+      "unit": "millimeters",
+      "geometry": {
+        "OAL": 130,
+        "RE": 0,
+        "DC": 10,
+        "LCF": 10.0054,
+        "NOF": 3,
+        "TP": 0,
+        "SIG": 139
+      },
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": 17,
+        "turret": 0,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "88685fdf-7e0a-483d-a556-2a003331a89e",
+      "libraryId": "frontlefthub-v5-v1",
+      "type": "turning general",
+      "description": "CNMT Right Hand",
+      "vendor": "",
+      "productId": "",
+      "unit": "millimeters",
+      "geometry": {
+        "OAL": 30,
+        "RE": 0.8,
+        "SC": "C",
+        "SCTY": "G",
+        "TC": "M",
+        "INSD": 12.8959,
+        "S": 4.7625,
+        "EPSR": 0,
+        "RA": 0,
+        "LH": 0
+      },
+      "holder": {
+        "OAL": 125,
+        "CW": 25,
+        "H": 20,
+        "W": 20,
+        "LH": 32,
+        "HAND": "R",
+        "MTP": "D",
+        "THSC": "L"
+      },
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": 27,
+        "turret": 0,
+        "compensationOffset": 0,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "93a7e594-974b-4e70-b666-7feb499bb9c0",
+      "libraryId": "frontlefthub-v5-v1",
+      "type": "flat end mill",
+      "description": "",
+      "vendor": "",
+      "productId": "",
+      "unit": "millimeters",
+      "geometry": {
+        "OAL": 90,
+        "RE": 0,
+        "DC": 8,
+        "LCF": 20,
+        "NOF": 3,
+        "TP": 0
+      },
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": 20,
+        "turret": 0,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "a57b7624-ce70-456b-9561-9427d4a054df",
+      "libraryId": "frontlefthub-v5-v1",
+      "type": "turning general",
+      "description": "",
+      "vendor": "",
+      "productId": "",
+      "unit": "millimeters",
+      "geometry": {
+        "RE": 0.8,
+        "SC": "C",
+        "SCTY": "G",
+        "TC": "M",
+        "INSD": 12.8959,
+        "S": 4.7625,
+        "RA": 0
+      },
+      "holder": {
+        "OAL": 125,
+        "CW": 25,
+        "H": 20,
+        "W": 20,
+        "LH": 32,
+        "HAND": "R",
+        "MTP": "D",
+        "THSC": "L"
+      },
+      "geometryId": "ce5fdd3d-8e00-4913-ad7d-efb4d535323a",
+      "stepFileName": null,
+      "postProcess": {
+        "number": 1,
+        "turret": 0,
+        "compensationOffset": 1,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "e0ed99ca-e792-4556-8b20-44f9b8579aa6",
+      "libraryId": "frontlefthub-v5-v1",
+      "type": "flat end mill",
+      "description": "",
+      "vendor": "",
+      "productId": "",
+      "unit": "millimeters",
+      "geometry": {
+        "OAL": 50,
+        "RE": 0,
+        "DC": 4,
+        "LCF": 11,
+        "NOF": 3,
+        "TP": 0
+      },
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": 22,
+        "turret": 0,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "e61e3294-ec07-441b-a8d5-a7a03ae6c1a5",
+      "libraryId": "frontlefthub-v5-v1",
+      "type": "turning threading",
+      "description": "",
+      "vendor": "",
+      "productId": "",
+      "unit": "millimeters",
+      "geometry": {
+        "OAL": 15,
+        "SC": "thread iso triple",
+        "SCTY": "M",
+        "TC": "M",
+        "S": 3.96875,
+        "TP": 1.5
+      },
+      "holder": {
+        "OAL": 125,
+        "H": 20,
+        "W": 20,
+        "LH": 32,
+        "HAND": "R",
+        "MTP": "D",
+        "THSC": "thread straight"
+      },
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": 19,
+        "turret": 0,
+        "compensationOffset": 19,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "62b68287-2333-47dd-b41e-ecc834cf6632",
+      "libraryId": "frontlefthub-v5-v1",
+      "type": "turning boring",
+      "description": "",
+      "vendor": "",
+      "productId": "",
+      "unit": "millimeters",
+      "geometry": {
+        "RE": 0.8,
+        "SC": "C",
+        "SCTY": "T",
+        "TC": "M",
+        "INSD": 9.671938365,
+        "S": 3.96875,
+        "RA": 0
+      },
+      "holder": {
+        "OAL": 125,
+        "CW": 25,
+        "W": 20,
+        "LH": 32,
+        "HAND": "R",
+        "MTP": "D",
+        "THSC": "boring bar g"
+      },
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": 2,
+        "turret": 0,
+        "compensationOffset": 2,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "8b8be06b-b98e-4a12-80f7-30e2b4aeac52",
+      "libraryId": "frontlefthub-v5-v1",
+      "type": "holder",
+      "description": "CT40 - 0.250 x 4.00  End Mill Holder",
+      "vendor": "Lyndex",
+      "productId": "C4016-0250",
+      "unit": "millimeters",
+      "geometry": {},
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": null,
+        "turret": null,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "c6f8d2f3-e5ac-40b3-baec-b72690815041",
+      "libraryId": "frontlefthub-v5-v1",
+      "type": "holder",
+      "description": "CT40 - 0.250 x 4.00  End Mill Holder",
+      "vendor": "Lyndex",
+      "productId": "C4016-0250",
+      "unit": "millimeters",
+      "geometry": {},
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": null,
+        "turret": null,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "4b4d0d9e-2548-487e-ab72-3362f1330daa",
+      "libraryId": "frontlefthub-v5-v1",
+      "type": "face mill",
+      "description": "8MM FACE MILL",
+      "vendor": "DATRON",
+      "productId": "0068441",
+      "unit": "millimeters",
+      "geometry": {
+        "OAL": 50,
+        "RE": 0,
+        "DC": 8,
+        "LCF": 10,
+        "NOF": 2,
+        "TP": 0,
+        "SIG": 0
+      },
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": 12,
+        "turret": 0,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "ca1c9458-b2f1-42c5-9a53-290e1f276d5b",
+      "libraryId": "frontlefthub-v5-v1",
+      "type": "chamfer mill",
+      "description": "6mm Chamfer_Mill_Ally",
+      "vendor": "",
+      "productId": "",
+      "unit": "millimeters",
+      "geometry": {
+        "OAL": 25,
+        "RE": 0,
+        "DC": 6,
+        "LCF": 5,
+        "NOF": 3,
+        "TP": 0,
+        "SIG": 0
+      },
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": 5,
+        "turret": 0,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "aa843daa-87f6-4c69-b562-ae1a54305473",
+      "libraryId": "frontlefthub-v5-v1",
+      "type": "thread mill",
+      "description": "M8-1.25 Thread Mill",
+      "vendor": "",
+      "productId": "",
+      "unit": "millimeters",
+      "geometry": {
+        "OAL": 65,
+        "DC": 6.350000000000001,
+        "LCF": 1.25,
+        "NOF": 3,
+        "TP": 1.25
+      },
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": 0,
+        "turret": 0,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "082b00c8-1b13-445c-90f9-a988367ca525",
+      "libraryId": "frontlefthub-v5-v1",
+      "type": "thread mill",
+      "description": "M10-1.5 Thread Mill",
+      "vendor": "",
+      "productId": "",
+      "unit": "millimeters",
+      "geometry": {
+        "OAL": 75,
+        "DC": 7.62,
+        "LCF": 1.5,
+        "NOF": 3,
+        "TP": 1.5
+      },
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": 0,
+        "turret": 0,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "129e1e31-a014-4d50-820c-f70142a11855",
+      "libraryId": "frontlefthub-v5-v1",
+      "type": "thread mill",
+      "description": "M12-1.75 Thread Mill",
+      "vendor": "",
+      "productId": "",
+      "unit": "millimeters",
+      "geometry": {
+        "OAL": 77,
+        "DC": 9.14,
+        "LCF": 1.75,
+        "NOF": 3,
+        "TP": 1.75
+      },
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": 0,
+        "turret": 0,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "fc10aa44-98d2-42ec-98bc-e9ad71640e17",
+      "libraryId": "frontlefthub-v5-v1",
+      "type": "form mill",
+      "description": "",
+      "vendor": "",
+      "productId": "",
+      "unit": "millimeters",
+      "geometry": {
+        "OAL": 69.57766471359587,
+        "DC": 22.08814752812565,
+        "LCF": 69.57766471359587,
+        "NOF": 1
+      },
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": 0,
+        "turret": 0,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "5fccfcd4-1033-4c48-af76-f39284ee8312",
+      "libraryId": "frontlefthub-v5-v1",
+      "type": "drill",
+      "description": "",
+      "vendor": "",
+      "productId": "",
+      "unit": "millimeters",
+      "geometry": {
+        "OAL": 70,
+        "DC": 7,
+        "LCF": 25,
+        "NOF": 3,
+        "SIG": 180
+      },
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": 34,
+        "turret": 0,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "41276435-5fc9-45a2-a216-6288ace5d238",
+      "libraryId": "frontlefthub-v5-v1",
+      "type": "flat end mill",
+      "description": "",
+      "vendor": "",
+      "productId": "",
+      "unit": "millimeters",
+      "geometry": {
+        "OAL": 75,
+        "DC": 8,
+        "LCF": 20,
+        "NOF": 3
+      },
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": 20,
+        "turret": 0,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "36c335d3-7d68-472b-8933-0a149084fe49",
+      "libraryId": "frontlefthub-v5-v1",
+      "type": "turning general",
+      "description": "",
+      "vendor": "",
+      "productId": "",
+      "unit": "millimeters",
+      "geometry": {
+        "RE": 0.8,
+        "SC": "C",
+        "SCTY": "T",
+        "TC": "M",
+        "INSD": 9.671938365,
+        "S": 3.96875,
+        "RA": 0
+      },
+      "holder": {
+        "OAL": 125,
+        "CW": 25,
+        "H": 20,
+        "W": 20,
+        "LH": 32,
+        "HAND": "R",
+        "MTP": "D",
+        "THSC": "L"
+      },
+      "geometryId": "ba14c763-1bee-423b-876d-dc5108a5c183",
+      "stepFileName": "ToolHolder 1.stp",
+      "postProcess": {
+        "number": 3,
+        "turret": 0,
+        "compensationOffset": 3,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "d98b586d-d6b5-4b05-be2a-9a40df64d67f",
+      "libraryId": "frontlefthub-v5-v1",
+      "type": "turning general",
+      "description": "",
+      "vendor": "",
+      "productId": "",
+      "unit": "millimeters",
+      "geometry": {
+        "RE": 0.8,
+        "SC": "C",
+        "SCTY": "T",
+        "TC": "M",
+        "INSD": 9.671938365,
+        "S": 3.96875,
+        "RA": 0
+      },
+      "holder": {
+        "OAL": 125,
+        "CW": 25,
+        "H": 20,
+        "W": 20,
+        "LH": 32,
+        "HAND": "R",
+        "MTP": "D",
+        "THSC": "L"
+      },
+      "geometryId": "48d92830-7494-4f01-bf5b-a0754a6f47f0",
+      "stepFileName": "turning_tool_holder_temp.stp",
+      "postProcess": {
+        "number": 4,
+        "turret": 0,
+        "compensationOffset": 4,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "1a9a63c4-6366-46a3-b53c-b84a0b26346d",
+      "libraryId": "frontlefthub-v5-v1",
+      "type": "turning general",
+      "description": "",
+      "vendor": "",
+      "productId": "",
+      "unit": "millimeters",
+      "geometry": {
+        "RE": 0.8,
+        "SC": "C",
+        "SCTY": "T",
+        "TC": "M",
+        "INSD": 9.671938365,
+        "S": 3.96875,
+        "RA": 0
+      },
+      "holder": {
+        "OAL": 125,
+        "CW": 25,
+        "H": 20,
+        "W": 20,
+        "LH": 32,
+        "HAND": "R",
+        "MTP": "D",
+        "THSC": "L"
+      },
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": 6,
+        "turret": 0,
+        "compensationOffset": 6,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "36d15952-5b78-4e2d-84d5-b1c89baa8448",
+      "libraryId": "frontlefthub-v5-v1",
+      "type": "ball end mill",
+      "description": "",
+      "vendor": "",
+      "productId": "",
+      "unit": "millimeters",
+      "geometry": {
+        "OAL": 100,
+        "DC": 9,
+        "LCF": 18,
+        "NOF": 5
+      },
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": 7,
+        "turret": 0,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "04d159cc-2bc8-4d2d-b6a4-169054455b83",
+      "libraryId": "haas-tool-library",
+      "type": "chamfer mill",
+      "description": "",
+      "vendor": "",
+      "productId": "",
+      "unit": "millimeters",
+      "geometry": {
+        "OAL": 60,
+        "RE": 0,
+        "DC": 12,
+        "LCF": 24,
+        "NOF": 3,
+        "TP": 0,
+        "SIG": 0
+      },
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": 16,
+        "turret": 0,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "09853b5a-57ac-4558-abd0-59258d6a503c",
+      "libraryId": "haas-tool-library",
+      "type": "flat end mill",
+      "description": "12mm END MILL_ALLY",
+      "vendor": "",
+      "productId": "",
+      "unit": "millimeters",
+      "geometry": {
+        "OAL": 100,
+        "DC": 12,
+        "LCF": 62,
+        "NOF": 3
+      },
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": 3,
+        "turret": 0,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "25396cf7-1c42-4ab4-a352-f63e4ccdf764",
+      "libraryId": "haas-tool-library",
+      "type": "tap right hand",
+      "description": "M6x1 Tap",
+      "vendor": "",
+      "productId": "",
+      "unit": "millimeters",
+      "geometry": {
+        "OAL": 50,
+        "RE": 0,
+        "DC": 8,
+        "LCF": 13,
+        "NOF": 3,
+        "TP": 1.25,
+        "SIG": 0
+      },
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": 12,
+        "turret": 0,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "44a29f85-cec2-48b6-a497-67ec7d12a84e",
+      "libraryId": "haas-tool-library",
+      "type": "ball end mill",
+      "description": "3mm_BALL_ALLY",
+      "vendor": "",
+      "productId": "",
+      "unit": "millimeters",
+      "geometry": {
+        "OAL": 105,
+        "RE": 1.5,
+        "DC": 3,
+        "LCF": 17,
+        "NOF": 2,
+        "TP": 0,
+        "SIG": 0
+      },
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": 15,
+        "turret": 0,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "47b27c46-15c9-417d-a7d2-bddb1744ed88",
+      "libraryId": "haas-tool-library",
+      "type": "ball end mill",
+      "description": "10mm BALL_NOSE_ALLY",
+      "vendor": "",
+      "productId": "",
+      "unit": "millimeters",
+      "geometry": {
+        "OAL": 40,
+        "RE": 5,
+        "DC": 10,
+        "LCF": 20,
+        "NOF": 3,
+        "TP": 0
+      },
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": 7,
+        "turret": 0,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "5fecc21e-e8e3-4813-b531-cb17f7d8ef7b",
+      "libraryId": "haas-tool-library",
+      "type": "flat end mill",
+      "description": "6mm END_MILL",
+      "vendor": "",
+      "productId": "",
+      "unit": "millimeters",
+      "geometry": {
+        "OAL": 38,
+        "RE": 0,
+        "DC": 6,
+        "LCF": 10,
+        "NOF": 4,
+        "TP": 0,
+        "SIG": 0
+      },
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": 13,
+        "turret": 0,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "61113d15-bdce-4814-992d-a8c217098acb",
+      "libraryId": "haas-tool-library",
+      "type": "ball end mill",
+      "description": "8mm BALL_NOSE_ALLY",
+      "vendor": "",
+      "productId": "",
+      "unit": "millimeters",
+      "geometry": {
+        "OAL": 40,
+        "RE": 4,
+        "DC": 8,
+        "LCF": 20,
+        "NOF": 3,
+        "TP": 0
+      },
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": 6,
+        "turret": 0,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "645cf00b-e5c1-4bb4-952f-e2c25269060c",
+      "libraryId": "haas-tool-library",
+      "type": "flat end mill",
+      "description": "",
+      "vendor": "",
+      "productId": "",
+      "unit": "millimeters",
+      "geometry": {
+        "OAL": 100,
+        "DC": 3,
+        "LCF": 6,
+        "NOF": 3
+      },
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": 18,
+        "turret": 0,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "64ce08ae-f65c-4143-b258-e86b64ec7e38",
+      "libraryId": "haas-tool-library",
+      "type": "drill",
+      "description": "6MM DRILL",
+      "vendor": "",
+      "productId": "",
+      "unit": "millimeters",
+      "geometry": {
+        "OAL": 71,
+        "RE": 0,
+        "DC": 6.8,
+        "LCF": 32,
+        "NOF": 3,
+        "TP": 0,
+        "SIG": 118
+      },
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": 10,
+        "turret": 0,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "6ccecb13-5727-4736-9b92-62f2de3c3b60",
+      "libraryId": "haas-tool-library",
+      "type": "chamfer mill",
+      "description": "6mm Chamfer_Mill_Ally",
+      "vendor": "",
+      "productId": "",
+      "unit": "millimeters",
+      "geometry": {
+        "OAL": 25,
+        "RE": 0,
+        "DC": 6,
+        "LCF": 5,
+        "NOF": 3,
+        "TP": 0,
+        "SIG": 0
+      },
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": 5,
+        "turret": 0,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "842a56ca-7bb5-4ca1-b3ed-081a5efde7df",
+      "libraryId": "haas-tool-library",
+      "type": "drill",
+      "description": "10mm Drill (Drill_ALLY)",
+      "vendor": "",
+      "productId": "",
+      "unit": "millimeters",
+      "geometry": {
+        "OAL": 60,
+        "RE": 0,
+        "DC": 10,
+        "LCF": 40,
+        "NOF": 3,
+        "TP": 0,
+        "SIG": 118
+      },
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": 4,
+        "turret": 0,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "846632d3-5777-489a-823b-08ecb7738ed9",
+      "libraryId": "haas-tool-library",
+      "type": "flat end mill",
+      "description": "",
+      "vendor": "",
+      "productId": "",
+      "unit": "millimeters",
+      "geometry": {
+        "OAL": 140,
+        "DC": 6,
+        "LCF": 12,
+        "NOF": 3
+      },
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": 20,
+        "turret": 0,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "b3e1cbe7-9b55-49b6-a901-8b2a4215431a",
+      "libraryId": "haas-tool-library",
+      "type": "probe",
+      "description": "",
+      "vendor": "",
+      "productId": "",
+      "unit": "millimeters",
+      "geometry": {
+        "OAL": 50,
+        "RE": 3,
+        "DC": 6,
+        "LCF": 12,
+        "NOF": 0,
+        "TP": 0,
+        "SIG": 0
+      },
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": 31,
+        "turret": 0,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "c2d2599e-ffc5-43d7-8cb0-cc5807d56662",
+      "libraryId": "haas-tool-library",
+      "type": "flat end mill",
+      "description": "10mm END MILL_ALLY",
+      "vendor": "",
+      "productId": "",
+      "unit": "millimeters",
+      "geometry": {
+        "OAL": 53,
+        "DC": 10,
+        "LCF": 30,
+        "NOF": 3
+      },
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": 1,
+        "turret": 0,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "c4df14c9-85c4-49e8-a20d-14e250098400",
+      "libraryId": "haas-tool-library",
+      "type": "flat end mill",
+      "description": "8mm END_MILL_ALLY",
+      "vendor": "",
+      "productId": "",
+      "unit": "millimeters",
+      "geometry": {
+        "OAL": 35,
+        "DC": 8,
+        "LCF": 20,
+        "NOF": 3
+      },
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": 2,
+        "turret": 0,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "d1034bc8-859a-47d9-a02d-be99f297f4d4",
+      "libraryId": "haas-tool-library",
+      "type": "flat end mill",
+      "description": "",
+      "vendor": "",
+      "productId": "",
+      "unit": "millimeters",
+      "geometry": {
+        "OAL": 82,
+        "DC": 16,
+        "LCF": 66,
+        "NOF": 3
+      },
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": 21,
+        "turret": 0,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "def0eef1-d88b-4125-ba14-e62be21785f9",
+      "libraryId": "haas-tool-library",
+      "type": "tap right hand",
+      "description": "",
+      "vendor": "",
+      "productId": "",
+      "unit": "millimeters",
+      "geometry": {
+        "OAL": 25,
+        "RE": 0,
+        "DC": 5,
+        "LCF": 10,
+        "NOF": 3,
+        "TP": 0.8,
+        "SIG": 0
+      },
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": 9,
+        "turret": 0,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "e3b09695-6240-4524-b22f-ed11a379c7ee",
+      "libraryId": "haas-tool-library",
+      "type": "flat end mill",
+      "description": "4mm END_MILL_ALLY",
+      "vendor": "",
+      "productId": "",
+      "unit": "millimeters",
+      "geometry": {
+        "OAL": 50,
+        "RE": 0,
+        "DC": 4,
+        "LCF": 10,
+        "NOF": 2,
+        "TP": 0,
+        "SIG": 0
+      },
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": 14,
+        "turret": 0,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "feae0aea-9955-482e-a3e7-a17223a820a5",
+      "libraryId": "haas-tool-library",
+      "type": "drill",
+      "description": "4.2mm Drill",
+      "vendor": "",
+      "productId": "",
+      "unit": "millimeters",
+      "geometry": {
+        "OAL": 54.6,
+        "RE": 0,
+        "DC": 4.2,
+        "LCF": 30,
+        "NOF": 3,
+        "TP": 0,
+        "SIG": 118
+      },
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": 8,
+        "turret": 0,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "42a64a0d-0935-4c24-a17c-afa128728828",
+      "libraryId": "haas-tool-library",
+      "type": "drill",
+      "description": "",
+      "vendor": "",
+      "productId": "",
+      "unit": "millimeters",
+      "geometry": {
+        "OAL": 135,
+        "RE": 0,
+        "DC": 40,
+        "LCF": 135,
+        "NOF": 3,
+        "TP": 0,
+        "SIG": 180
+      },
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": 34,
+        "turret": 0,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "6ecf7772-ce63-49cf-8e3d-f3b127840407",
+      "libraryId": "haas-tool-library",
+      "type": "holder",
+      "description": "CT40 - 0.250 x 4.00  End Mill Holder",
+      "vendor": "Lyndex",
+      "productId": "C4016-0250",
+      "unit": "millimeters",
+      "geometry": {},
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": null,
+        "turret": null,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "23f96d6f-d05b-424a-a1a7-66fc0ed97610",
+      "libraryId": "haas-tool-library",
+      "type": "holder",
+      "description": "CT40 - 0.250 x 4.00  End Mill Holder",
+      "vendor": "Lyndex",
+      "productId": "C4016-0250",
+      "unit": "millimeters",
+      "geometry": {},
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": null,
+        "turret": null,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "f3ae1d82-3ddc-41af-8798-1f002dad5a9c",
+      "libraryId": "haas-tool-library",
+      "type": "turning boring",
+      "description": "",
+      "vendor": "",
+      "productId": "",
+      "unit": "millimeters",
+      "geometry": {
+        "RE": 0.8,
+        "SC": "C",
+        "SCTY": "T",
+        "TC": "M",
+        "INSD": 9.671938365,
+        "S": 3.96875,
+        "RA": 0
+      },
+      "holder": {
+        "OAL": 125,
+        "CW": 25,
+        "W": 20,
+        "LH": 32,
+        "HAND": "R",
+        "MTP": "D",
+        "THSC": "boring bar g"
+      },
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": 2,
+        "turret": 0,
+        "compensationOffset": 2,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "1cb2e5e7-14d6-4bc4-97c8-98201bf40280",
+      "libraryId": "machine-1",
+      "type": "drill",
+      "description": "6MM DRILL",
+      "vendor": "",
+      "productId": "",
+      "unit": "millimeters",
+      "geometry": {
+        "OAL": 71,
+        "RE": 0,
+        "DC": 6.800000000000002,
+        "LCF": 32,
+        "NOF": 3,
+        "TP": 0,
+        "SIG": 118
+      },
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": 10,
+        "turret": 0,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "205225c6-55bb-4d45-84c2-8486440f2683",
+      "libraryId": "machine-1",
+      "type": "chamfer mill",
+      "description": "6mm Chamfer_Mill_Ally",
+      "vendor": "",
+      "productId": "",
+      "unit": "millimeters",
+      "geometry": {
+        "OAL": 25,
+        "RE": 0,
+        "DC": 6,
+        "LCF": 5,
+        "NOF": 3,
+        "TP": 0,
+        "SIG": 0
+      },
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": 5,
+        "turret": 0,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "2b4f7a23-e9b6-4b2d-9bc3-91a6f89980d6",
+      "libraryId": "machine-1",
+      "type": "flat end mill",
+      "description": "6mm END_MILL",
+      "vendor": "",
+      "productId": "",
+      "unit": "millimeters",
+      "geometry": {
+        "OAL": 38,
+        "RE": 0,
+        "DC": 6,
+        "LCF": 10,
+        "NOF": 4,
+        "TP": 0,
+        "SIG": 0
+      },
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": 13,
+        "turret": 0,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "2f42ad1d-40c1-4e8e-abe2-f325dc27a542",
+      "libraryId": "machine-1",
+      "type": "drill",
+      "description": "4.2mm Drill",
+      "vendor": "",
+      "productId": "",
+      "unit": "millimeters",
+      "geometry": {
+        "OAL": 54.6,
+        "RE": 0,
+        "DC": 4.2,
+        "LCF": 30,
+        "NOF": 3,
+        "TP": 0,
+        "SIG": 118
+      },
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": 8,
+        "turret": 0,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "391f5e68-b79f-4387-8e83-ca74e66d8459",
+      "libraryId": "machine-1",
+      "type": "ball end mill",
+      "description": "8mm BALL_NOSE_ALLY",
+      "vendor": "",
+      "productId": "",
+      "unit": "millimeters",
+      "geometry": {
+        "OAL": 40,
+        "RE": 4,
+        "DC": 8,
+        "LCF": 20,
+        "NOF": 3,
+        "TP": 0
+      },
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": 6,
+        "turret": 0,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "4b8afe34-0820-4127-a5ab-aa09de451704",
+      "libraryId": "machine-1",
+      "type": "drill",
+      "description": "10mm Drill (Drill_ALLY)",
+      "vendor": "",
+      "productId": "",
+      "unit": "millimeters",
+      "geometry": {
+        "OAL": 60,
+        "RE": 0,
+        "DC": 10,
+        "LCF": 40,
+        "NOF": 3,
+        "TP": 0,
+        "SIG": 118
+      },
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": 4,
+        "turret": 0,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "75e309c7-72d0-44a3-9373-88077adedd97",
+      "libraryId": "machine-1",
+      "type": "flat end mill",
+      "description": "12mm END MILL_ALLY",
+      "vendor": "",
+      "productId": "",
+      "unit": "millimeters",
+      "geometry": {
+        "OAL": 53,
+        "RE": 0,
+        "DC": 12,
+        "LCF": 62,
+        "NOF": 3,
+        "TP": 0,
+        "SIG": 0
+      },
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": 3,
+        "turret": 0,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "980dcdd7-1832-4d5d-a461-53074fdf4860",
+      "libraryId": "machine-1",
+      "type": "ball end mill",
+      "description": "10mm BALL_NOSE_ALLY",
+      "vendor": "",
+      "productId": "",
+      "unit": "millimeters",
+      "geometry": {
+        "OAL": 40,
+        "RE": 5,
+        "DC": 10,
+        "LCF": 20,
+        "NOF": 3,
+        "TP": 0
+      },
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": 7,
+        "turret": 0,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "c285aada-a0fe-4855-874b-37f79e83826f",
+      "libraryId": "machine-1",
+      "type": "flat end mill",
+      "description": "10mm END MILL_ALLY",
+      "vendor": "",
+      "productId": "",
+      "unit": "millimeters",
+      "geometry": {
+        "OAL": 53,
+        "RE": 0,
+        "DC": 10,
+        "LCF": 30,
+        "NOF": 3,
+        "TP": 0,
+        "SIG": 0
+      },
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": 1,
+        "turret": 0,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "cd54803f-97dd-4149-af2f-462976153aae",
+      "libraryId": "machine-1",
+      "type": "flat end mill",
+      "description": "8mm END_MILL_ALLY",
+      "vendor": "",
+      "productId": "",
+      "unit": "millimeters",
+      "geometry": {
+        "OAL": 35,
+        "RE": 0,
+        "DC": 8,
+        "LCF": 20,
+        "NOF": 3,
+        "TP": 0
+      },
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": 2,
+        "turret": 0,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "eca8aa92-a80d-4a10-9ff9-2336b6535877",
+      "libraryId": "machine-1",
+      "type": "tap right hand",
+      "description": "",
+      "vendor": "",
+      "productId": "",
+      "unit": "millimeters",
+      "geometry": {
+        "OAL": 25,
+        "RE": 0,
+        "DC": 5,
+        "LCF": 10,
+        "NOF": 3,
+        "TP": 0.8,
+        "SIG": 0
+      },
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": 9,
+        "turret": 0,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "fb2e8ec8-62a5-4302-84ce-094eba3cddda",
+      "libraryId": "machine-1",
+      "type": "tap right hand",
+      "description": "M6x1 Tap",
+      "vendor": "",
+      "productId": "",
+      "unit": "millimeters",
+      "geometry": {
+        "OAL": 50,
+        "RE": 0,
+        "DC": 8,
+        "LCF": 13,
+        "NOF": 3,
+        "TP": 1.25,
+        "SIG": 0
+      },
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": 12,
+        "turret": 0,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "fe8d4d13-d46f-474e-8c90-75837a3bf988",
+      "libraryId": "machine-1",
+      "type": "flat end mill",
+      "description": "4mm END_MILL_ALLY",
+      "vendor": "",
+      "productId": "",
+      "unit": "millimeters",
+      "geometry": {
+        "OAL": 50,
+        "RE": 0,
+        "DC": 4,
+        "LCF": 10,
+        "NOF": 2,
+        "TP": 0,
+        "SIG": 0
+      },
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": 14,
+        "turret": 0,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "5fbdc9b8-82ab-47bf-b072-c87d60dde1d4",
+      "libraryId": "machine-1",
+      "type": "turning threading",
+      "description": "",
+      "vendor": "",
+      "productId": "",
+      "unit": "millimeters",
+      "geometry": {
+        "OAL": 18,
+        "SC": "thread iso triple",
+        "SCTY": "M",
+        "TC": "M",
+        "S": 3.96875
+      },
+      "holder": {
+        "OAL": 125,
+        "H": 20,
+        "W": 20,
+        "LH": 32,
+        "HAND": "R",
+        "MTP": "D",
+        "THSC": "thread straight"
+      },
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": 19,
+        "turret": 0,
+        "compensationOffset": 19,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "ae0286f1-a661-407d-b6a2-bbf46c094c7b",
+      "libraryId": "machine-1",
+      "type": "chamfer mill",
+      "description": "6mm Chamfer_Mill_Ally",
+      "vendor": "",
+      "productId": "",
+      "unit": "millimeters",
+      "geometry": {
+        "OAL": 25,
+        "RE": 0,
+        "DC": 6,
+        "LCF": 5,
+        "NOF": 3,
+        "TP": 0,
+        "SIG": 0
+      },
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": 5,
+        "turret": 0,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "8cca72cb-cf22-43e5-ae49-0e7e597858fa",
+      "libraryId": "machine-1",
+      "type": "turning general",
+      "description": "",
+      "vendor": "",
+      "productId": "",
+      "unit": "millimeters",
+      "geometry": {
+        "OAL": 30,
+        "RE": 0.8,
+        "SC": "C",
+        "SCTY": "G",
+        "TC": "M",
+        "INSD": 12.8959,
+        "S": 4.7625,
+        "EPSR": 0,
+        "RA": 0,
+        "LH": 0
+      },
+      "holder": {
+        "OAL": 125,
+        "CW": 25,
+        "H": 20,
+        "W": 20,
+        "LH": 32,
+        "HAND": "R",
+        "MTP": "D",
+        "THSC": "L"
+      },
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": 1,
+        "turret": 0,
+        "compensationOffset": 1,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "13252108-e034-4075-8e9a-a45a55a89d64",
+      "libraryId": "machine-1",
+      "type": "turning general",
+      "description": "main",
+      "vendor": "",
+      "productId": "",
+      "unit": "millimeters",
+      "geometry": {
+        "OAL": 30,
+        "RE": 0.4,
+        "SC": "V",
+        "SCTY": "T",
+        "TC": "M",
+        "INSD": 11.0709,
+        "S": 4.7625,
+        "EPSR": 0,
+        "RA": 5,
+        "LH": 0
+      },
+      "holder": {
+        "OAL": 125,
+        "CW": 25,
+        "H": 20,
+        "W": 20,
+        "LH": 32,
+        "HAND": "L",
+        "MTP": "D",
+        "THSC": "L"
+      },
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": 25,
+        "turret": 0,
+        "compensationOffset": 25,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "6aa21b51-fe4a-4319-bbb3-3f3281e82693",
+      "libraryId": "machine-1",
+      "type": "turning general",
+      "description": "CNMT Right Hand",
+      "vendor": "",
+      "productId": "",
+      "unit": "millimeters",
+      "geometry": {
+        "OAL": 30,
+        "RE": 0.8,
+        "SC": "C",
+        "SCTY": "G",
+        "TC": "M",
+        "INSD": 12.8959,
+        "S": 4.7625,
+        "EPSR": 0,
+        "RA": 0,
+        "LH": 0
+      },
+      "holder": {
+        "OAL": 125,
+        "CW": 25,
+        "H": 20,
+        "W": 20,
+        "LH": 32,
+        "HAND": "R",
+        "MTP": "D",
+        "THSC": "L"
+      },
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": 27,
+        "turret": 0,
+        "compensationOffset": 0,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "b6b6e549-6024-4bae-811d-cd5478bac7ff",
+      "libraryId": "machine-1",
+      "type": "turning boring",
+      "description": "",
+      "vendor": "",
+      "productId": "",
+      "unit": "millimeters",
+      "geometry": {
+        "OAL": 30,
+        "RE": 0.8,
+        "SC": "C",
+        "SCTY": "G",
+        "TC": "M",
+        "INSD": 12.8959,
+        "S": 4.7625,
+        "EPSR": 0,
+        "RA": 0,
+        "LH": 0
+      },
+      "holder": {
+        "OAL": 125,
+        "CW": 25,
+        "H": 20,
+        "W": 20,
+        "LH": 32,
+        "HAND": "R",
+        "MTP": "D",
+        "THSC": "boring bar f"
+      },
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": 35,
+        "turret": 0,
+        "compensationOffset": 35,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "ddbaf937-b1a5-4fd5-a387-0febc35292f9",
+      "libraryId": "machine-1",
+      "type": "turning grooving",
+      "description": "",
+      "vendor": "",
+      "productId": "",
+      "unit": "millimeters",
+      "geometry": {
+        "OAL": 33,
+        "RE": 0,
+        "SC": "groove round",
+        "SCTY": "T",
+        "TC": "M",
+        "INSD": 10,
+        "S": 3.96875,
+        "EPSR": 0,
+        "RA": 0,
+        "LH": 0
+      },
+      "holder": {
+        "OAL": 125,
+        "CW": 20,
+        "H": 20,
+        "W": 20,
+        "LH": 32,
+        "HAND": "L",
+        "MTP": "D",
+        "THSC": "groove external"
+      },
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": 21,
+        "turret": 0,
+        "compensationOffset": 21,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "0c536506-72b7-47e1-851c-d16db8b46c3e",
+      "libraryId": "machine-1",
+      "type": "face mill",
+      "description": "8MM FACE MILL",
+      "vendor": "DATRON",
+      "productId": "0068441",
+      "unit": "millimeters",
+      "geometry": {
+        "OAL": 50,
+        "RE": 0,
+        "DC": 8,
+        "LCF": 10,
+        "NOF": 2,
+        "TP": 0,
+        "SIG": 0
+      },
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": 12,
+        "turret": 0,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "{01ac5fc3-708a-4bf3-aea7-191b948abc66}",
+      "libraryId": "maritool-maritool-holders",
+      "type": "holder",
+      "description": "Maritool CAT40-ER25-4.0M",
+      "vendor": "Maritool",
+      "productId": "CAT40-ER25-4.0M",
+      "unit": "inches",
+      "geometry": {},
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": null,
+        "turret": null,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "{027467d4-4d0e-4a1a-8833-f32cab366327}",
+      "libraryId": "maritool-maritool-holders",
+      "type": "holder",
+      "description": "Maritool CAT40-ER11-2.5",
+      "vendor": "Maritool",
+      "productId": "CAT40-ER11-2.5",
+      "unit": "inches",
+      "geometry": {},
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": null,
+        "turret": null,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "{0447c839-9ab0-4966-87e8-95bffe422667}",
+      "libraryId": "maritool-maritool-holders",
+      "type": "holder",
+      "description": "Maritool CAT40-EM1.0-1.25",
+      "vendor": "Maritool",
+      "productId": "CAT40-EM1.0-1.25",
+      "unit": "inches",
+      "geometry": {},
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": null,
+        "turret": null,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "{048f6d2b-235d-426c-8462-981cebffbda5}",
+      "libraryId": "maritool-maritool-holders",
+      "type": "holder",
+      "description": "Maritool CAT40-ER16-2.0",
+      "vendor": "Maritool",
+      "productId": "CAT40-ER16-2.0",
+      "unit": "inches",
+      "geometry": {},
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": null,
+        "turret": null,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "{056ac0fd-ddc6-40ca-a36e-b1ec0326550e}",
+      "libraryId": "maritool-maritool-holders",
+      "type": "holder",
+      "description": "Maritool CAT40-FMA.750-2.0",
+      "vendor": "Maritool",
+      "productId": "CAT40-FMA.750-2.0",
+      "unit": "inches",
+      "geometry": {},
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": null,
+        "turret": null,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "{08b379da-013e-48b2-aa8c-464de6253955}",
+      "libraryId": "maritool-maritool-holders",
+      "type": "holder",
+      "description": "Maritool CAT40-ER11-4.0",
+      "vendor": "Maritool",
+      "productId": "CAT40-ER11-4.0",
+      "unit": "inches",
+      "geometry": {},
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": null,
+        "turret": null,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "{08fd72e3-5555-4371-88bd-73363a81a8b0}",
+      "libraryId": "maritool-maritool-holders",
+      "type": "holder",
+      "description": "Maritool CAT40-EM.1875-2.75",
+      "vendor": "Maritool",
+      "productId": "CAT40-EM.1875-2.75",
+      "unit": "inches",
+      "geometry": {},
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": null,
+        "turret": null,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "{09624808-da2e-4f7a-8829-f972c206c1c4}",
+      "libraryId": "maritool-maritool-holders",
+      "type": "holder",
+      "description": "Maritool CAT40-FMA.750-3.0M",
+      "vendor": "Maritool",
+      "productId": "CAT40-FMA.750-3.0M",
+      "unit": "inches",
+      "geometry": {},
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": null,
+        "turret": null,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "{0be289a5-fd48-4c02-a142-362117f08537}",
+      "libraryId": "maritool-maritool-holders",
+      "type": "holder",
+      "description": "Maritool CAT40-ER32-1.85",
+      "vendor": "Maritool",
+      "productId": "CAT40-ER32-1.85",
+      "unit": "inches",
+      "geometry": {},
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": null,
+        "turret": null,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "{0fd589d6-fd77-4e96-84df-16817de04ffa}",
+      "libraryId": "maritool-maritool-holders",
+      "type": "holder",
+      "description": "Maritool CAT40-ER20-2.5M",
+      "vendor": "Maritool",
+      "productId": "CAT40-ER20-2.5M",
+      "unit": "inches",
+      "geometry": {},
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": null,
+        "turret": null,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "{147cf63e-393d-41bf-87a4-a26e8f73bece}",
+      "libraryId": "maritool-maritool-holders",
+      "type": "holder",
+      "description": "Maritool CAT40-ER25-2.5",
+      "vendor": "Maritool",
+      "productId": "CAT40-ER25-2.5",
+      "unit": "inches",
+      "geometry": {},
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": null,
+        "turret": null,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "{151c55b9-5dc0-48d5-aeec-d1161af711a9}",
+      "libraryId": "maritool-maritool-holders",
+      "type": "holder",
+      "description": "Maritool CAT40-ER16-6.0M",
+      "vendor": "Maritool",
+      "productId": "CAT40-ER16-6.0M",
+      "unit": "inches",
+      "geometry": {},
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": null,
+        "turret": null,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "{1636f96d-dd46-4128-9886-685feb00f58b}",
+      "libraryId": "maritool-maritool-holders",
+      "type": "holder",
+      "description": "Maritool CAT40-FMA.750-2.0M",
+      "vendor": "Maritool",
+      "productId": "CAT40-FMA.750-2.0M",
+      "unit": "inches",
+      "geometry": {},
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": null,
+        "turret": null,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "{1a644722-cba6-445b-821c-bf16729d0d1d}",
+      "libraryId": "maritool-maritool-holders",
+      "type": "holder",
+      "description": "Maritool CAT40-ER40-3.0",
+      "vendor": "Maritool",
+      "productId": "CAT40-ER40-3.0",
+      "unit": "inches",
+      "geometry": {},
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": null,
+        "turret": null,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "{1bfe30b4-da3c-4477-82f8-9c2c23044703}",
+      "libraryId": "maritool-maritool-holders",
+      "type": "holder",
+      "description": "Maritool BT30-ER16-110",
+      "vendor": "Maritool",
+      "productId": "BT30-ER16-110",
+      "unit": "millimeters",
+      "geometry": {},
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": null,
+        "turret": null,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "{1d00a7e3-d76d-47ad-8ea3-31a7ce557563}",
+      "libraryId": "maritool-maritool-holders",
+      "type": "holder",
+      "description": "Maritool BT30-ER20-60",
+      "vendor": "Maritool",
+      "productId": "BT30-ER20-60",
+      "unit": "millimeters",
+      "geometry": {},
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": null,
+        "turret": null,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "{1e890cc9-d747-4918-ab7c-138183bbdec2}",
+      "libraryId": "maritool-maritool-holders",
+      "type": "holder",
+      "description": "Maritool CAT40-APU13 Drill Chuck",
+      "vendor": "Maritool",
+      "productId": "CAT40-APU13",
+      "unit": "inches",
+      "geometry": {},
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": null,
+        "turret": null,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "{21c23794-a50f-4dad-b08f-d8b7b52c0957}",
+      "libraryId": "maritool-maritool-holders",
+      "type": "holder",
+      "description": "Maritool CAT40-EM.375-3.0",
+      "vendor": "Maritool",
+      "productId": "CAT40-EM.375-3.0",
+      "unit": "inches",
+      "geometry": {},
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": null,
+        "turret": null,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "{2254af41-59fc-4ec4-8418-8e03313df776}",
+      "libraryId": "maritool-maritool-holders",
+      "type": "holder",
+      "description": "Maritool CAT40-FMA.500-2.0M",
+      "vendor": "Maritool",
+      "productId": "CAT40-FMA.500-2.0M",
+      "unit": "inches",
+      "geometry": {},
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": null,
+        "turret": null,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "{23c38a24-6a46-4369-af75-c0092be59436}",
+      "libraryId": "maritool-maritool-holders",
+      "type": "holder",
+      "description": "Maritool CAT40-EM.500-1.2",
+      "vendor": "Maritool",
+      "productId": "CAT40-EM.500-1.2",
+      "unit": "inches",
+      "geometry": {},
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": null,
+        "turret": null,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "{25c8c1a3-0258-4e34-88aa-6b3e4f7707db}",
+      "libraryId": "maritool-maritool-holders",
+      "type": "holder",
+      "description": "Maritool BT30-ER16-80M",
+      "vendor": "Maritool",
+      "productId": "BT30-ER16-80M",
+      "unit": "millimeters",
+      "geometry": {},
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": null,
+        "turret": null,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "{26161fbf-34f3-4e87-bc6e-aa9f606bfafd}",
+      "libraryId": "maritool-maritool-holders",
+      "type": "holder",
+      "description": "Maritool BT30-ER16-60M",
+      "vendor": "Maritool",
+      "productId": "BT30-ER16-60M",
+      "unit": "millimeters",
+      "geometry": {},
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": null,
+        "turret": null,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "{2afbc862-34c6-4857-92a0-e30d874c4ab1}",
+      "libraryId": "maritool-maritool-holders",
+      "type": "holder",
+      "description": "Maritool CAT40-ER16-6.0",
+      "vendor": "Maritool",
+      "productId": "CAT40-ER16-6.0",
+      "unit": "inches",
+      "geometry": {},
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": null,
+        "turret": null,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "{2f108240-53aa-4fbd-b5b1-ad9af423def9}",
+      "libraryId": "maritool-maritool-holders",
+      "type": "holder",
+      "description": "Maritool CAT40-EM.1875-3.0",
+      "vendor": "Maritool",
+      "productId": "CAT40-EM.1875-3.0",
+      "unit": "inches",
+      "geometry": {},
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": null,
+        "turret": null,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "{3401ee15-09c7-4ea3-a3cf-9c374b5de51e}",
+      "libraryId": "maritool-maritool-holders",
+      "type": "holder",
+      "description": "Maritool CAT40-FMA.750-1.5",
+      "vendor": "Maritool",
+      "productId": "CAT40-FMA.750-1.5",
+      "unit": "inches",
+      "geometry": {},
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": null,
+        "turret": null,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "{34150566-bf5c-4709-a2f6-0b57eb62609d}",
+      "libraryId": "maritool-maritool-holders",
+      "type": "holder",
+      "description": "Maritool CAT40-EM.625-3.0",
+      "vendor": "Maritool",
+      "productId": "CAT40-EM.625-3.0",
+      "unit": "inches",
+      "geometry": {},
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": null,
+        "turret": null,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "{3479898c-f857-4463-a687-8393c899467a}",
+      "libraryId": "maritool-maritool-holders",
+      "type": "holder",
+      "description": "Maritool CAT40-ER20-5.0M",
+      "vendor": "Maritool",
+      "productId": "CAT40-ER20-5.0M",
+      "unit": "inches",
+      "geometry": {},
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": null,
+        "turret": null,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "{37a5938b-2d98-45b9-a81d-eca9e24d16b5}",
+      "libraryId": "maritool-maritool-holders",
+      "type": "holder",
+      "description": "Maritool CAT40-ER16-3.0",
+      "vendor": "Maritool",
+      "productId": "CAT40-ER16-3.0",
+      "unit": "inches",
+      "geometry": {},
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": null,
+        "turret": null,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "{3ab0999c-73d9-496e-bf7f-4d63e702fa83}",
+      "libraryId": "maritool-maritool-holders",
+      "type": "holder",
+      "description": "Maritool CAT40-EM1.5-4.0",
+      "vendor": "Maritool",
+      "productId": "CAT40-EM1.5-4.0",
+      "unit": "inches",
+      "geometry": {},
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": null,
+        "turret": null,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "{3ab0ba6c-a633-4c27-897e-1899074633dc}",
+      "libraryId": "maritool-maritool-holders",
+      "type": "holder",
+      "description": "Maritool CAT40-EM.500-2.25",
+      "vendor": "Maritool",
+      "productId": "CAT40-EM.500-2.25",
+      "unit": "inches",
+      "geometry": {},
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": null,
+        "turret": null,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "{3c79a86d-39d1-4411-91c2-db0f172775cc}",
+      "libraryId": "maritool-maritool-holders",
+      "type": "holder",
+      "description": "Maritool CAT40-ER11-3.0",
+      "vendor": "Maritool",
+      "productId": "CAT40-ER11-3.0",
+      "unit": "inches",
+      "geometry": {},
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": null,
+        "turret": null,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "{3d71353c-3072-4b68-827b-8865803611fc}",
+      "libraryId": "maritool-maritool-holders",
+      "type": "holder",
+      "description": "Maritool CAT40-EM.250-2.5",
+      "vendor": "Maritool",
+      "productId": "CAT40-EM.250-2.5",
+      "unit": "inches",
+      "geometry": {},
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": null,
+        "turret": null,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "{3fd314d6-ac97-4156-9f27-7cc3ec9364fc}",
+      "libraryId": "maritool-maritool-holders",
+      "type": "holder",
+      "description": "Maritool CAT40-FMA1.0-2.0",
+      "vendor": "Maritool",
+      "productId": "CAT40-FMA1.0-2.0",
+      "unit": "inches",
+      "geometry": {},
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": null,
+        "turret": null,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "{451f39e9-3d9a-4238-b32b-ab7e15130ecf}",
+      "libraryId": "maritool-maritool-holders",
+      "type": "holder",
+      "description": "Maritool CAT40-EM1.25-2.5",
+      "vendor": "Maritool",
+      "productId": "CAT40-EM1.25-2.5",
+      "unit": "inches",
+      "geometry": {},
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": null,
+        "turret": null,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "{457fab20-b388-41c7-9983-cda609f7cc0e}",
+      "libraryId": "maritool-maritool-holders",
+      "type": "holder",
+      "description": "Maritool CAT40-EM.625-1.75",
+      "vendor": "Maritool",
+      "productId": "CAT40-EM.625-1.75",
+      "unit": "inches",
+      "geometry": {},
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": null,
+        "turret": null,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "{45a5bcc2-5c33-445b-ad2d-7c4f493adc15}",
+      "libraryId": "maritool-maritool-holders",
+      "type": "holder",
+      "description": "Maritool CAT40-ER25-4.0",
+      "vendor": "Maritool",
+      "productId": "CAT40-ER25-4.0",
+      "unit": "inches",
+      "geometry": {},
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": null,
+        "turret": null,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "{477ed781-261a-48f4-9f7a-b73491eb500a}",
+      "libraryId": "maritool-maritool-holders",
+      "type": "holder",
+      "description": "Maritool BT30-ER32-110",
+      "vendor": "Maritool",
+      "productId": "BT30-ER32-110",
+      "unit": "millimeters",
+      "geometry": {},
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": null,
+        "turret": null,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "{4da777b8-cf37-4e99-b046-2dda56a5f324}",
+      "libraryId": "maritool-maritool-holders",
+      "type": "holder",
+      "description": "Maritool CAT40-EM.1875-2.25",
+      "vendor": "Maritool",
+      "productId": "CAT40-EM.1875-2.25",
+      "unit": "inches",
+      "geometry": {},
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": null,
+        "turret": null,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "{4e64f3f4-f9cc-4855-b521-cd9df24d2c52}",
+      "libraryId": "maritool-maritool-holders",
+      "type": "holder",
+      "description": "Maritool CAT40-ER16-3.5",
+      "vendor": "Maritool",
+      "productId": "CAT40-ER16-3.5",
+      "unit": "inches",
+      "geometry": {},
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": null,
+        "turret": null,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "{4f358561-62f8-43eb-b005-b411e582060b}",
+      "libraryId": "maritool-maritool-holders",
+      "type": "holder",
+      "description": "Maritool CAT40-EM.750-1.75",
+      "vendor": "Maritool",
+      "productId": "CAT40-EM.750-1.75",
+      "unit": "inches",
+      "geometry": {},
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": null,
+        "turret": null,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "{503e2d4b-48db-4349-8a6e-1dd65e089433}",
+      "libraryId": "maritool-maritool-holders",
+      "type": "holder",
+      "description": "Maritool CAT40-EM.125-3.0",
+      "vendor": "Maritool",
+      "productId": "CAT40-EM.125-3.0",
+      "unit": "inches",
+      "geometry": {},
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": null,
+        "turret": null,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "{532874d5-ced4-4d6a-b4ab-61054b97a184}",
+      "libraryId": "maritool-maritool-holders",
+      "type": "holder",
+      "description": "Maritool BT30-ER25-50",
+      "vendor": "Maritool",
+      "productId": "BT30-ER25-50",
+      "unit": "millimeters",
+      "geometry": {},
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": null,
+        "turret": null,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "{53b2e9e7-b4ca-4ee5-b715-952b1ad2acd4}",
+      "libraryId": "maritool-maritool-holders",
+      "type": "holder",
+      "description": "Maritool CAT40-EM.3125-3.0",
+      "vendor": "Maritool",
+      "productId": "CAT40-EM.3125-3.0",
+      "unit": "inches",
+      "geometry": {},
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": null,
+        "turret": null,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "{5abca15b-9e29-42eb-8969-f1ef9de3bb95}",
+      "libraryId": "maritool-maritool-holders",
+      "type": "holder",
+      "description": "Maritool CAT40-EM.3125-2.5",
+      "vendor": "Maritool",
+      "productId": "CAT40-EM.3125-2.5",
+      "unit": "inches",
+      "geometry": {},
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": null,
+        "turret": null,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "{5c2729a4-befd-4fd4-9088-34ed67e00083}",
+      "libraryId": "maritool-maritool-holders",
+      "type": "holder",
+      "description": "Maritool BT30-ER32-60",
+      "vendor": "Maritool",
+      "productId": "BT30-ER32-60",
+      "unit": "millimeters",
+      "geometry": {},
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": null,
+        "turret": null,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "{61143083-14c3-4a6f-8e85-4ce13e5b9264}",
+      "libraryId": "maritool-maritool-holders",
+      "type": "holder",
+      "description": "Maritool BT30-ER11-50",
+      "vendor": "Maritool",
+      "productId": "BT30-ER11-50",
+      "unit": "millimeters",
+      "geometry": {},
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": null,
+        "turret": null,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "{66329e1a-313a-43fe-badc-6aa69a05b629}",
+      "libraryId": "maritool-maritool-holders",
+      "type": "holder",
+      "description": "Maritool CAT40-EM.3125-1.75",
+      "vendor": "Maritool",
+      "productId": "CAT40-EM.3125-1.75",
+      "unit": "inches",
+      "geometry": {},
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": null,
+        "turret": null,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "{68cf751f-35b3-44d3-b852-d3ed5af3c5a7}",
+      "libraryId": "maritool-maritool-holders",
+      "type": "holder",
+      "description": "Maritool CAT40-ER20-3.5M",
+      "vendor": "Maritool",
+      "productId": "CAT40-ER20-3.5M",
+      "unit": "inches",
+      "geometry": {},
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": null,
+        "turret": null,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "{6d38a02f-4ce3-45d1-8bc0-81e4b80998f3}",
+      "libraryId": "maritool-maritool-holders",
+      "type": "holder",
+      "description": "Maritool CAT40-ER16-2.5M",
+      "vendor": "Maritool",
+      "productId": "CAT40-ER16-2.5M",
+      "unit": "inches",
+      "geometry": {},
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": null,
+        "turret": null,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "{6d75a366-9906-4781-923a-49427a0b8cfa}",
+      "libraryId": "maritool-maritool-holders",
+      "type": "holder",
+      "description": "Maritool CAT40-FMA.500-1.5M",
+      "vendor": "Maritool",
+      "productId": "CAT40-FMA.500-1.5M",
+      "unit": "inches",
+      "geometry": {},
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": null,
+        "turret": null,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "{6e7fd2c5-152d-4169-ab26-af14f71b1176}",
+      "libraryId": "maritool-maritool-holders",
+      "type": "holder",
+      "description": "Maritool CAT40-EM.750-3.0",
+      "vendor": "Maritool",
+      "productId": "CAT40-EM.750-3.0",
+      "unit": "inches",
+      "geometry": {},
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": null,
+        "turret": null,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "{6ea6a1c4-3645-4092-8101-fb08b387dcc7}",
+      "libraryId": "maritool-maritool-holders",
+      "type": "holder",
+      "description": "Maritool CAT40-FMA.750-2.75",
+      "vendor": "Maritool",
+      "productId": "CAT40-FMA.750-2.75",
+      "unit": "inches",
+      "geometry": {},
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": null,
+        "turret": null,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "{6fbdc446-1459-449e-82a1-daedeaca4b7e}",
+      "libraryId": "maritool-maritool-holders",
+      "type": "holder",
+      "description": "Maritool CAT40-EM.875-3.0",
+      "vendor": "Maritool",
+      "productId": "CAT40-EM.875-3.0",
+      "unit": "inches",
+      "geometry": {},
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": null,
+        "turret": null,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "{70f0b008-b067-46b8-9322-c35148e6a174}",
+      "libraryId": "maritool-maritool-holders",
+      "type": "holder",
+      "description": "Maritool CAT40-EM.625-2.5",
+      "vendor": "Maritool",
+      "productId": "CAT40-EM.625-2.5",
+      "unit": "inches",
+      "geometry": {},
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": null,
+        "turret": null,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "{7179f67f-e28f-4ac1-acb6-a1b1436d29cf}",
+      "libraryId": "maritool-maritool-holders",
+      "type": "holder",
+      "description": "Maritool CAT40-FMA1.25-2.0",
+      "vendor": "Maritool",
+      "productId": "CAT40-FMA1.25-2.0",
+      "unit": "inches",
+      "geometry": {},
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": null,
+        "turret": null,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "{74dd734e-7f33-4fc7-a2f1-430f88f51cf9}",
+      "libraryId": "maritool-maritool-holders",
+      "type": "holder",
+      "description": "Maritool CAT40-ER20-5.0",
+      "vendor": "Maritool",
+      "productId": "CAT40-ER20-5.0",
+      "unit": "inches",
+      "geometry": {},
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": null,
+        "turret": null,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "{757328e1-d339-4f5a-a880-7f8dcb13c73d}",
+      "libraryId": "maritool-maritool-holders",
+      "type": "holder",
+      "description": "Maritool CAT40-ER32-6.0",
+      "vendor": "Maritool",
+      "productId": "CAT40-ER32-6.0",
+      "unit": "inches",
+      "geometry": {},
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": null,
+        "turret": null,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "{77d3a8fd-ac3a-4c6c-a4f7-f67be4a1804c}",
+      "libraryId": "maritool-maritool-holders",
+      "type": "holder",
+      "description": "Maritool CAT40-ER20-2.5",
+      "vendor": "Maritool",
+      "productId": "CAT40-ER20-2.5",
+      "unit": "inches",
+      "geometry": {},
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": null,
+        "turret": null,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "{7d27d5b0-4d45-4bfb-ad23-7de59d780b0e}",
+      "libraryId": "maritool-maritool-holders",
+      "type": "holder",
+      "description": "Maritool CAT40-ER16-4.0",
+      "vendor": "Maritool",
+      "productId": "CAT40-ER16-4.0",
+      "unit": "inches",
+      "geometry": {},
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": null,
+        "turret": null,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "{7f98c1b3-16da-474d-9595-922cd661dea2}",
+      "libraryId": "maritool-maritool-holders",
+      "type": "holder",
+      "description": "Maritool BT30-ER16-60",
+      "vendor": "Maritool",
+      "productId": "BT30-ER16-60",
+      "unit": "millimeters",
+      "geometry": {},
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": null,
+        "turret": null,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "{84632983-8867-48df-9154-370d322d9575}",
+      "libraryId": "maritool-maritool-holders",
+      "type": "holder",
+      "description": "Maritool CAT40-FMA1.5-2.0",
+      "vendor": "Maritool",
+      "productId": "CAT40-FMA1.5-2.0",
+      "unit": "inches",
+      "geometry": {},
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": null,
+        "turret": null,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "{84f6c7cf-6e05-4f62-bbfb-3326a80f6a74}",
+      "libraryId": "maritool-maritool-holders",
+      "type": "holder",
+      "description": "Maritool BT30-ER11-60",
+      "vendor": "Maritool",
+      "productId": "BT30-ER11-60",
+      "unit": "millimeters",
+      "geometry": {},
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": null,
+        "turret": null,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "{859162e8-9b2d-4849-83ec-516f53b15713}",
+      "libraryId": "maritool-maritool-holders",
+      "type": "holder",
+      "description": "Maritool CAT40-EM.375-2.25",
+      "vendor": "Maritool",
+      "productId": "CAT40-EM.375-2.25",
+      "unit": "inches",
+      "geometry": {},
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": null,
+        "turret": null,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "{865a81ea-4703-4be8-9c40-5bd1d48219b0}",
+      "libraryId": "maritool-maritool-holders",
+      "type": "holder",
+      "description": "Maritool CAT40-ER25-3.0",
+      "vendor": "Maritool",
+      "productId": "CAT40-ER25-3.0",
+      "unit": "inches",
+      "geometry": {},
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": null,
+        "turret": null,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "{872d383b-dec3-4de3-b8fb-44458d2e6457}",
+      "libraryId": "maritool-maritool-holders",
+      "type": "holder",
+      "description": "Maritool CAT40-ER25-1.85",
+      "vendor": "Maritool",
+      "productId": "CAT40-ER25-1.85",
+      "unit": "inches",
+      "geometry": {},
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": null,
+        "turret": null,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "{88e60996-7883-4c9c-81c0-63b3999a4cec}",
+      "libraryId": "maritool-maritool-holders",
+      "type": "holder",
+      "description": "Maritool CAT40-EM.125-2.25",
+      "vendor": "Maritool",
+      "productId": "CAT40-EM.125-2.25",
+      "unit": "inches",
+      "geometry": {},
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": null,
+        "turret": null,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "{89cacb9e-a6b8-459c-91a0-d1cb0103b5e6}",
+      "libraryId": "maritool-maritool-holders",
+      "type": "holder",
+      "description": "Maritool BT30-ER16-80",
+      "vendor": "Maritool",
+      "productId": "BT30-ER16-80",
+      "unit": "millimeters",
+      "geometry": {},
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": null,
+        "turret": null,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "{926a883d-e98e-421d-9560-50ddc8fc7b49}",
+      "libraryId": "maritool-maritool-holders",
+      "type": "holder",
+      "description": "Maritool BT30-ER32-52",
+      "vendor": "Maritool",
+      "productId": "BT30-ER32-52",
+      "unit": "millimeters",
+      "geometry": {},
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": null,
+        "turret": null,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "{932c8de7-2a2c-4c33-8790-49185b65434d}",
+      "libraryId": "maritool-maritool-holders",
+      "type": "holder",
+      "description": "Maritool BT30-ER25-60",
+      "vendor": "Maritool",
+      "productId": "BT30-ER25-60",
+      "unit": "millimeters",
+      "geometry": {},
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": null,
+        "turret": null,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "{93c961d8-0d69-485b-9000-9d94cbd811d4}",
+      "libraryId": "maritool-maritool-holders",
+      "type": "holder",
+      "description": "Maritool CAT40-FMA.750-3.0",
+      "vendor": "Maritool",
+      "productId": "CAT40-FMA.750-3.0",
+      "unit": "inches",
+      "geometry": {},
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": null,
+        "turret": null,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "{94b20d9c-b977-4872-ab29-2533f29f9561}",
+      "libraryId": "maritool-maritool-holders",
+      "type": "holder",
+      "description": "Maritool CAT40-EM.250-1.75",
+      "vendor": "Maritool",
+      "productId": "CAT40-EM.250-1.75",
+      "unit": "inches",
+      "geometry": {},
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": null,
+        "turret": null,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "{9b1f3cc2-58b7-4e8f-91d4-6fb39cb25f69}",
+      "libraryId": "maritool-maritool-holders",
+      "type": "holder",
+      "description": "Maritool CAT40-EM1.0-3.0",
+      "vendor": "Maritool",
+      "productId": "CAT40-EM1.0-3.0",
+      "unit": "inches",
+      "geometry": {},
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": null,
+        "turret": null,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "{9bf27523-a803-4e7f-b162-0b9dd3f67706}",
+      "libraryId": "maritool-maritool-holders",
+      "type": "holder",
+      "description": "Maritool CAT40-EM.500-2.75",
+      "vendor": "Maritool",
+      "productId": "CAT40-EM.500-2.75",
+      "unit": "inches",
+      "geometry": {},
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": null,
+        "turret": null,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "{a9fa5373-f8b9-4591-8e6e-ebd9bf5d38d0}",
+      "libraryId": "maritool-maritool-holders",
+      "type": "holder",
+      "description": "Maritool CAT40-ER20-1.75",
+      "vendor": "Maritool",
+      "productId": "CAT40-ER20-1.75",
+      "unit": "inches",
+      "geometry": {},
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": null,
+        "turret": null,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "{aba2a1f6-bff1-494b-8e3c-271bdb09f814}",
+      "libraryId": "maritool-maritool-holders",
+      "type": "holder",
+      "description": "Maritool CAT40-FMA1.0-3.0",
+      "vendor": "Maritool",
+      "productId": "CAT40-FMA1.0-3.0",
+      "unit": "inches",
+      "geometry": {},
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": null,
+        "turret": null,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "{ad8039d6-8d00-47c6-a428-d39ed4eb8b09}",
+      "libraryId": "maritool-maritool-holders",
+      "type": "holder",
+      "description": "Maritool CAT40-ER20-3.0M",
+      "vendor": "Maritool",
+      "productId": "CAT40-ER20-3.0M",
+      "unit": "inches",
+      "geometry": {},
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": null,
+        "turret": null,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "{ae7ebae2-dd9b-418a-84dc-5f8901b9fc8e}",
+      "libraryId": "maritool-maritool-holders",
+      "type": "holder",
+      "description": "Maritool CAT40-ER20-4.0M",
+      "vendor": "Maritool",
+      "productId": "CAT40-ER20-4.0M",
+      "unit": "inches",
+      "geometry": {},
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": null,
+        "turret": null,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "{ae8f5878-4071-4ec6-9cda-d8097c8cec65}",
+      "libraryId": "maritool-maritool-holders",
+      "type": "holder",
+      "description": "Maritool BT30-ER20-80",
+      "vendor": "Maritool",
+      "productId": "BT30-ER20-80",
+      "unit": "millimeters",
+      "geometry": {},
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": null,
+        "turret": null,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "{b26158ac-6838-418b-8033-dab50a753049}",
+      "libraryId": "maritool-maritool-holders",
+      "type": "holder",
+      "description": "Maritool CAT40-ER25-3.5",
+      "vendor": "Maritool",
+      "productId": "CAT40-ER25-3.5",
+      "unit": "inches",
+      "geometry": {},
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": null,
+        "turret": null,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "{b3cfb512-4f26-4422-83ae-e3abb1686f03}",
+      "libraryId": "maritool-maritool-holders",
+      "type": "holder",
+      "description": "Maritool CAT40-ER32-4.0",
+      "vendor": "Maritool",
+      "productId": "CAT40-ER32-4.0",
+      "unit": "inches",
+      "geometry": {},
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": null,
+        "turret": null,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "{b6d8c50e-d785-4604-8038-cbd90956bdda}",
+      "libraryId": "maritool-maritool-holders",
+      "type": "holder",
+      "description": "Maritool CAT40-EM.875-1.75",
+      "vendor": "Maritool",
+      "productId": "CAT40-EM.875-1.75",
+      "unit": "inches",
+      "geometry": {},
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": null,
+        "turret": null,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "{b74efa00-b259-4e0a-b1d7-916d7db0f7c8}",
+      "libraryId": "maritool-maritool-holders",
+      "type": "holder",
+      "description": "Maritool CAT40-EM.375-3.0",
+      "vendor": "Maritool",
+      "productId": "CAT40-EM.375-3.0",
+      "unit": "inches",
+      "geometry": {},
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": null,
+        "turret": null,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "{b8aa601e-618f-4e0c-9f46-f71d60e419bf}",
+      "libraryId": "maritool-maritool-holders",
+      "type": "holder",
+      "description": "Maritool CAT40-ER32-3.0",
+      "vendor": "Maritool",
+      "productId": "CAT40-ER32-3.0",
+      "unit": "inches",
+      "geometry": {},
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": null,
+        "turret": null,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "{bd9d55c4-0b7f-40be-8af3-d903db109d8d}",
+      "libraryId": "maritool-maritool-holders",
+      "type": "holder",
+      "description": "Maritool CAT40-EM.500-1.75",
+      "vendor": "Maritool",
+      "productId": "CAT40-EM.500-1.75",
+      "unit": "inches",
+      "geometry": {},
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": null,
+        "turret": null,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "{be393622-3348-48fc-8ff2-3a4560934769}",
+      "libraryId": "maritool-maritool-holders",
+      "type": "holder",
+      "description": "Maritool CAT40-EM.250-3.0",
+      "vendor": "Maritool",
+      "productId": "CAT40-EM.250-3.0",
+      "unit": "inches",
+      "geometry": {},
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": null,
+        "turret": null,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "{bf8d8c9c-b5f2-417e-a279-b8fc58c16671}",
+      "libraryId": "maritool-maritool-holders",
+      "type": "holder",
+      "description": "Maritool CAT40-EM.375-1.75",
+      "vendor": "Maritool",
+      "productId": "CAT40-EM.375-1.75",
+      "unit": "inches",
+      "geometry": {},
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": null,
+        "turret": null,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "{c302cd10-8534-437d-ad6a-257eef1260dd}",
+      "libraryId": "maritool-maritool-holders",
+      "type": "holder",
+      "description": "Maritool CAT40-ER32-5.0",
+      "vendor": "Maritool",
+      "productId": "CAT40-ER32-5.0",
+      "unit": "inches",
+      "geometry": {},
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": null,
+        "turret": null,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "{c33ad3b5-a203-4a42-ae8d-97f2b6b2a9f9}",
+      "libraryId": "maritool-maritool-holders",
+      "type": "holder",
+      "description": "Maritool CAT40-ER16-5.0M",
+      "vendor": "Maritool",
+      "productId": "CAT40-ER16-5.0M",
+      "unit": "inches",
+      "geometry": {},
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": null,
+        "turret": null,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "{c92866b0-dff9-4392-ac70-5cdb7b9ca1a6}",
+      "libraryId": "maritool-maritool-holders",
+      "type": "holder",
+      "description": "Maritool CAT40-FMA.750-1.5M",
+      "vendor": "Maritool",
+      "productId": "CAT40-FMA.750-1.5M",
+      "unit": "inches",
+      "geometry": {},
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": null,
+        "turret": null,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "{c97f0d3f-56b9-4efa-b8f1-f4a6cc6baa70}",
+      "libraryId": "maritool-maritool-holders",
+      "type": "holder",
+      "description": "Maritool CAT40-FMA1.5-1.5",
+      "vendor": "Maritool",
+      "productId": "CAT40-FMA1.5-1.5",
+      "unit": "inches",
+      "geometry": {},
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": null,
+        "turret": null,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "{cb0273fc-0ff4-497c-9fd6-b8e97da08f03}",
+      "libraryId": "maritool-maritool-holders",
+      "type": "holder",
+      "description": "Maritool BT30-ER11-80",
+      "vendor": "Maritool",
+      "productId": "BT30-ER11-80",
+      "unit": "millimeters",
+      "geometry": {},
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": null,
+        "turret": null,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "{cc6408d7-851c-4e2f-ad8a-1385ec570e5a}",
+      "libraryId": "maritool-maritool-holders",
+      "type": "holder",
+      "description": "Maritool CAT40-FMA1.0-4.0",
+      "vendor": "Maritool",
+      "productId": "CAT40-FMA1.0-4.0",
+      "unit": "inches",
+      "geometry": {},
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": null,
+        "turret": null,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "{cc64ce07-c98b-471b-83f3-dcc11d338995}",
+      "libraryId": "maritool-maritool-holders",
+      "type": "holder",
+      "description": "Maritool CAT40-FMA.750-2.5",
+      "vendor": "Maritool",
+      "productId": "CAT40-FMA.750-2.5",
+      "unit": "inches",
+      "geometry": {},
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": null,
+        "turret": null,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "{ce23aa4c-cfc2-4af8-b7e0-75bfc796d950}",
+      "libraryId": "maritool-maritool-holders",
+      "type": "holder",
+      "description": "Maritool CAT40-ER16-5.0",
+      "vendor": "Maritool",
+      "productId": "CAT40-ER16-5.0",
+      "unit": "inches",
+      "geometry": {},
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": null,
+        "turret": null,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "{ce5a1068-e359-4acc-92da-e35a793da906}",
+      "libraryId": "maritool-maritool-holders",
+      "type": "holder",
+      "description": "Maritool CAT40-FMA1.0-1.5M",
+      "vendor": "Maritool",
+      "productId": "CAT40-FMA1.0-1.5M",
+      "unit": "inches",
+      "geometry": {},
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": null,
+        "turret": null,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "{d0cfd2fe-5e8d-4b5d-810a-e19ad7c6852c}",
+      "libraryId": "maritool-maritool-holders",
+      "type": "holder",
+      "description": "Maritool CAT40-ER16-3.5M",
+      "vendor": "Maritool",
+      "productId": "CAT40-ER16-3.5M",
+      "unit": "inches",
+      "geometry": {},
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": null,
+        "turret": null,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "{d61cb113-b516-4148-88e9-23d27e509c05}",
+      "libraryId": "maritool-maritool-holders",
+      "type": "holder",
+      "description": "Maritool CAT40-ER16-4.0M",
+      "vendor": "Maritool",
+      "productId": "CAT40-ER16-4.0M",
+      "unit": "inches",
+      "geometry": {},
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": null,
+        "turret": null,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "{d737b400-9cdd-4166-8843-c8e146373364}",
+      "libraryId": "maritool-maritool-holders",
+      "type": "holder",
+      "description": "Maritool BT30-ER25-80",
+      "vendor": "Maritool",
+      "productId": "BT30-ER25-80",
+      "unit": "millimeters",
+      "geometry": {},
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": null,
+        "turret": null,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "{d7f1eb73-a348-4817-9a56-591cebe19b70}",
+      "libraryId": "maritool-maritool-holders",
+      "type": "holder",
+      "description": "Maritool CAT40-FMA1.0-2.0M",
+      "vendor": "Maritool",
+      "productId": "CAT40-FMA1.0-2.0M",
+      "unit": "inches",
+      "geometry": {},
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": null,
+        "turret": null,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "{da783c10-bfc4-410c-bbb0-18dff104ae71}",
+      "libraryId": "maritool-maritool-holders",
+      "type": "holder",
+      "description": "Maritool CAT40-ER20-3.0",
+      "vendor": "Maritool",
+      "productId": "CAT40-ER20-3.0",
+      "unit": "inches",
+      "geometry": {},
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": null,
+        "turret": null,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "{dc1826ee-b6f7-40fe-8a95-d42571903884}",
+      "libraryId": "maritool-maritool-holders",
+      "type": "holder",
+      "description": "Maritool CAT40-EM.500-3.0",
+      "vendor": "Maritool",
+      "productId": "CAT40-EM.500-3.0",
+      "unit": "inches",
+      "geometry": {},
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": null,
+        "turret": null,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "{dc8fb23c-8a95-472b-a8d1-a70e745e6428}",
+      "libraryId": "maritool-maritool-holders",
+      "type": "holder",
+      "description": "Maritool CAT40-ER20-4.0",
+      "vendor": "Maritool",
+      "productId": "CAT40-ER20-4.0",
+      "unit": "inches",
+      "geometry": {},
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": null,
+        "turret": null,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "{e445a1fd-5d97-477e-b6ca-bae5784d9362}",
+      "libraryId": "maritool-maritool-holders",
+      "type": "holder",
+      "description": "Maritool CAT40-ER20-3.5",
+      "vendor": "Maritool",
+      "productId": "CAT40-ER20-3.5",
+      "unit": "inches",
+      "geometry": {},
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": null,
+        "turret": null,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "{e67dc1fe-48c8-4ecc-b579-41876eafab05}",
+      "libraryId": "maritool-maritool-holders",
+      "type": "holder",
+      "description": "Maritool CAT40-FMA1.0-1.5",
+      "vendor": "Maritool",
+      "productId": "CAT40-FMA1.0-1.5",
+      "unit": "inches",
+      "geometry": {},
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": null,
+        "turret": null,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "{e7026b6e-ef04-457f-b689-c922099fb4be}",
+      "libraryId": "maritool-maritool-holders",
+      "type": "holder",
+      "description": "Maritool CAT40-APU08 Drill Chuck",
+      "vendor": "Maritool",
+      "productId": "CAT40-APU08",
+      "unit": "inches",
+      "geometry": {},
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": null,
+        "turret": null,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "{e800051b-e2d6-4699-a2b6-dad6466a0a0c}",
+      "libraryId": "maritool-maritool-holders",
+      "type": "holder",
+      "description": "Maritool CAT40-ER32-2.35",
+      "vendor": "Maritool",
+      "productId": "CAT40-ER32-2.35",
+      "unit": "inches",
+      "geometry": {},
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": null,
+        "turret": null,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "{e8542988-8a94-4b74-96e9-98f3ae588997}",
+      "libraryId": "maritool-maritool-holders",
+      "type": "holder",
+      "description": "Maritool CAT40-EM.750-2.5",
+      "vendor": "Maritool",
+      "productId": "CAT40-EM.750-2.5",
+      "unit": "inches",
+      "geometry": {},
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": null,
+        "turret": null,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "{ea309d32-2f49-4b70-a936-eef5cecd47b3}",
+      "libraryId": "maritool-maritool-holders",
+      "type": "holder",
+      "description": "Maritool CAT40-ER40-4.0",
+      "vendor": "Maritool",
+      "productId": "CAT40-ER40-4.0",
+      "unit": "inches",
+      "geometry": {},
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": null,
+        "turret": null,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "{ef25b190-199e-4309-b599-b2b645e55bea}",
+      "libraryId": "maritool-maritool-holders",
+      "type": "holder",
+      "description": "Maritool CAT40-ER16-2.5",
+      "vendor": "Maritool",
+      "productId": "CAT40-ER16-2.5",
+      "unit": "inches",
+      "geometry": {},
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": null,
+        "turret": null,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "{f1cbd2a7-ffc9-41fb-99ed-60b477cb596e}",
+      "libraryId": "maritool-maritool-holders",
+      "type": "holder",
+      "description": "Maritool CAT40-EM1.0-1.75",
+      "vendor": "Maritool",
+      "productId": "CAT40-EM1.0-1.75",
+      "unit": "inches",
+      "geometry": {},
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": null,
+        "turret": null,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "{f5e9f1ae-a6ee-4e97-85ab-a02854d4325a}",
+      "libraryId": "maritool-maritool-holders",
+      "type": "holder",
+      "description": "Maritool CAT40-ER25-3.0M",
+      "vendor": "Maritool",
+      "productId": "CAT40-ER25-3.0M",
+      "unit": "inches",
+      "geometry": {},
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": null,
+        "turret": null,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "{fa120722-8d2a-450d-bbf4-f1fea32cc58d}",
+      "libraryId": "maritool-maritool-holders",
+      "type": "holder",
+      "description": "Maritool CAT40-EM.375-2.5",
+      "vendor": "Maritool",
+      "productId": "CAT40-EM.375-2.5",
+      "unit": "inches",
+      "geometry": {},
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": null,
+        "turret": null,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "{fa89673e-f93b-4fc0-b951-efa3ec325694}",
+      "libraryId": "maritool-maritool-holders",
+      "type": "holder",
+      "description": "Maritool BT30-ER16-50",
+      "vendor": "Maritool",
+      "productId": "BT30-ER16-50",
+      "unit": "millimeters",
+      "geometry": {},
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": null,
+        "turret": null,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "{fcedb885-2ea8-492c-a618-e6d545bfa9da}",
+      "libraryId": "maritool-maritool-holders",
+      "type": "holder",
+      "description": "Maritool CAT40-FMA1.25-1.5",
+      "vendor": "Maritool",
+      "productId": "CAT40-FMA1.25-1.5",
+      "unit": "inches",
+      "geometry": {},
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": null,
+        "turret": null,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "02a05d48-de7c-4252-8479-886238620a9c",
+      "libraryId": "test-piece-2",
+      "type": "holder",
+      "description": "New Holder",
+      "vendor": "",
+      "productId": "",
+      "unit": "millimeters",
+      "geometry": {},
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": null,
+        "turret": null,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "2497af8e-4f8f-4c2e-bb1d-6cdbc5bb3a6a",
+      "libraryId": "test-piece-2",
+      "type": "flat end mill",
+      "description": "25mm Flat Endmill",
+      "vendor": "",
+      "productId": "",
+      "unit": "millimeters",
+      "geometry": {
+        "OAL": 100,
+        "DC": 25,
+        "LCF": 38,
+        "NOF": 3
+      },
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": 0,
+        "turret": 0,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "5051764a-af76-4d72-8045-20bef2865dd5",
+      "libraryId": "test-piece-2",
+      "type": "holder",
+      "description": "Jason Holder 3",
+      "vendor": "",
+      "productId": "",
+      "unit": "millimeters",
+      "geometry": {},
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": null,
+        "turret": null,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "64c1aa94-76d3-4379-af39-0075bf203c01",
+      "libraryId": "test-piece-2",
+      "type": "chamfer mill",
+      "description": "12mm x 45 Chamfer Tool",
+      "vendor": "",
+      "productId": "",
+      "unit": "millimeters",
+      "geometry": {
+        "OAL": 100,
+        "RE": 0,
+        "DC": 12,
+        "LCF": 2.3094,
+        "NOF": 3,
+        "TP": 0
+      },
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": 0,
+        "turret": 0,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "78ad7834-2f96-498e-936a-b543a3282ed4",
+      "libraryId": "test-piece-2",
+      "type": "drill",
+      "description": "",
+      "vendor": "",
+      "productId": "",
+      "unit": "millimeters",
+      "geometry": {
+        "OAL": 7.580000000000001,
+        "RE": 0,
+        "DC": 0.25,
+        "LCF": 2.5,
+        "NOF": 1,
+        "TP": 0,
+        "SIG": 118
+      },
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": 0,
+        "turret": 0,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "91bd3dbd-5fbd-4632-911f-9c20ab741bb6",
+      "libraryId": "test-piece-2",
+      "type": "holder",
+      "description": "Maritool BT30-ER16-60",
+      "vendor": "Maritool",
+      "productId": "BT30-ER16-60",
+      "unit": "millimeters",
+      "geometry": {},
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": null,
+        "turret": null,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "b368441b-c784-4a61-b158-60a463a9f066",
+      "libraryId": "test-piece-2",
+      "type": "holder",
+      "description": "Jason Holder 1",
+      "vendor": "",
+      "productId": "",
+      "unit": "millimeters",
+      "geometry": {},
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": null,
+        "turret": null,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "ce55152a-9f30-4295-867e-9acc01aa1520",
+      "libraryId": "test-piece-2",
+      "type": "flat end mill",
+      "description": "3mm Flat Endmill",
+      "vendor": "",
+      "productId": "",
+      "unit": "millimeters",
+      "geometry": {
+        "OAL": 63,
+        "DC": 3,
+        "LCF": 12,
+        "NOF": 3
+      },
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": 0,
+        "turret": 0,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "d34da681-4507-48c1-bc4c-1ba11cafff87",
+      "libraryId": "test-piece-2",
+      "type": "holder",
+      "description": "BT30 - Blank1",
+      "vendor": "",
+      "productId": "",
+      "unit": "millimeters",
+      "geometry": {},
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": null,
+        "turret": null,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "eaa8ba46-0d04-47b7-a2de-0c4c7a9cc1b5",
+      "libraryId": "test-piece-2",
+      "type": "radius mill",
+      "description": "1/2\" x 0.187\" Radius Tool",
+      "vendor": "",
+      "productId": "",
+      "unit": "inches",
+      "geometry": {
+        "OAL": 1.5,
+        "RE": 0.187,
+        "DC": 0.126,
+        "LCF": 0.187,
+        "NOF": 3,
+        "TP": 0
+      },
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": 0,
+        "turret": 0,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "35e32754-a7c4-4024-af26-1c03d57138f1",
+      "libraryId": "test-piece-2",
+      "type": "holder",
+      "description": "",
+      "vendor": "",
+      "productId": "",
+      "unit": "millimeters",
+      "geometry": {},
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": null,
+        "turret": null,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "25305475-4c00-4a45-bf4c-5aec2f5510d2",
+      "libraryId": "test-piece-2",
+      "type": "turning general",
+      "description": "",
+      "vendor": "",
+      "productId": "",
+      "unit": "millimeters",
+      "geometry": {
+        "OAL": 30,
+        "RE": 0.8,
+        "SC": "C",
+        "SCTY": "G",
+        "TC": "M",
+        "INSD": 12.8959,
+        "S": 4.7625,
+        "EPSR": 0,
+        "RA": 0,
+        "LH": 0
+      },
+      "holder": {
+        "OAL": 125,
+        "CW": 25,
+        "H": 20,
+        "W": 20,
+        "LH": 32,
+        "HAND": "R",
+        "MTP": "D",
+        "THSC": "L"
+      },
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": 1,
+        "turret": 0,
+        "compensationOffset": 1,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "bb44bce1-c1f0-41da-8209-91c624dc1750",
+      "libraryId": "test-piece-2",
+      "type": "drill",
+      "description": "",
+      "vendor": "",
+      "productId": "",
+      "unit": "millimeters",
+      "geometry": {
+        "OAL": 130,
+        "RE": 0,
+        "DC": 10,
+        "LCF": 10.005400000000002,
+        "NOF": 3,
+        "TP": 0,
+        "SIG": 139
+      },
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": 17,
+        "turret": 0,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "91c485d3-2e27-4a50-8b12-ce8f9059fb04",
+      "libraryId": "test-piece-2",
+      "type": "turning grooving",
+      "description": "",
+      "vendor": "",
+      "productId": "",
+      "unit": "millimeters",
+      "geometry": {
+        "OAL": 28,
+        "RE": 0,
+        "SC": "groove round",
+        "SCTY": "T",
+        "TC": "M",
+        "INSD": 10,
+        "S": 3.96875,
+        "EPSR": 0,
+        "RA": 0,
+        "LH": 0
+      },
+      "holder": {
+        "OAL": 125,
+        "CW": 20,
+        "H": 20,
+        "W": 20,
+        "LH": 32,
+        "HAND": "R",
+        "MTP": "D",
+        "THSC": "groove external"
+      },
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": 19,
+        "turret": 0,
+        "compensationOffset": 19,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "f6841944-9a75-46ed-8059-e810f7b353f9",
+      "libraryId": "test-piece-2",
+      "type": "flat end mill",
+      "description": "",
+      "vendor": "",
+      "productId": "",
+      "unit": "millimeters",
+      "geometry": {
+        "OAL": 90,
+        "RE": 0,
+        "DC": 8,
+        "LCF": 20,
+        "NOF": 3,
+        "TP": 0
+      },
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": 20,
+        "turret": 0,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "92fed435-bf0f-4df6-b2a5-b6d20f9429cb",
+      "libraryId": "test-piece-2",
+      "type": "turning grooving",
+      "description": "",
+      "vendor": "",
+      "productId": "",
+      "unit": "millimeters",
+      "geometry": {
+        "OAL": 33,
+        "RE": 0,
+        "SC": "groove round",
+        "SCTY": "T",
+        "TC": "M",
+        "INSD": 10,
+        "S": 3.96875,
+        "EPSR": 0,
+        "RA": 0,
+        "LH": 0
+      },
+      "holder": {
+        "OAL": 125,
+        "CW": 20,
+        "H": 20,
+        "W": 20,
+        "LH": 32,
+        "HAND": "L",
+        "MTP": "D",
+        "THSC": "groove external"
+      },
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": 21,
+        "turret": 0,
+        "compensationOffset": 21,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "271520c6-5170-482e-9e08-e24e53a0c7cd",
+      "libraryId": "test-piece-2",
+      "type": "flat end mill",
+      "description": "",
+      "vendor": "",
+      "productId": "",
+      "unit": "millimeters",
+      "geometry": {
+        "OAL": 50,
+        "RE": 0,
+        "DC": 4,
+        "LCF": 11,
+        "NOF": 3,
+        "TP": 0
+      },
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": 22,
+        "turret": 0,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "ffc5d3b4-8b90-442f-adf7-9c895c07d6c4",
+      "libraryId": "test-piece-2",
+      "type": "turning general",
+      "description": "main",
+      "vendor": "",
+      "productId": "",
+      "unit": "millimeters",
+      "geometry": {
+        "OAL": 30,
+        "RE": 0.4,
+        "SC": "V",
+        "SCTY": "T",
+        "TC": "M",
+        "INSD": 11.070900000000002,
+        "S": 4.7625,
+        "EPSR": 0,
+        "RA": 5,
+        "LH": 0
+      },
+      "holder": {
+        "OAL": 125,
+        "CW": 25,
+        "H": 20,
+        "W": 20,
+        "LH": 32,
+        "HAND": "L",
+        "MTP": "D",
+        "THSC": "L"
+      },
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": 25,
+        "turret": 0,
+        "compensationOffset": 25,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "a7afa6f1-13c1-49c1-85ac-d65605623865",
+      "libraryId": "test-piece-2",
+      "type": "turning general",
+      "description": "CNMT Right Hand",
+      "vendor": "",
+      "productId": "",
+      "unit": "millimeters",
+      "geometry": {
+        "OAL": 30,
+        "RE": 0.8,
+        "SC": "C",
+        "SCTY": "G",
+        "TC": "M",
+        "INSD": 12.8959,
+        "S": 4.7625,
+        "EPSR": 0,
+        "RA": 0,
+        "LH": 0
+      },
+      "holder": {
+        "OAL": 125,
+        "CW": 25,
+        "H": 20,
+        "W": 20,
+        "LH": 32,
+        "HAND": "R",
+        "MTP": "D",
+        "THSC": "L"
+      },
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": 27,
+        "turret": 0,
+        "compensationOffset": 0,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "1d76a797-bb3f-4c6a-bf49-b31432491279",
+      "libraryId": "test-piece-2",
+      "type": "drill",
+      "description": "",
+      "vendor": "",
+      "productId": "",
+      "unit": "millimeters",
+      "geometry": {
+        "OAL": 135,
+        "RE": 0,
+        "DC": 40,
+        "LCF": 135,
+        "NOF": 3,
+        "TP": 0,
+        "SIG": 180
+      },
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": 34,
+        "turret": 0,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "9d9ab81a-6d90-442f-8126-407d35ceb538",
+      "libraryId": "test-piece-2",
+      "type": "turning boring",
+      "description": "",
+      "vendor": "",
+      "productId": "",
+      "unit": "millimeters",
+      "geometry": {
+        "OAL": 30,
+        "RE": 0.8,
+        "SC": "C",
+        "SCTY": "G",
+        "TC": "M",
+        "INSD": 12.8959,
+        "S": 4.7625,
+        "EPSR": 0,
+        "RA": 0,
+        "LH": 0
+      },
+      "holder": {
+        "OAL": 125,
+        "CW": 25,
+        "H": 20,
+        "W": 20,
+        "LH": 32,
+        "HAND": "R",
+        "MTP": "D",
+        "THSC": "boring bar f"
+      },
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": 35,
+        "turret": 0,
+        "compensationOffset": 35,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "d7d31805-c809-46bd-b64d-8162ca622dd5",
+      "libraryId": "test-piece-2",
+      "type": "turning general",
+      "description": "",
+      "vendor": "",
+      "productId": "",
+      "unit": "millimeters",
+      "geometry": {
+        "OAL": 30,
+        "RE": 0.8,
+        "SC": "C",
+        "SCTY": "G",
+        "TC": "M",
+        "INSD": 12.8959,
+        "S": 4.7625,
+        "EPSR": 0,
+        "RA": 0,
+        "LH": 0
+      },
+      "holder": {
+        "OAL": 125,
+        "CW": 25,
+        "H": 20,
+        "W": 20,
+        "LH": 32,
+        "HAND": "R",
+        "MTP": "D",
+        "THSC": "L"
+      },
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": 1,
+        "turret": 0,
+        "compensationOffset": 1,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "db30b8ed-0b1b-4a5a-8792-7c1dc06a8ea0",
+      "libraryId": "test-piece-2",
+      "type": "drill",
+      "description": "",
+      "vendor": "",
+      "productId": "",
+      "unit": "millimeters",
+      "geometry": {
+        "OAL": 130,
+        "RE": 0,
+        "DC": 10,
+        "LCF": 10.005400000000002,
+        "NOF": 3,
+        "TP": 0,
+        "SIG": 139
+      },
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": 17,
+        "turret": 0,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "3c42fa77-7e62-468c-b9f5-2de018db9684",
+      "libraryId": "test-piece-2",
+      "type": "turning grooving",
+      "description": "",
+      "vendor": "",
+      "productId": "",
+      "unit": "millimeters",
+      "geometry": {
+        "OAL": 28,
+        "RE": 0,
+        "SC": "groove round",
+        "SCTY": "T",
+        "TC": "M",
+        "INSD": 10,
+        "S": 3.96875,
+        "EPSR": 0,
+        "RA": 0,
+        "LH": 0
+      },
+      "holder": {
+        "OAL": 125,
+        "CW": 20,
+        "H": 20,
+        "W": 20,
+        "LH": 32,
+        "HAND": "R",
+        "MTP": "D",
+        "THSC": "groove external"
+      },
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": 19,
+        "turret": 0,
+        "compensationOffset": 19,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "86fd221d-9785-4fc2-b30e-e816e52359ca",
+      "libraryId": "test-piece-2",
+      "type": "flat end mill",
+      "description": "",
+      "vendor": "",
+      "productId": "",
+      "unit": "millimeters",
+      "geometry": {
+        "OAL": 90,
+        "RE": 0,
+        "DC": 8,
+        "LCF": 20,
+        "NOF": 3,
+        "TP": 0
+      },
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": 20,
+        "turret": 0,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "b346ab48-97c0-4465-96f2-5a87aebcd161",
+      "libraryId": "test-piece-2",
+      "type": "turning grooving",
+      "description": "",
+      "vendor": "",
+      "productId": "",
+      "unit": "millimeters",
+      "geometry": {
+        "OAL": 33,
+        "RE": 0,
+        "SC": "groove round",
+        "SCTY": "T",
+        "TC": "M",
+        "INSD": 10,
+        "S": 3.96875,
+        "EPSR": 0,
+        "RA": 0,
+        "LH": 0
+      },
+      "holder": {
+        "OAL": 125,
+        "CW": 20,
+        "H": 20,
+        "W": 20,
+        "LH": 32,
+        "HAND": "L",
+        "MTP": "D",
+        "THSC": "groove external"
+      },
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": 21,
+        "turret": 0,
+        "compensationOffset": 21,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "3c5cc391-3b9e-4f14-b722-7035a184a0f3",
+      "libraryId": "test-piece-2",
+      "type": "flat end mill",
+      "description": "",
+      "vendor": "",
+      "productId": "",
+      "unit": "millimeters",
+      "geometry": {
+        "OAL": 50,
+        "RE": 0,
+        "DC": 4,
+        "LCF": 11,
+        "NOF": 3,
+        "TP": 0
+      },
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": 22,
+        "turret": 0,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "c438dca3-386f-466b-92ab-7f9b5dd1cae1",
+      "libraryId": "test-piece-2",
+      "type": "turning general",
+      "description": "main",
+      "vendor": "",
+      "productId": "",
+      "unit": "millimeters",
+      "geometry": {
+        "OAL": 30,
+        "RE": 0.4,
+        "SC": "V",
+        "SCTY": "T",
+        "TC": "M",
+        "INSD": 11.070900000000002,
+        "S": 4.7625,
+        "EPSR": 0,
+        "RA": 5,
+        "LH": 0
+      },
+      "holder": {
+        "OAL": 125,
+        "CW": 25,
+        "H": 20,
+        "W": 20,
+        "LH": 32,
+        "HAND": "L",
+        "MTP": "D",
+        "THSC": "L"
+      },
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": 25,
+        "turret": 0,
+        "compensationOffset": 25,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "61b979d7-f9cf-4dcd-a6a1-a41712450b31",
+      "libraryId": "test-piece-2",
+      "type": "turning general",
+      "description": "CNMT Right Hand",
+      "vendor": "",
+      "productId": "",
+      "unit": "millimeters",
+      "geometry": {
+        "OAL": 30,
+        "RE": 0.8,
+        "SC": "C",
+        "SCTY": "G",
+        "TC": "M",
+        "INSD": 12.8959,
+        "S": 4.7625,
+        "EPSR": 0,
+        "RA": 0,
+        "LH": 0
+      },
+      "holder": {
+        "OAL": 125,
+        "CW": 25,
+        "H": 20,
+        "W": 20,
+        "LH": 32,
+        "HAND": "R",
+        "MTP": "D",
+        "THSC": "L"
+      },
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": 27,
+        "turret": 0,
+        "compensationOffset": 0,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "08518d62-6502-41b9-b534-906231f6c708",
+      "libraryId": "test-piece-2",
+      "type": "drill",
+      "description": "",
+      "vendor": "",
+      "productId": "",
+      "unit": "millimeters",
+      "geometry": {
+        "OAL": 135,
+        "RE": 0,
+        "DC": 40,
+        "LCF": 135,
+        "NOF": 3,
+        "TP": 0,
+        "SIG": 180
+      },
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": 34,
+        "turret": 0,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "c99d862c-fe6e-4923-ac4e-f47b1a4245f1",
+      "libraryId": "test-piece-2",
+      "type": "turning boring",
+      "description": "",
+      "vendor": "",
+      "productId": "",
+      "unit": "millimeters",
+      "geometry": {
+        "OAL": 30,
+        "RE": 0.8,
+        "SC": "C",
+        "SCTY": "G",
+        "TC": "M",
+        "INSD": 12.8959,
+        "S": 4.7625,
+        "EPSR": 0,
+        "RA": 0,
+        "LH": 0
+      },
+      "holder": {
+        "OAL": 125,
+        "CW": 25,
+        "H": 20,
+        "W": 20,
+        "LH": 32,
+        "HAND": "R",
+        "MTP": "D",
+        "THSC": "boring bar f"
+      },
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": 35,
+        "turret": 0,
+        "compensationOffset": 35,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "0511440e-ca98-4bfb-b4d4-78edcf188d95",
+      "libraryId": "toolsand-blocks-toolsandblocks",
+      "type": "tool block",
+      "description": "",
+      "vendor": "",
+      "productId": "",
+      "unit": "millimeters",
+      "geometry": {
+        "adaptiveItemSize": 0,
+        "numberOfAttachmentPoints": 0,
+        "numberOfTools": 1,
+        "orientationType": "axial",
+        "machineSideConnectionType": "Unspecified"
+      },
+      "holder": null,
+      "geometryId": "2495f719-9192-4668-ad03-c3a002a39a80",
+      "stepFileName": "EWS_163950_DIN4003.stp",
+      "postProcess": {
+        "number": null,
+        "turret": null,
+        "compensationOffset": null,
+        "stationNumber": 0,
+        "halfIndex": false
+      },
+      "block": null
+    },
+    {
+      "id": "c964fc7c-7b0d-4277-9ea0-36354ef0399a",
+      "libraryId": "toolsand-blocks-toolsandblocks",
+      "type": "turning threading",
+      "description": "Thread LH",
+      "vendor": "",
+      "productId": "",
+      "unit": "millimeters",
+      "geometry": {
+        "OAL": 30,
+        "SC": "thread iso double",
+        "SCTY": "T",
+        "TC": "M",
+        "S": 3.96875,
+        "TP": 1
+      },
+      "holder": {
+        "OAL": 125,
+        "CW": 20,
+        "H": 20,
+        "W": 20,
+        "LH": 37,
+        "HAND": "L",
+        "MTP": "D",
+        "THSC": "thread offset"
+      },
+      "geometryId": "39b960cd-22d8-47aa-a57d-5a98cc7acf43",
+      "stepFileName": "3326462.stp",
+      "postProcess": {
+        "number": 1,
+        "turret": 0,
+        "compensationOffset": 1,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": {
+        "guid": "0511440e-ca98-4bfb-b4d4-78edcf188d95",
+        "description": "Test Assembly",
+        "vendor": "",
+        "productId": "",
+        "geometry": {
+          "adaptiveItemSize": 0,
+          "numberOfAttachmentPoints": 0,
+          "numberOfTools": 1,
+          "orientationType": "axial",
+          "machineSideConnectionType": "Unspecified"
+        },
+        "geometryId": "2495f719-9192-4668-ad03-c3a002a39a80",
+        "stepFileName": "EWS_163950_DIN4003.stp",
+        "transformOverride": {
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "translation": {
+            "x": 0,
+            "y": 0,
+            "z": -10
+          }
+        },
+        "postProcess": {
+          "stationNumber": 0,
+          "halfIndex": false,
+          "live": true,
+          "maximumRotationalSpeed": 1000
+        }
+      }
+    },
+    {
+      "id": "4282e896-24e2-4c76-9662-7d139270036d",
+      "libraryId": "toolsand-blocks-toolsandblocks",
+      "type": "turning general",
+      "description": "General Turining  Test 2 RH",
+      "vendor": "",
+      "productId": "",
+      "unit": "millimeters",
+      "geometry": {
+        "RE": 0.8,
+        "SC": "S",
+        "SCTY": "T",
+        "TC": "M",
+        "INSD": 9.671938365,
+        "S": 3.96875,
+        "RA": 0
+      },
+      "holder": {
+        "OAL": 150,
+        "CW": 25,
+        "H": 25,
+        "W": 25,
+        "LH": 26.6,
+        "HAND": "R",
+        "MTP": "D",
+        "THSC": "B"
+      },
+      "geometryId": "35d24e60-4661-4c7d-bcc5-162649df9981",
+      "stepFileName": "3601536.stp",
+      "postProcess": {
+        "number": 2,
+        "turret": 0,
+        "compensationOffset": 2,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": {
+        "guid": "0511440e-ca98-4bfb-b4d4-78edcf188d95",
+        "description": "",
+        "vendor": "",
+        "productId": "",
+        "geometry": {
+          "adaptiveItemSize": 0,
+          "numberOfAttachmentPoints": 0,
+          "numberOfTools": 1,
+          "orientationType": "axial",
+          "machineSideConnectionType": "Unspecified"
+        },
+        "geometryId": "2495f719-9192-4668-ad03-c3a002a39a80",
+        "stepFileName": "EWS_163950_DIN4003.stp",
+        "transformOverride": {
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 3.141592653589793
+          },
+          "translation": {
+            "x": 125,
+            "y": -25,
+            "z": -30
+          }
+        },
+        "postProcess": {
+          "stationNumber": 0,
+          "halfIndex": false,
+          "live": true,
+          "maximumRotationalSpeed": 1000
+        }
+      }
+    },
+    {
+      "id": "7026f1f8-77b8-4b57-9954-d81388fd23b1",
+      "libraryId": "toolsand-blocks-toolsandblocks",
+      "type": "turning general",
+      "description": "Test 3 LH",
+      "vendor": "",
+      "productId": "",
+      "unit": "millimeters",
+      "geometry": {
+        "RE": 0.8,
+        "SC": "S",
+        "SCTY": "T",
+        "TC": "M",
+        "INSD": 9.671938365,
+        "S": 3.96875,
+        "RA": 0
+      },
+      "holder": {
+        "OAL": 100,
+        "CW": 20,
+        "H": 16,
+        "W": 16,
+        "LH": 22,
+        "HAND": "R",
+        "MTP": "D",
+        "THSC": "B"
+      },
+      "geometryId": "f574ac93-89fd-45df-b4b1-f48f2c341ac8",
+      "stepFileName": "3601551.stp",
+      "postProcess": {
+        "number": 3,
+        "turret": 0,
+        "compensationOffset": 3,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": {
+        "guid": "0511440e-ca98-4bfb-b4d4-78edcf188d95",
+        "description": "",
+        "vendor": "",
+        "productId": "",
+        "geometry": {
+          "adaptiveItemSize": 0,
+          "numberOfAttachmentPoints": 0,
+          "numberOfTools": 1,
+          "orientationType": "axial",
+          "machineSideConnectionType": "Unspecified"
+        },
+        "geometryId": "2495f719-9192-4668-ad03-c3a002a39a80",
+        "stepFileName": "EWS_163950_DIN4003.stp",
+        "transformOverride": {
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "translation": {
+            "x": 0,
+            "y": 0,
+            "z": -20
+          }
+        },
+        "postProcess": {
+          "stationNumber": 0,
+          "halfIndex": false,
+          "live": true,
+          "maximumRotationalSpeed": 1000
+        }
+      }
+    },
+    {
+      "id": "486612b9-9caf-4ef4-bfac-8d41b8484f60",
+      "libraryId": "toolsand-blocks-toolsandblocks",
+      "type": "turning general",
+      "description": "General Turn test 4",
+      "vendor": "",
+      "productId": "",
+      "unit": "millimeters",
+      "geometry": {
+        "RE": 0.8,
+        "SC": "C",
+        "SCTY": "T",
+        "TC": "M",
+        "INSD": 9.671938365,
+        "S": 3.96875,
+        "RA": 0
+      },
+      "holder": {
+        "OAL": 125,
+        "CW": 25,
+        "H": 20,
+        "W": 20,
+        "LH": 32,
+        "HAND": "R",
+        "MTP": "D",
+        "THSC": "L"
+      },
+      "geometryId": "66a91bfc-e53b-4fc0-9a06-5a15692cf643",
+      "stepFileName": "3601658.stp",
+      "postProcess": {
+        "number": 4,
+        "turret": 0,
+        "compensationOffset": 4,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "dde2aa9d-675b-4618-9858-c35e8e2f3c23",
+      "libraryId": "toolsand-blocks-toolsandblocks",
+      "type": "turning general",
+      "description": "",
+      "vendor": "",
+      "productId": "",
+      "unit": "millimeters",
+      "geometry": {
+        "RE": 0.8,
+        "SC": "V",
+        "SCTY": "T",
+        "TC": "M",
+        "INSD": 16.60633077,
+        "S": 3.96875,
+        "RA": 0
+      },
+      "holder": {
+        "OAL": 125,
+        "CW": 25,
+        "H": 20,
+        "W": 20,
+        "LH": 32,
+        "HAND": "R",
+        "MTP": "D",
+        "THSC": "L"
+      },
+      "geometryId": "73d5d3ee-fb96-4916-afcf-ee6fb5c451dc",
+      "stepFileName": "Type A 0 deg side.stp",
+      "postProcess": {
+        "number": 5,
+        "turret": 0,
+        "compensationOffset": 5,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "97a3df07-4e42-41ac-8d91-8e1d7a893e28",
+      "libraryId": "toolsand-blocks-toolsandblocks",
+      "type": "turning general",
+      "description": "",
+      "vendor": "",
+      "productId": "",
+      "unit": "millimeters",
+      "geometry": {
+        "RE": 0.8,
+        "SC": "C",
+        "SCTY": "T",
+        "TC": "M",
+        "INSD": 9.671938365,
+        "S": 3.96875,
+        "RA": 0
+      },
+      "holder": {
+        "OAL": 125,
+        "CW": 25,
+        "H": 20,
+        "W": 20,
+        "LH": 32,
+        "HAND": "R",
+        "MTP": "D",
+        "THSC": "L"
+      },
+      "geometryId": "ecaa6a5c-6e63-433e-9e34-62441e376cbc",
+      "stepFileName": "3601536.stp",
+      "postProcess": {
+        "number": 6,
+        "turret": 0,
+        "compensationOffset": 6,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "ca8efa77-0b55-4dff-bf08-49a2ab45128b",
+      "libraryId": "toolsand-blocks-toolsandblocks",
+      "type": "turning general",
+      "description": "General Turining  Test 2 RH",
+      "vendor": "",
+      "productId": "",
+      "unit": "millimeters",
+      "geometry": {
+        "RE": 0.8,
+        "SC": "S",
+        "SCTY": "T",
+        "TC": "M",
+        "INSD": 9.671938365,
+        "S": 3.96875,
+        "RA": 0
+      },
+      "holder": {
+        "OAL": 150,
+        "CW": 25,
+        "H": 25,
+        "W": 25,
+        "LH": 26.6,
+        "HAND": "R",
+        "MTP": "D",
+        "THSC": "B"
+      },
+      "geometryId": "35d24e60-4661-4c7d-bcc5-162649df9981",
+      "stepFileName": "3601536.stp",
+      "postProcess": {
+        "number": 2,
+        "turret": 0,
+        "compensationOffset": 2,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": {
+        "guid": "0511440e-ca98-4bfb-b4d4-78edcf188d95",
+        "description": "",
+        "vendor": "",
+        "productId": "",
+        "geometry": {
+          "adaptiveItemSize": 0,
+          "numberOfAttachmentPoints": 0,
+          "numberOfTools": 1,
+          "orientationType": "axial",
+          "machineSideConnectionType": "Unspecified"
+        },
+        "geometryId": "2495f719-9192-4668-ad03-c3a002a39a80",
+        "stepFileName": "EWS_163950_DIN4003.stp",
+        "transformOverride": {
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 3.141592653589793
+          },
+          "translation": {
+            "x": 125,
+            "y": -25,
+            "z": -30
+          }
+        },
+        "postProcess": {
+          "stationNumber": 0,
+          "halfIndex": false,
+          "live": true,
+          "maximumRotationalSpeed": 1000
+        }
+      }
+    },
+    {
+      "id": "e01cf4c0-a812-4d13-a0bc-d46a7f665379",
+      "libraryId": "jk",
+      "type": "flat end mill",
+      "description": "10mm END MILL_ALLY",
+      "vendor": "",
+      "productId": "",
+      "unit": "millimeters",
+      "geometry": {
+        "OAL": 53,
+        "DC": 10,
+        "LCF": 30,
+        "NOF": 3
+      },
+      "holder": null,
+      "geometryId": null,
+      "stepFileName": null,
+      "postProcess": {
+        "number": 1,
+        "turret": 0,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    }
+  ],
+  "jointFrames": {
+    "2495f719-9192-4668-ad03-c3a002a39a80": {
+      "stepFileName": "EWS_163950_DIN4003.stp",
+      "mcs": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "csw": [
+        1.0,
+        0.0,
+        0.0,
+        63.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        -80.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ]
+    },
+    "35d24e60-4661-4c7d-bcc5-162649df9981": {
+      "stepFileName": "3601536.stp",
+      "mcs": [
+        1.0,
+        0.0,
+        0.0,
+        -12.5000000001,
+        0.0,
+        1.0,
+        0.0,
+        25.0,
+        0.0,
+        0.0,
+        1.0,
+        -114.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "csw": [
+        9.16367333010043e-14,
+        0.9945812646101958,
+        -0.10396205118399574,
+        -26.9359501091,
+        0.10452846326715282,
+        0.10339253618987682,
+        0.9891328443779597,
+        26.0562468696,
+        0.9945218953683261,
+        -0.010866993448454796,
+        -0.10396205118399576,
+        -144.77405986,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ]
+    },
+    "39b960cd-22d8-47aa-a57d-5a98cc7acf43": {
+      "stepFileName": "3326462.stp",
+      "mcs": [
+        1.0,
+        0.0,
+        0.0,
+        10.0,
+        0.0,
+        1.0,
+        0.0,
+        20.0,
+        0.0,
+        0.0,
+        1.0,
+        -77.2000000002,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "csw": [
+        -0.9996565531466218,
+        0.004710805481876185,
+        0.025779527977203877,
+        15.2746806685,
+        0.02620589187738058,
+        0.17352661248094658,
+        0.9844804548551479,
+        21.4487173557,
+        0.00016426176228961277,
+        0.9848179136635359,
+        -0.17359046617102605,
+        -116.897259931,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ]
+    },
+    "48d92830-7494-4f01-bf5b-a0754a6f47f0": {
+      "stepFileName": "turning_tool_holder_temp.stp",
+      "mcs": [
+        1.0,
+        0.0,
+        0.0,
+        -12.45,
+        0.0,
+        1.0,
+        0.0,
+        -24.9,
+        0.0,
+        0.0,
+        1.0,
+        111.722,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "csw": [
+        -1.0,
+        -2.2111059074999997e-32,
+        2.22045e-16,
+        14.7839,
+        2.22045e-16,
+        1.22465e-16,
+        1.0,
+        -1.62003,
+        -4.93038e-32,
+        1.0,
+        -1.22465e-16,
+        -29.3928,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ]
+    },
+    "66a91bfc-e53b-4fc0-9a06-5a15692cf643": {
+      "stepFileName": "3601658.stp",
+      "mcs": [
+        1.0,
+        0.0,
+        0.0,
+        -9.525,
+        0.0,
+        1.0,
+        0.0,
+        19.05,
+        0.0,
+        0.0,
+        1.0,
+        -78.9,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "csw": [
+        -0.02220474329713189,
+        0.9943333652697796,
+        -0.10396205118399575,
+        -20.335950109,
+        0.1021940966903262,
+        0.10570043885630637,
+        0.9891328443779596,
+        20.1062468696,
+        0.9945166242837558,
+        0.011339132985352596,
+        -0.10396205118399576,
+        -109.07405986,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ]
+    },
+    "73d5d3ee-fb96-4916-afcf-ee6fb5c451dc": {
+      "stepFileName": "Type A 0 deg side.stp",
+      "mcs": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "csw": [
+        0.017452406437284705,
+        0.9998476951563913,
+        -2.34273231083895e-15,
+        -3.5687713603199,
+        1.1714553645825178e-15,
+        2.3226413452199616e-15,
+        1.0000000000000002,
+        0.0499999999999995,
+        0.9998476951563913,
+        -0.017452406437284705,
+        -1.1307412654916e-15,
+        -26.703624838798,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ]
+    },
+    "ba14c763-1bee-423b-876d-dc5108a5c183": {
+      "stepFileName": "ToolHolder 1.stp",
+      "mcs": [
+        2.220449999999997e-16,
+        -2.34291e-15,
+        1.0,
+        9.76996e-14,
+        -1.0,
+        1.224649999999995e-16,
+        2.22045e-16,
+        -12.45,
+        -1.22465e-16,
+        -1.0,
+        -2.34291e-15,
+        110.494,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "csw": [
+        -0.07351231833760505,
+        -2.8187304288439405e-09,
+        0.9972943091448135,
+        5.82643,
+        -0.9891328420894864,
+        -0.12767242157082082,
+        -0.0729107226011234,
+        -2.17976,
+        0.1273269796728328,
+        -0.9918163906541587,
+        0.009385492909348253,
+        -34.9249,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ]
+    },
+    "ce5fdd3d-8e00-4913-ad7d-efb4d535323a": {
+      "stepFileName": null,
+      "mcs": null,
+      "csw": [
+        0.08126932054400793,
+        0.9912554033917106,
+        -0.10396164093093402,
+        -18.5147487445732,
+        0.112626889532915,
+        0.09450518146771358,
+        0.9891329306164541,
+        21.4368219168409,
+        0.9903082758880973,
+        -0.09209503744769143,
+        -0.10396164093093403,
+        -119.514748744573,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ]
+    },
+    "ecaa6a5c-6e63-433e-9e34-62441e376cbc": {
+      "stepFileName": "3601536.stp",
+      "mcs": [
+        1.0,
+        0.0,
+        0.0,
+        -12.5000000001,
+        0.0,
+        1.0,
+        0.0,
+        25.0,
+        0.0,
+        0.0,
+        1.0,
+        -114.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "csw": [
+        9.16367333010043e-14,
+        0.9945812646101958,
+        -0.10396205118399574,
+        -26.9359501091,
+        0.10452846326715282,
+        0.10339253618987682,
+        0.9891328443779597,
+        26.0562468696,
+        0.9945218953683261,
+        -0.010866993448454796,
+        -0.10396205118399576,
+        -144.77405986,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ]
+    },
+    "f574ac93-89fd-45df-b4b1-f48f2c341ac8": {
+      "stepFileName": "3601551.stp",
+      "mcs": [
+        1.0,
+        0.0,
+        0.0,
+        8.0,
+        0.0,
+        1.0,
+        0.0,
+        16.0,
+        0.0,
+        0.0,
+        1.0,
+        -68.35,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "csw": [
+        -1.0,
+        0.0,
+        0.0,
+        14.8496952635,
+        0.0,
+        0.0,
+        1.0,
+        16.0,
+        0.0,
+        1.0,
+        0.0,
+        -94.7508593037,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ]
+    }
+  }
+}

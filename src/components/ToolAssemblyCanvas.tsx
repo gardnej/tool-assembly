@@ -1,24 +1,32 @@
-import type { ToolComponent } from "../types";
+import type { AssemblyRow, ComponentRole } from "../types";
 
 interface ToolAssemblyCanvasProps {
-  components: ToolComponent[];
-  selectedComponentId?: string;
-  highlightSlots?: boolean;
+  rows: AssemblyRow[];
+  selectedRole?: ComponentRole | null;
+  /** Measured through the joint frames; null when the chain has a gap. */
+  measuredStackUpMm: number | null;
 }
 
+/**
+ * Schematic of the joint chain, machine side at the left.
+ *
+ * This is a diagram of the frames rather than a render of the solids: the point
+ * is which components carry MCS and CSW frames and where they meet, since that
+ * is what determines whether the assembly comes together at all.
+ */
 export function ToolAssemblyCanvas({
-  components,
-  selectedComponentId,
-  highlightSlots = false,
+  rows,
+  selectedRole,
+  measuredStackUpMm,
 }: ToolAssemblyCanvasProps) {
-  const holder = components.find((c) => c.category === "tool-holder");
-  const insert = components.find((c) => c.category === "insert");
-  const clamp = components.find((c) => c.category === "clamp");
-  const adapter = components.find((c) => c.category === "adapter");
+  const block = rows.find((row) => row.role === "block");
+  const holder = rows.find((row) => row.role === "holder");
+
+  const hasBlock = block?.toolId != null;
+  const hasHolder = holder?.toolId != null;
 
   return (
     <section className="relative flex h-full min-h-0 flex-1 flex-col overflow-hidden bg-weave-viewport">
-      {/* Future: Fusion viewport / Neutron graphics integration */}
       <div
         className="relative min-h-0 flex-1"
         style={{
@@ -32,121 +40,209 @@ export function ToolAssemblyCanvas({
         <ViewCube />
 
         <svg
-          viewBox="0 0 420 520"
-          className="absolute inset-0 m-auto h-[88%] w-[88%] max-w-none"
-          aria-label="Tool assembly preview"
+          viewBox="0 0 520 420"
+          className="absolute inset-0 m-auto h-[92%] w-[92%] max-w-none"
+          aria-label="Tool assembly joint chain"
         >
           <defs>
-            <linearGradient id="holderGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <linearGradient id="blockGrad" x1="0%" y1="0%" x2="0%" y2="100%">
               <stop offset="0%" stopColor="#a8b4c4" />
               <stop offset="100%" stopColor="#8a96a8" />
             </linearGradient>
-            <linearGradient id="insertGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="#f0c060" />
-              <stop offset="100%" stopColor="#d4a030" />
+            <linearGradient id="holderGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stopColor="#9aa8ba" />
+              <stop offset="100%" stopColor="#f0c060" />
             </linearGradient>
           </defs>
 
-          {/* Axes — Fusion turning profile: +X vertical, +Z horizontal */}
-          <g opacity="0.9">
-            <line x1="200" y1="460" x2="200" y2="60" stroke="#1a1a1a" strokeWidth="1.5" />
-            <text x="188" y="52" fill="#e85d5d" fontSize="11" fontWeight="600">
-              +X
+          {/* Turret face: the assembly datum the first MCS frame sits on */}
+          <g>
+            <line x1="70" y1="70" x2="70" y2="350" stroke="#1a1a1a" strokeWidth="2" />
+            <path
+              d="M52 70 L70 70 L70 350 L52 350"
+              fill="rgb(120 130 145 / 0.35)"
+              stroke="none"
+            />
+            <text x="76" y="86" fill="rgb(229 237 246 / 0.85)" fontSize="10" fontWeight="600">
+              Turret face (datum)
             </text>
-            <line x1="60" y1="320" x2="360" y2="320" stroke="#1a1a1a" strokeWidth="1.5" />
-            <text x="365" y="324" fill="#3a9ad9" fontSize="11" fontWeight="600">
-              +Z
-            </text>
-            <circle cx="200" cy="320" r="3.5" fill="#1a1a1a" />
           </g>
 
-          {/* Adapter */}
-          {adapter !== undefined && (
-            <g opacity={selectedComponentId === adapter.id ? 1 : 0.9}>
-              <rect
-                x="175"
-                y="120"
-                width="70"
-                height="90"
-                rx="3"
-                fill="#c4b5fd"
-                stroke={selectedComponentId === adapter.id ? "#3a9ad9" : "#8b7fd4"}
-                strokeWidth={selectedComponentId === adapter.id ? 2 : 1}
-              />
-              <CoordinateTriad x={210} y={155} scale={0.7} />
-            </g>
-          )}
+          {/* Axis along which the chain runs */}
+          <line
+            x1="70"
+            y1="230"
+            x2="470"
+            y2="230"
+            stroke="#1a1a1a"
+            strokeWidth="1.5"
+            strokeDasharray="4 3"
+          />
+          <text x="474" y="234" fill="#3a9ad9" fontSize="11" fontWeight="600">
+            +Z
+          </text>
 
-          {/* Tool holder body */}
-          {holder !== undefined ? (
-            <g opacity={selectedComponentId === holder.id ? 1 : 0.95}>
-              <path
-                d="M 140 210 L 280 210 L 300 250 L 300 420 L 120 420 L 120 250 Z"
-                fill="url(#holderGrad)"
-                stroke={selectedComponentId === holder.id ? "#3a9ad9" : "#6d7a8c"}
-                strokeWidth={selectedComponentId === holder.id ? 2.5 : 1.5}
+          {/* Tool block, machine side */}
+          {hasBlock ? (
+            <g opacity={selectedRole === "block" ? 1 : 0.92}>
+              <rect
+                x="70"
+                y="165"
+                width="180"
+                height="130"
+                rx="2"
+                fill="url(#blockGrad)"
+                stroke={selectedRole === "block" ? "#3a9ad9" : "#6d7a8c"}
+                strokeWidth={selectedRole === "block" ? 2.5 : 1.5}
               />
-              <rect x="155" y="230" width="110" height="24" rx="2" fill="#9ec5db" opacity="0.6" />
-              <CoordinateTriad x={210} y={280} />
-              {highlightSlots && (
-                <>
-                  <SlotMarker x={175} y={310} label="Slot 1" active={insert !== undefined} />
-                  <SlotMarker x={175} y={350} label="Slot 2" active={clamp !== undefined} />
-                  <SlotMarker x={175} y={390} label="Slot 3" active={false} />
-                </>
-              )}
-            </g>
-          ) : (
-            <g opacity="0.35">
-              <path
-                d="M 140 210 L 280 210 L 300 250 L 300 420 L 120 420 L 120 250 Z"
-                fill="none"
-                stroke="#808080"
-                strokeWidth="1.5"
-                strokeDasharray="6 4"
-              />
-              <text x="155" y="330" fill="rgb(200 210 220 / 0.62)" fontSize="12">
-                Select a tool holder
+              <FrameMarker x={70} y={230} label="MCS" present={block?.missingFrame === null} />
+              <FrameMarker x={250} y={230} label="CSW" present={block?.missingFrame === null} />
+              <text x="80" y="185" fill="#22303f" fontSize="10" fontWeight="600">
+                {truncate(block?.name ?? "", 24)}
               </text>
             </g>
+          ) : (
+            <PlaceholderBody
+              x={70}
+              y={165}
+              width={180}
+              height={130}
+              label="Select tool block"
+            />
           )}
 
-          {/* Insert */}
-          {insert !== undefined && (
-            <g opacity={selectedComponentId === insert.id ? 1 : 0.92}>
-              <polygon
-                points="195,300 245,295 250,325 200,330"
-                fill="url(#insertGrad)"
-                stroke={selectedComponentId === insert.id ? "#3a9ad9" : "#b8860b"}
-                strokeWidth={selectedComponentId === insert.id ? 2 : 1}
+          {/* Cutting tool, cutting side */}
+          {hasHolder ? (
+            <g opacity={selectedRole === "holder" ? 1 : 0.92}>
+              <path
+                d="M250 190 L400 190 L430 230 L400 270 L250 270 Z"
+                fill="url(#holderGrad)"
+                stroke={selectedRole === "holder" ? "#3a9ad9" : "#6d7a8c"}
+                strokeWidth={selectedRole === "holder" ? 2.5 : 1.5}
               />
-              <CoordinateTriad x={222} y={312} scale={0.55} />
+              <FrameMarker x={250} y={230} label="MCS" present={holder?.missingFrame === null} />
+              <FrameMarker x={430} y={230} label="CSW" present={holder?.missingFrame === null} />
+              <text x="262" y="210" fill="#22303f" fontSize="10" fontWeight="600">
+                {truncate(holder?.name ?? "", 22)}
+              </text>
             </g>
+          ) : (
+            <PlaceholderBody
+              x={250}
+              y={190}
+              width={180}
+              height={80}
+              label="Select cutting tool"
+            />
           )}
 
-          {/* Clamp */}
-          {clamp !== undefined && (
-            <g opacity={selectedComponentId === clamp.id ? 1 : 0.9}>
-              <rect
-                x="190"
-                y="335"
-                width="60"
-                height="14"
-                rx="1"
-                fill="#94a3b8"
-                stroke={selectedComponentId === clamp.id ? "#3a9ad9" : "#64748b"}
-                strokeWidth={selectedComponentId === clamp.id ? 2 : 1}
-              />
-            </g>
-          )}
+          {/* Measured stack-up, datum to final cutting-side frame */}
+          <g>
+            <line x1="70" y1="368" x2={hasHolder ? 430 : 250} y2="368" stroke="#3a9ad9" strokeWidth="1" />
+            <line x1="70" y1="360" x2="70" y2="376" stroke="#3a9ad9" strokeWidth="1" />
+            <line
+              x1={hasHolder ? 430 : 250}
+              y1="360"
+              x2={hasHolder ? 430 : 250}
+              y2="376"
+              stroke="#3a9ad9"
+              strokeWidth="1"
+            />
+            <text
+              x={(70 + (hasHolder ? 430 : 250)) / 2}
+              y="388"
+              fill="#3a9ad9"
+              fontSize="11"
+              fontWeight="600"
+              textAnchor="middle"
+            >
+              {measuredStackUpMm !== null
+                ? `${measuredStackUpMm.toFixed(2)} mm measured`
+                : "not measurable"}
+            </text>
+          </g>
         </svg>
 
-        <div className="absolute bottom-3 right-3 flex items-center gap-1.5 text-[10px] text-weave-text-active">
-          <span className="inline-block h-px w-8 bg-weave-text-active" />
-          5 mm
-        </div>
+        <p className="absolute bottom-3 left-3 max-w-[60%] text-[10px] leading-relaxed text-weave-text-active/80">
+          Schematic of the joint chain, not a render. Frames are imported from each
+          STEP file.
+        </p>
       </div>
     </section>
+  );
+}
+
+function truncate(value: string, max: number): string {
+  return value.length > max ? `${value.slice(0, max - 1)}…` : value;
+}
+
+/** A joint origin, hollow when the frame is missing from the STEP file. */
+function FrameMarker({
+  x,
+  y,
+  label,
+  present,
+}: {
+  x: number;
+  y: number;
+  label: string;
+  present: boolean;
+}) {
+  const colour = present ? "#3a9ad9" : "#d98a2b";
+  return (
+    <g transform={`translate(${x}, ${y})`}>
+      <line x1="0" y1="0" x2="0" y2="-16" stroke={colour} strokeWidth="1.4" />
+      <line x1="0" y1="0" x2="16" y2="0" stroke="#e03030" strokeWidth="1.4" />
+      <circle
+        cx="0"
+        cy="0"
+        r="3.5"
+        fill={present ? colour : "none"}
+        stroke={colour}
+        strokeWidth="1.4"
+      />
+      <text x="4" y="-20" fill={colour} fontSize="9" fontWeight="700">
+        {present ? label : `${label}?`}
+      </text>
+    </g>
+  );
+}
+
+function PlaceholderBody({
+  x,
+  y,
+  width,
+  height,
+  label,
+}: {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  label: string;
+}) {
+  return (
+    <g opacity="0.4">
+      <rect
+        x={x}
+        y={y}
+        width={width}
+        height={height}
+        fill="none"
+        stroke="#808080"
+        strokeWidth="1.5"
+        strokeDasharray="6 4"
+      />
+      <text
+        x={x + width / 2}
+        y={y + height / 2 + 4}
+        fill="rgb(200 210 220 / 0.7)"
+        fontSize="11"
+        textAnchor="middle"
+      >
+        {label}
+      </text>
+    </g>
   );
 }
 
@@ -167,54 +263,3 @@ function ViewCube() {
     </div>
   );
 }
-
-function CoordinateTriad({
-  x,
-  y,
-  scale = 1,
-}: {
-  x: number;
-  y: number;
-  scale?: number;
-}) {
-  const s = 18 * scale;
-  return (
-    <g transform={`translate(${x}, ${y})`}>
-      <line x1="0" y1="0" x2="0" y2={-s} stroke="#3a9ad9" strokeWidth="1.2" />
-      <line x1="0" y1="0" x2={s} y2="0" stroke="#e03030" strokeWidth="1.2" />
-      <line x1="0" y1="0" x2={-s * 0.6} y2={s * 0.4} stroke="#30a030" strokeWidth="1.2" />
-    </g>
-  );
-}
-
-function SlotMarker({
-  x,
-  y,
-  label,
-  active,
-}: {
-  x: number;
-  y: number;
-  label: string;
-  active: boolean;
-}) {
-  return (
-    <g>
-      <rect
-        x={x}
-        y={y}
-        width="90"
-        height="28"
-        rx="2"
-        fill={active ? "rgb(58 154 217 / 0.2)" : "none"}
-        stroke={active ? "#3a9ad9" : "rgb(255 255 255 / 0.25)"}
-        strokeWidth="1"
-        strokeDasharray={active ? undefined : "4 3"}
-      />
-      <text x={x + 6} y={y + 17} fill="rgb(229 237 246 / 0.78)" fontSize="9">
-        {label}
-      </text>
-    </g>
-  );
-}
-

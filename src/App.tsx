@@ -29,7 +29,10 @@ export default function App() {
   );
 
   const [newToolOpen, setNewToolOpen] = useState(false);
-  const [toolHolderOpen, setToolHolderOpen] = useState(false);
+  const [toolHolderOpen, setToolHolderOpen] = useState(() =>
+    typeof window !== "undefined" &&
+    new URLSearchParams(window.location.search).get("assembly") === "1",
+  );
 
   const handleRibbonWorkspaceChange = useCallback((w: RibbonWorkspaceId) => {
     setRibbonWorkspace(w);

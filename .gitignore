@@ -5,3 +5,6 @@ dist
 .env
 .env.*
 *.tsbuildinfo
+__pycache__/
+*.pyc
+.test-build

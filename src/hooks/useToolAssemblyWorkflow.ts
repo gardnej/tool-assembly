@@ -1,41 +1,97 @@
 import { useCallback, useMemo, useState } from "react";
-import { getComponentById, INITIAL_SLOTS } from "../data/toolComponents";
+import {
+  chainFor,
+  cuttingTools,
+  displayName,
+  isTurningType,
+  LIBRARIES,
+  measuredStackUpMm,
+  missingFrameLabel,
+  toolBlocks,
+  toolById,
+  type ChainComponent,
+  type LibraryToolRecord,
+} from "../data/realLibrary";
 import { getStepIndex, WORKFLOW_STEPS } from "../data/workflowSteps";
 import type {
   AssemblyConfig,
   AssemblyRow,
-  AssemblySlot,
-  ToolComponent,
+  ComponentRole,
+  Orientation,
   ValidationIssue,
   ValidationStatus,
   WorkflowState,
   WorkflowStepId,
 } from "../types";
 
+/** Library holding the real tool blocks, preferred as the starting point. */
+function defaultLibraryId(): string {
+  const withBlocks = LIBRARIES.find((library) => library.blockCount > 0);
+  return withBlocks?.id ?? LIBRARIES[0]?.id ?? "";
+}
+
 const DEFAULT_CONFIG: AssemblyConfig = {
   orientation: "axial",
-  machineConnectionType: "Unspecified",
-  toolConnectionType: "ER16 MF",
-  size: "Unspecified",
-  numberOfTools: 2,
-  stickOut: 42,
-  totalLength: 57,
+  machineSideConnectionType: "Unspecified",
+  numberOfTools: 1,
+  numberOfAttachmentPoints: 0,
+  adaptiveItemSize: 0,
+  stationNumber: null,
+  halfIndex: false,
 };
+
+function readNumber(
+  source: Record<string, number | string | boolean>,
+  key: string,
+  fallback: number,
+): number {
+  const value = source[key];
+  return typeof value === "number" ? value : fallback;
+}
+
+function readString(
+  source: Record<string, number | string | boolean>,
+  key: string,
+  fallback: string,
+): string {
+  const value = source[key];
+  return typeof value === "string" ? value : fallback;
+}
+
+/** Pull block-level settings out of a real `tool block` item. */
+function configFromBlock(block: LibraryToolRecord): Partial<AssemblyConfig> {
+  const geometry = block.geometry;
+  const orientation = readString(geometry, "orientationType", "axial");
+
+  return {
+    orientation: orientation === "radial" ? "radial" : ("axial" as Orientation),
+    machineSideConnectionType: readString(
+      geometry,
+      "machineSideConnectionType",
+      "Unspecified",
+    ),
+    numberOfTools: readNumber(geometry, "numberOfTools", 1),
+    numberOfAttachmentPoints: readNumber(geometry, "numberOfAttachmentPoints", 0),
+    adaptiveItemSize: readNumber(geometry, "adaptiveItemSize", 0),
+    stationNumber: block.postProcess.stationNumber,
+    halfIndex: block.postProcess.halfIndex === true,
+  };
+}
 
 function createInitialState(): WorkflowState {
   return {
-    currentStep: "select-holder",
+    currentStep: "select-block",
     completedSteps: [],
     activeTab: "assembly",
-    selectedCatalogId: null,
-    selectedAssemblyId: null,
-    assemblyRows: [],
-    slots: INITIAL_SLOTS.map((s) => ({ ...s, componentId: null })),
+    libraryId: defaultLibraryId(),
+    blockToolId: null,
+    cuttingToolId: null,
+    selectedRowId: null,
     config: { ...DEFAULT_CONFIG },
     validationStatus: "idle",
     validationIssues: [],
     generalInfo: {
-      description: "Turning tool holder assembly — prototype",
+      description: "",
       vendor: "",
       productId: "",
       productLink: "",
@@ -43,89 +99,128 @@ function createInitialState(): WorkflowState {
   };
 }
 
-function isCompatible(holderId: string, componentId: string): boolean {
-  const holder = getComponentById(holderId);
-  const component = getComponentById(componentId);
-  if (holder === undefined || component === undefined) return false;
-  return (
-    holder.compatibleWith.includes(componentId) ||
-    component.compatibleWith.includes(holderId)
-  );
+function rowFor(
+  role: ComponentRole,
+  tool: LibraryToolRecord | undefined,
+  component: ChainComponent | undefined,
+  hasTransformOverride: boolean,
+): AssemblyRow {
+  if (tool === undefined) {
+    return {
+      id: role,
+      role,
+      toolId: null,
+      name: "",
+      type: "",
+      vendor: "",
+      spanMm: null,
+      missingFrame: null,
+      hasTransformOverride: false,
+    };
+  }
+
+  return {
+    id: role,
+    role,
+    toolId: tool.id,
+    name: displayName(tool),
+    type: tool.type,
+    vendor: tool.vendor,
+    spanMm: component?.spanMm ?? null,
+    missingFrame: component !== undefined ? missingFrameLabel(component) : "geometry",
+    hasTransformOverride,
+  };
 }
 
+/**
+ * Validation against what Fusion actually requires: a component is only usable
+ * once its solid carries both joint frames, and a chain with a gap in it cannot
+ * be measured at all.
+ */
 function runValidation(
   rows: AssemblyRow[],
-  slots: AssemblySlot[],
+  measuredMm: number | null,
   config: AssemblyConfig,
 ): { status: ValidationStatus; issues: ValidationIssue[] } {
   const issues: ValidationIssue[] = [];
-  const holder = rows.find((r) => r.isRoot === true);
-  if (holder === undefined) {
+
+  const block = rows.find((row) => row.role === "block");
+  const holder = rows.find((row) => row.role === "holder");
+
+  if (holder?.toolId === null || holder === undefined) {
     return {
       status: "fail",
       issues: [
         {
-          id: "no-holder",
+          id: "no-tool",
           severity: "error",
-          message: "No tool holder selected in the assembly.",
+          message: "No cutting tool selected — a tool owns the block in Fusion's schema.",
         },
       ],
     };
   }
 
-  const filledSlots = slots.filter((s) => s.componentId !== null);
-  if (filledSlots.length === 0) {
+  if (block === undefined || block.toolId === null) {
     issues.push({
-      id: "no-slots",
+      id: "no-block",
       severity: "warning",
-      message: "No components assigned to assembly slots.",
+      message: "No tool block chosen, so the assembly has no machine-side root.",
     });
   }
 
-  for (const slot of filledSlots) {
-    if (slot.componentId !== null && !isCompatible(holder.componentId, slot.componentId)) {
-      const comp = getComponentById(slot.componentId);
+  for (const row of rows) {
+    if (row.toolId === null || row.missingFrame === null) continue;
+    if (row.missingFrame === "geometry") {
       issues.push({
-        id: `compat-${slot.id}`,
+        id: `no-geometry-${row.role}`,
         severity: "error",
-        message: `${comp?.name ?? "Component"} is not compatible with the selected holder.`,
-        componentId: slot.componentId,
+        message: `${row.name} has no 3D solid, so it carries no joint frames.`,
+        toolId: row.toolId,
       });
+      continue;
     }
-  }
-
-  if (config.stickOut > config.totalLength) {
     issues.push({
-      id: "stickout-exceeds",
+      id: `missing-frame-${row.role}`,
       severity: "error",
-      message: "Stick out exceeds total tool length.",
+      message:
+        `${row.name} is missing its ${row.missingFrame} frame. ` +
+        "Joint frames come from the STEP file, so add it in CAD and re-import.",
+      toolId: row.toolId,
     });
   }
 
-  if (config.toolConnectionType === "Unspecified") {
+  if (measuredMm === null && issues.every((issue) => issue.severity !== "error")) {
+    issues.push({
+      id: "not-measurable",
+      severity: "warning",
+      message: "Stack-up cannot be measured through this chain.",
+    });
+  }
+
+  const overridden = rows.find((row) => row.hasTransformOverride);
+  if (overridden !== undefined) {
+    issues.push({
+      id: "transform-override",
+      severity: "warning",
+      message:
+        `${overridden.name} is positioned manually by transformOverride, ` +
+        "which overrides the joint chain.",
+      toolId: overridden.toolId ?? undefined,
+    });
+  }
+
+  if (config.machineSideConnectionType === "Unspecified") {
     issues.push({
       id: "connection-unspecified",
       severity: "warning",
-      message: "Tool connection type is unspecified — verify machine interface.",
+      message: "Machine-side connection type is unspecified — verify the turret interface.",
     });
   }
 
-  const hasInsert = filledSlots.some((s) => {
-    const c = s.componentId !== null ? getComponentById(s.componentId) : undefined;
-    return c?.category === "insert";
-  });
-  if (!hasInsert) {
-    issues.push({
-      id: "no-insert",
-      severity: "warning",
-      message: "No cutting insert assigned — assembly cannot generate toolpaths.",
-    });
-  }
-
-  if (issues.some((i) => i.severity === "error")) {
+  if (issues.some((issue) => issue.severity === "error")) {
     return { status: "fail", issues };
   }
-  if (issues.some((i) => i.severity === "warning")) {
+  if (issues.length > 0) {
     return { status: "warning", issues };
   }
   return { status: "pass", issues: [] };
@@ -134,47 +229,79 @@ function runValidation(
 export function useToolAssemblyWorkflow() {
   const [state, setState] = useState<WorkflowState>(createInitialState);
 
-  const holderRow = useMemo(
-    () => state.assemblyRows.find((r) => r.isRoot === true),
-    [state.assemblyRows],
+  const availableBlocks = useMemo(
+    () => toolBlocks(state.libraryId),
+    [state.libraryId],
   );
 
-  const selectedCatalogComponent = useMemo(
-    () =>
-      state.selectedCatalogId !== null
-        ? getComponentById(state.selectedCatalogId)
-        : undefined,
-    [state.selectedCatalogId],
+  const availableTools = useMemo(
+    () => cuttingTools(state.libraryId),
+    [state.libraryId],
   );
 
-  const selectedAssemblyComponent = useMemo(() => {
-    if (state.selectedAssemblyId === null) return undefined;
-    const row = state.assemblyRows.find((r) => r.id === state.selectedAssemblyId);
-    if (row !== undefined) return getComponentById(row.componentId);
-    const slot = state.slots.find((s) => s.id === state.selectedAssemblyId);
-    if (slot?.componentId !== null && slot !== undefined) {
-      return getComponentById(slot.componentId);
+  const blockTool = useMemo(
+    () => (state.blockToolId !== null ? toolById(state.blockToolId) : undefined),
+    [state.blockToolId],
+  );
+
+  const cuttingTool = useMemo(
+    () => (state.cuttingToolId !== null ? toolById(state.cuttingToolId) : undefined),
+    [state.cuttingToolId],
+  );
+
+  /** Chain components, machine side first, from real joint frames. */
+  const chain = useMemo<ChainComponent[]>(() => {
+    if (cuttingTool === undefined) return [];
+    return chainFor(cuttingTool, blockTool ?? null);
+  }, [cuttingTool, blockTool]);
+
+  const measuredStackUpMmValue = useMemo(
+    () => measuredStackUpMm(chain),
+    [chain],
+  );
+
+  const rows = useMemo<AssemblyRow[]>(() => {
+    const blockComponent = chain.find((component) => component.role === "block");
+    const holderComponent = chain.find((component) => component.role === "holder");
+
+    const blockRow = rowFor(
+      "block",
+      blockTool ?? (cuttingTool?.block != null ? cuttingTool : undefined),
+      blockComponent,
+      cuttingTool?.block?.transformOverride != null,
+    );
+
+    // A tool that already carries a block should show the block's own name.
+    if (blockTool === undefined && cuttingTool?.block != null) {
+      blockRow.name = cuttingTool.block.description || "Tool block";
+      blockRow.type = "tool block";
+      blockRow.vendor = cuttingTool.block.vendor;
+      blockRow.toolId = cuttingTool.id;
     }
+
+    return [blockRow, rowFor("holder", cuttingTool, holderComponent, false)];
+  }, [chain, blockTool, cuttingTool]);
+
+  const selectedTool = useMemo(() => {
+    if (state.selectedRowId === "block") return blockTool ?? undefined;
+    if (state.selectedRowId === "holder") return cuttingTool ?? undefined;
     return undefined;
-  }, [state.selectedAssemblyId, state.assemblyRows, state.slots]);
+  }, [state.selectedRowId, blockTool, cuttingTool]);
 
-  const assemblyComponents = useMemo(() => {
-    const ids = new Set<string>();
-    for (const row of state.assemblyRows) ids.add(row.componentId);
-    for (const slot of state.slots) {
-      if (slot.componentId !== null) ids.add(slot.componentId);
-    }
-    return [...ids]
-      .map((id) => getComponentById(id))
-      .filter((c): c is ToolComponent => c !== undefined);
-  }, [state.assemblyRows, state.slots]);
-
-  const selectCatalogComponent = useCallback((id: string) => {
-    setState((prev) => ({ ...prev, selectedCatalogId: id }));
+  const selectLibrary = useCallback((libraryId: string) => {
+    setState((prev) => ({
+      ...prev,
+      libraryId,
+      blockToolId: null,
+      cuttingToolId: null,
+      selectedRowId: null,
+      validationStatus: "idle",
+      validationIssues: [],
+    }));
   }, []);
 
-  const selectAssemblyItem = useCallback((id: string) => {
-    setState((prev) => ({ ...prev, selectedAssemblyId: id }));
+  const selectRow = useCallback((id: ComponentRole) => {
+    setState((prev) => ({ ...prev, selectedRowId: id }));
   }, []);
 
   const setActiveTab = useCallback((tab: WorkflowState["activeTab"]) => {
@@ -199,122 +326,139 @@ export function useToolAssemblyWorkflow() {
     [],
   );
 
-  const addToAssembly = useCallback(() => {
+  /** Choose the tool block that seats against the turret face. */
+  const selectToolBlock = useCallback((toolId: string | null) => {
     setState((prev) => {
-      if (prev.selectedCatalogId === null) return prev;
-      const component = getComponentById(prev.selectedCatalogId);
-      if (component === undefined) return prev;
-
-      if (component.category === "tool-holder") {
-        const row: AssemblyRow = {
-          id: "root-holder",
-          componentId: component.id,
-          type: component.type,
-          stickOut: component.stickOut,
-          totalLength: component.totalLength,
-          isRoot: true,
-        };
-        const nextCompleted: WorkflowStepId[] = prev.completedSteps.includes("select-holder")
-          ? prev.completedSteps
-          : [...prev.completedSteps, "select-holder"];
+      if (toolId === null) {
         return {
           ...prev,
-          assemblyRows: [row],
-          selectedAssemblyId: row.id,
-          config: {
-            ...prev.config,
-            stickOut: component.stickOut,
-            totalLength: component.totalLength,
-            toolConnectionType: component.connectionType ?? prev.config.toolConnectionType,
-            orientation: component.orientation ?? prev.config.orientation,
-          },
-          currentStep: prev.currentStep === "select-holder" ? "add-insert" : prev.currentStep,
-          completedSteps: nextCompleted,
-          generalInfo: {
-            ...prev.generalInfo,
-            vendor: component.vendor,
-            productId: component.productId,
-          },
+          blockToolId: null,
+          selectedRowId: prev.selectedRowId === "block" ? null : prev.selectedRowId,
+          currentStep: "select-block",
+          completedSteps: prev.completedSteps.filter((step) => step !== "select-block"),
+          validationStatus: "idle",
+          validationIssues: [],
         };
       }
 
-      const emptySlot = prev.slots.find((s) => s.componentId === null);
-      if (emptySlot === undefined) return prev;
-
-      const holder = prev.assemblyRows.find((r) => r.isRoot === true);
-      if (holder !== undefined && !isCompatible(holder.componentId, component.id)) {
-        return {
-          ...prev,
-          validationStatus: "warning" as ValidationStatus,
-          validationIssues: [
-            {
-              id: "add-incompatible",
-              severity: "warning",
-              message: `${component.name} may not be compatible with the current holder.`,
-              componentId: component.id,
-            },
-          ],
-        };
-      }
-
-      const slots = prev.slots.map((s) =>
-        s.id === emptySlot.id ? { ...s, componentId: component.id } : s,
-      );
-      const hasInsert = slots.some((s) => {
-        const c = s.componentId !== null ? getComponentById(s.componentId) : undefined;
-        return c?.category === "insert";
-      });
-      const nextCompleted: WorkflowStepId[] = [...prev.completedSteps];
-      if (hasInsert && !nextCompleted.includes("add-insert")) {
-        nextCompleted.push("add-insert");
-      }
+      const block = toolById(toolId);
+      if (block === undefined) return prev;
 
       return {
         ...prev,
-        slots,
-        selectedAssemblyId: emptySlot.id,
-        currentStep:
-          prev.currentStep === "add-insert" && hasInsert ? "configure" : prev.currentStep,
-        completedSteps: nextCompleted,
+        libraryId: block.libraryId,
+        blockToolId: block.id,
+        selectedRowId: "block",
+        config: { ...prev.config, ...configFromBlock(block) },
+        currentStep: prev.cuttingToolId === null ? "select-tool" : prev.currentStep,
+        completedSteps: prev.completedSteps.includes("select-block")
+          ? prev.completedSteps
+          : [...prev.completedSteps, "select-block"],
+        generalInfo: {
+          ...prev.generalInfo,
+          vendor: block.vendor || prev.generalInfo.vendor,
+          productId: block.productId || prev.generalInfo.productId,
+        },
         validationStatus: "idle",
         validationIssues: [],
       };
     });
   }, []);
 
-  const assignSlotComponent = useCallback((slotId: string, componentId: string | null) => {
-    setState((prev) => ({
-      ...prev,
-      slots: prev.slots.map((s) =>
-        s.id === slotId ? { ...s, componentId } : s,
-      ),
-      validationStatus: "idle",
-    }));
+  /** Choose the cutting tool that will own the block. */
+  const selectCuttingTool = useCallback((toolId: string | null) => {
+    setState((prev) => {
+      if (toolId === null) {
+        return {
+          ...prev,
+          cuttingToolId: null,
+          selectedRowId: prev.selectedRowId === "holder" ? null : prev.selectedRowId,
+          validationStatus: "idle",
+          validationIssues: [],
+        };
+      }
+
+      const tool = toolById(toolId);
+      if (tool === undefined) return prev;
+
+      // A tool that already carries a block brings its own block settings.
+      const blockConfig =
+        tool.block !== null
+          ? {
+              stationNumber: tool.block.postProcess.stationNumber,
+              halfIndex: tool.block.postProcess.halfIndex === true,
+            }
+          : {};
+
+      return {
+        ...prev,
+        libraryId: tool.libraryId,
+        cuttingToolId: tool.id,
+        selectedRowId: "holder",
+        config: { ...prev.config, ...blockConfig },
+        currentStep: "configure",
+        completedSteps: prev.completedSteps.includes("select-tool")
+          ? prev.completedSteps
+          : [...prev.completedSteps, "select-tool"],
+        generalInfo: {
+          ...prev.generalInfo,
+          description: prev.generalInfo.description || displayName(tool),
+          vendor: tool.vendor || prev.generalInfo.vendor,
+          productId: tool.productId || prev.generalInfo.productId,
+        },
+        validationStatus: "idle",
+        validationIssues: [],
+      };
+    });
+  }, []);
+
+  /** Load an assembly that already exists in the library. */
+  const loadExistingAssembly = useCallback((toolId: string) => {
+    setState((prev) => {
+      const tool = toolById(toolId);
+      if (tool === undefined || tool.block === null) return prev;
+
+      return {
+        ...prev,
+        libraryId: tool.libraryId,
+        blockToolId: null,
+        cuttingToolId: tool.id,
+        selectedRowId: "holder",
+        config: {
+          ...prev.config,
+          stationNumber: tool.block.postProcess.stationNumber,
+          halfIndex: tool.block.postProcess.halfIndex === true,
+        },
+        currentStep: "configure",
+        completedSteps: ["select-block", "select-tool"],
+        generalInfo: {
+          ...prev.generalInfo,
+          description: displayName(tool),
+          vendor: tool.vendor,
+          productId: tool.productId,
+        },
+        validationStatus: "idle",
+        validationIssues: [],
+      };
+    });
   }, []);
 
   const runValidate = useCallback(() => {
     setState((prev) => {
-      const { status, issues } = runValidation(prev.assemblyRows, prev.slots, prev.config);
-      const nextCompleted: WorkflowStepId[] = [...prev.completedSteps];
-      if (!nextCompleted.includes("configure")) nextCompleted.push("configure");
-      if (status === "pass" || status === "warning") {
-        if (!nextCompleted.includes("validate")) nextCompleted.push("validate");
-      }
-      const finalCompleted: WorkflowStepId[] =
-        status === "pass" || status === "warning"
-          ? nextCompleted.includes("review")
-            ? nextCompleted
-            : [...nextCompleted, "review"]
-          : nextCompleted;
+      const { status, issues } = runValidation(rows, measuredStackUpMmValue, prev.config);
+      const completed: WorkflowStepId[] = [...prev.completedSteps];
+      if (!completed.includes("configure")) completed.push("configure");
+      if (status !== "fail" && !completed.includes("validate")) completed.push("validate");
+
       return {
         ...prev,
         validationStatus: status,
         validationIssues: issues,
         currentStep: status === "fail" ? "validate" : "review",
-        completedSteps: finalCompleted,
+        completedSteps: completed,
       };
     });
-  }, []);
+  }, [rows, measuredStackUpMmValue]);
 
   const goToStep = useCallback((step: WorkflowStepId) => {
     setState((prev) => ({ ...prev, currentStep: step }));
@@ -322,13 +466,15 @@ export function useToolAssemblyWorkflow() {
 
   const advanceStep = useCallback(() => {
     setState((prev) => {
-      const idx = getStepIndex(prev.currentStep);
-      const next = WORKFLOW_STEPS[idx + 1];
+      const next = WORKFLOW_STEPS[getStepIndex(prev.currentStep) + 1];
       if (next === undefined) return prev;
-      const completed = prev.completedSteps.includes(prev.currentStep)
-        ? prev.completedSteps
-        : [...prev.completedSteps, prev.currentStep];
-      return { ...prev, currentStep: next.id, completedSteps: completed };
+      return {
+        ...prev,
+        currentStep: next.id,
+        completedSteps: prev.completedSteps.includes(prev.currentStep)
+          ? prev.completedSteps
+          : [...prev.completedSteps, prev.currentStep],
+      };
     });
   }, []);
 
@@ -338,17 +484,23 @@ export function useToolAssemblyWorkflow() {
 
   return {
     state,
-    holderRow,
-    selectedCatalogComponent,
-    selectedAssemblyComponent,
-    assemblyComponents,
-    selectCatalogComponent,
-    selectAssemblyItem,
+    rows,
+    chain,
+    measuredStackUpMm: measuredStackUpMmValue,
+    availableBlocks,
+    availableTools,
+    blockTool,
+    cuttingTool,
+    selectedTool,
+    isTurningTool: cuttingTool !== undefined && isTurningType(cuttingTool.type),
+    selectLibrary,
+    selectRow,
+    selectToolBlock,
+    selectCuttingTool,
+    loadExistingAssembly,
     setActiveTab,
     updateConfig,
     updateGeneralInfo,
-    addToAssembly,
-    assignSlotComponent,
     runValidate,
     goToStep,
     advanceStep,
