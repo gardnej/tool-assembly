@@ -10,214 +10,311 @@ import { SETUP_OPTIONS } from "./featureManagerTypes";
 /** Matches Fusion CAM browser root label for this prototype part. */
 export const DEMO_BLOCK_DOCUMENT_TITLE = "AU Part 2023";
 
+/**
+ * What a node is, which decides its icon. The names follow the resource folders
+ * `scripts/build-browser-icons.py` copies the artwork from.
+ */
+export type BrowserNodeKind =
+  | "document"
+  | "component"
+  | "folder"
+  | "camFolder"
+  | "units"
+  | "namedView"
+  | "point"
+  | "axis"
+  | "plane"
+  | "body"
+  | "setup"
+  | "stock"
+  | "setupModel"
+  | "opFace"
+  | "opRough"
+  | "opFinish"
+  | "opGroove"
+  | "opThread"
+  | "opTrace"
+  | "opToolCall"
+  | "opAdaptive"
+  | "opMill"
+  | "opDrill"
+  | "opInspect";
+
 export type DemoBlockBrowserNode = {
   id: string;
   label: string;
+  kind: BrowserNodeKind;
   /** Default: true */
   selectable?: boolean;
   defaultExpanded?: boolean;
+  /** Units carries no show/hide control in Fusion; everything else does. */
+  noVisibility?: boolean;
   /** When set, selecting this row syncs Feature Manager to this feature id */
   linkedFeatureRowId?: string;
   children?: DemoBlockBrowserNode[];
 };
 
+/**
+ * The Manufacture browser as the product builds it: Units, Named Views, Origin,
+ * Analysis, the linked design model, then the CAM collections, of which Setups
+ * is the only one always present. Origin children are named as Fusion names
+ * them — single letters, not "X Axis" — and the home view is "HOME".
+ */
 export const DEMO_BLOCK_BROWSER_ROOT: DemoBlockBrowserNode = {
   id: "design-root",
   label: DEMO_BLOCK_DOCUMENT_TITLE,
+  kind: "document",
   selectable: false,
   defaultExpanded: true,
   children: [
-    { id: "cam-units", label: "Units: mm", selectable: false },
+    { id: "cam-units", label: "Units: mm", kind: "units", selectable: false, noVisibility: true },
     {
       id: "cam-named-views",
       label: "Named Views",
+      kind: "folder",
       selectable: false,
-      defaultExpanded: false,
-      children: [{ id: "cam-nv-home", label: "Home", selectable: false }],
+      children: [{ id: "cam-nv-home", label: "HOME", kind: "namedView", selectable: false }],
     },
     {
       id: "cam-origin",
       label: "Origin",
+      kind: "folder",
       selectable: false,
-      defaultExpanded: false,
       children: [
-        { id: "origin-x", label: "X Axis" },
-        { id: "origin-y", label: "Y Axis" },
-        { id: "origin-z", label: "Z Axis" },
-        { id: "origin-xy", label: "XY Plane" },
+        { id: "origin-o", label: "O", kind: "point" },
+        { id: "origin-x", label: "X", kind: "axis" },
+        { id: "origin-y", label: "Y", kind: "axis" },
+        { id: "origin-z", label: "Z", kind: "axis" },
+        { id: "origin-xy", label: "XY", kind: "plane" },
+        { id: "origin-xz", label: "XZ", kind: "plane" },
+        { id: "origin-yz", label: "YZ", kind: "plane" },
       ],
     },
+    { id: "cam-analysis", label: "Analysis", kind: "folder", selectable: false },
     {
-      id: "cam-analysis",
-      label: "Analysis",
+      id: "cam-model",
+      label: DEMO_BLOCK_DOCUMENT_TITLE,
+      kind: "component",
       selectable: false,
-      defaultExpanded: false,
-      children: [{ id: "cam-analysis-prepare", label: "Prepare", selectable: false }],
-    },
-    {
-      id: "cam-models",
-      label: "Models",
-      selectable: false,
-      defaultExpanded: false,
-      children: [{ id: "body1", label: "Body1" }],
+      children: [
+        {
+          id: "cam-bodies",
+          label: "Bodies",
+          kind: "folder",
+          selectable: false,
+          children: [{ id: "body1", label: "Body1", kind: "body" }],
+        },
+      ],
     },
     {
       id: "cam-setups",
       label: "Setups",
+      kind: "setup",
       selectable: false,
-      defaultExpanded: false,
+      defaultExpanded: true,
       children: [
         {
           id: "cam-op10",
           label: "[(0:12:26)] OP 10",
+          kind: "setup",
           selectable: false,
-          defaultExpanded: false,
           children: [
+            { id: "cam-op10-stock", label: "Stock", kind: "stock", selectable: false },
+            {
+              id: "cam-op10-model",
+              label: "Setup Model",
+              kind: "setupModel",
+              selectable: false,
+            },
             {
               id: "cam-op10-op01",
               label: "[T1 (0:00:17)] Face Rough (Rough OD — P clamp)",
+              kind: "opFace",
               linkedFeatureRowId: "p1",
             },
             {
               id: "cam-op10-op02",
               label: "[T1 (0:02:47)] OD Rough (Rough OD — P clamp)",
+              kind: "opRough",
             },
             {
               id: "cam-op10-op03",
               label: "[T11 (0:00:13)] Groove Front Rough (4mm wide)",
+              kind: "opGroove",
               linkedFeatureRowId: "g1",
             },
             {
               id: "cam-op10-op04",
               label: "[T4 (0:01:46)] Adaptive Roughing1 (OD groove)",
+              kind: "opAdaptive",
               linkedFeatureRowId: "s1",
             },
             {
               id: "cam-op10-op05",
               label: "[T7 (0:00:12)] Drill 22mm c/line (22 mm)",
+              kind: "opDrill",
               linkedFeatureRowId: "h1",
             },
             {
               id: "cam-op10-op06",
               label: "[T10 (0:00:35)] Mill Hex Rough (12mm flat)",
+              kind: "opMill",
               linkedFeatureRowId: "s2",
             },
             {
               id: "cam-op10-op07",
               label: "[T10 (0:00:27)] Mill Hex Finish (12mm flat)",
+              kind: "opMill",
               linkedFeatureRowId: "p2",
             },
             {
               id: "cam-op10-op08",
               label: "[T2 (0:00:06)] Face Finish (Finishing — P clamp)",
+              kind: "opFace",
             },
             {
               id: "cam-op10-op09",
               label: "[T2 (0:00:47)] OD Finish (Finishing — P clamp)",
+              kind: "opFinish",
               linkedFeatureRowId: "sh1",
             },
             {
               id: "cam-op10-op10",
               label: "[T11 (0:00:10)] OD Finish Groove (4mm wide)",
+              kind: "opGroove",
             },
             {
               id: "cam-op10-op11",
               label: "[T6 (0:00:31)] Face Drill × 6 C axis (5mm)",
+              kind: "opDrill",
               linkedFeatureRowId: "h2",
             },
             {
               id: "cam-op10-op12",
               label: "[T5 (0:00:22)] ID Rough (16mm rough boring)",
+              kind: "opRough",
               linkedFeatureRowId: "h3",
             },
             {
               id: "cam-op10-op13",
               label: "[T8 (0:00:10)] ID U/Cut Rough (20mm boring)",
+              kind: "opRough",
             },
             {
               id: "cam-op10-op14",
               label: "[T8 (0:00:19)] ID Finish (20mm boring bar)",
+              kind: "opFinish",
             },
             {
               id: "cam-op10-op15",
               label: "[T9 (0:00:08)] INT Thread (metric)",
+              kind: "opThread",
               linkedFeatureRowId: "t1",
             },
             {
               id: "cam-op10-op16",
               label: "[T10 (0:00:27)] Deburr Hex (12mm flat)",
+              kind: "opMill",
             },
             {
               id: "cam-op10-op17",
               label: "[T7 (0:00:00)] Tool Call1 (22 mm)",
+              kind: "opToolCall",
             },
             {
               id: "cam-op10-manual-insp",
               label: "Manual Inspections2",
+              kind: "camFolder",
               selectable: false,
-              defaultExpanded: false,
-              children: [{ id: "cam-op10-insp-item", label: "Inspection · pending", selectable: false }],
+              children: [
+                {
+                  id: "cam-op10-insp-item",
+                  label: "Inspection · pending",
+                  kind: "opInspect",
+                  selectable: false,
+                },
+              ],
             },
           ],
         },
         {
           id: "cam-op20",
           label: "OP 20",
+          kind: "setup",
           selectable: false,
-          defaultExpanded: false,
           children: [
+            { id: "cam-op20-stock", label: "Stock", kind: "stock", selectable: false },
+            {
+              id: "cam-op20-model",
+              label: "Setup Model",
+              kind: "setupModel",
+              selectable: false,
+            },
             {
               id: "cam-op20-op01",
               label: "[T8] Profile Roughing6 (20mm boring bar)",
+              kind: "opRough",
             },
             {
               id: "cam-op20-op02",
               label: "[T1 (0:00:27)] Face (Sub — roughing steel)",
+              kind: "opFace",
             },
             {
               id: "cam-op20-op03",
               label: "[T1 (0:01:30)] OD Rough Sub (Sub — roughing)",
+              kind: "opRough",
             },
             {
               id: "cam-op20-op04",
               label: "[T12 (0:00:14)] OD SEMI Rough Sub (Sub — finish)",
+              kind: "opRough",
             },
             {
               id: "cam-op20-op05",
               label: "[T12 (0:00:17)] Face Finish (Sub — finishing)",
+              kind: "opFace",
             },
             {
               id: "cam-op20-op06",
               label: "[T12 (0:00:24)] OD Finish (Sub — finishing steel)",
+              kind: "opFinish",
             },
             {
               id: "cam-op20-op07",
               label: "[T3 (0:00:09)] EXT Thread (SUB ext thread)",
+              kind: "opThread",
               linkedFeatureRowId: "t2",
             },
             {
               id: "cam-op20-op08",
               label: "[T12 (0:00:05)] Profile Finishing3 (2) (Sub)",
+              kind: "opFinish",
             },
             {
               id: "cam-op20-op09",
               label: "[T12 (0:00:10)] Profile Finishing3 (3) (Sub)",
+              kind: "opFinish",
             },
             {
               id: "cam-op20-op10",
               label: "[T12] Profile Roughing7 (Sub — finishing steel)",
+              kind: "opRough",
             },
             {
               id: "cam-op20-op11",
               label: "[T10 (0:00:25)] Trace1 (12mm flat)",
+              kind: "opTrace",
             },
             {
               id: "cam-op20-op12",
               label: "[T1 (0:01:14)] Profile Roughing9 (Rough OD)",
+              kind: "opRough",
             },
             {
               id: "cam-op20-op13",
               label: "[T1 (0:01:12)] Profile Roughing13 (Rough OD)",
+              kind: "opRough",
             },
           ],
         },

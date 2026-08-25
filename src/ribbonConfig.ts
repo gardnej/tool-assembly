@@ -1,6 +1,12 @@
 /**
  * Fusion-style ribbon model: workspace dropdown + contextual tabs per workspace.
+ *
+ * The Manufacture workspace is not described here — its tabs, panels and
+ * commands come from `data/ribbonManufacture`, generated from Fusion's own
+ * toolbar definition. Design and Render remain hand-written stand-ins.
  */
+
+import { MANUFACTURE_TABS } from "./data/ribbonManufacture";
 
 export type RibbonWorkspaceId = "design" | "manufacturing" | "render";
 
@@ -15,13 +21,13 @@ export type RibbonTabId =
   | "inspect"
   | "utilities"
   | "addons"
-  /** Manufacturing workspace */
-  | "mfg_milling"
-  | "mfg_turning"
-  | "mfg_additive"
-  | "mfg_inspection"
-  | "mfg_fabrication"
-  | "mfg_utilities"
+  /** Manufacture workspace — Fusion's own tab ids, from TabToolbars.xml */
+  | "MillingTab"
+  | "TurningTab"
+  | "AdditiveTab"
+  | "FabricationTab"
+  | "ProbingTab"
+  | "UtilitiesTab"
   /** Render workspace */
   | "r_scene"
   | "r_visuals"
@@ -49,14 +55,9 @@ export const DESIGN_TAB_ORDER: readonly { id: RibbonTabId; label: string }[] = [
   { id: "addons", label: "ADD-INS" },
 ];
 
-export const MANUFACTURING_TAB_ORDER: readonly { id: RibbonTabId; label: string }[] = [
-  { id: "mfg_milling", label: "MILLING" },
-  { id: "mfg_turning", label: "TURNING" },
-  { id: "mfg_additive", label: "ADDITIVE" },
-  { id: "mfg_inspection", label: "INSPECTION" },
-  { id: "mfg_fabrication", label: "FABRICATION" },
-  { id: "mfg_utilities", label: "UTILITIES" },
-];
+/** Order and captions as the product declares them, not as we imagine them. */
+export const MANUFACTURING_TAB_ORDER: readonly { id: RibbonTabId; label: string }[] =
+  MANUFACTURE_TABS.map((tab) => ({ id: tab.id as RibbonTabId, label: tab.label }));
 
 export const RENDER_TAB_ORDER: readonly { id: RibbonTabId; label: string }[] = [
   { id: "r_scene", label: "SCENE" },

@@ -1,4 +1,13 @@
-import { useMemo, useState, type MouseEvent, type ReactNode } from "react";
+import {
+  Fragment,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type MouseEvent,
+  type ReactNode,
+} from "react";
 import {
   BLOCK_TYPE,
   LIBRARIES,
@@ -6,14 +15,30 @@ import {
   framesFor,
   isBlockType,
   isHalfIndex,
+  libraries,
   libraryById,
   solidSpanMm,
   stationNumber,
+  toolById,
   toolsForLibrary,
+  type LibraryRef,
   type LibraryToolRecord,
   type StoredJointFrames,
 } from "../data/realLibrary";
-import { ToolLibraryInsertPreview } from "./ToolLibraryInsertPreview";
+import {
+  hideLibrary,
+  isLibraryRenamed,
+  isToolEdited,
+  removeSessionAssembly,
+  renameLibrary,
+  resetLibraryName,
+  sessionAssembliesForLibrary,
+} from "../data/libraryEdits";
+import type { SavedAssembly } from "../types";
+import { useLibraryRevision } from "../hooks/useLibraryRevision";
+import { meshPreviewFor, ToolLibrarySolidPreview } from "./ToolLibrarySolidPreview";
+import { ToolSilhouette } from "./ToolSilhouette";
+import { ToolRecordEditor } from "./ToolRecordEditor";
 import "./tool-library-dialog.css";
 
 interface ToolLibraryDialogProps {
@@ -26,9 +51,19 @@ interface ToolLibraryDialogProps {
    */
   picker?: boolean;
   initialLibraryId?: string;
+  /** Opens on this record, in the library that holds it. */
+  initialToolId?: string;
+  /** Opens the record's editor straight away, for an edit sent from elsewhere. */
+  openEditor?: boolean;
   /** Restricts picking to tool blocks or to cutting tools. */
   pickKind?: "block" | "tool";
   onPick?: (toolId: string) => void;
+  /**
+   * Called when the user picks Edit on a saved assembly. The parent should
+   * close the browser and reopen the tool assembly dialog with the assembly
+   * pre-loaded for editing.
+   */
+  onEditAssembly?: (assemblyId: string) => void;
 }
 
 interface LibraryTreeNode {
@@ -43,11 +78,15 @@ interface LibraryTreeNode {
  * Folder tree over the real libraries, grouped the way they sit on disk under
  * Fusion's `libraries/Local` folder.
  */
-function buildLibraryTree(): LibraryTreeNode[] {
-  const rootLibraries = LIBRARIES.filter((library) => library.folder === null);
-  const folders = new Map<string, typeof LIBRARIES>();
+function buildLibraryTree(refs: LibraryRef[]): LibraryTreeNode[] {
+  const localRefs = refs.filter((library) => (library.parent ?? "local") === "local");
+  const documentsRefs = refs.filter((library) => library.parent === "documents");
+  const cloudRefs = refs.filter((library) => library.parent === "cloud");
 
-  for (const library of LIBRARIES) {
+  const rootLibraries = localRefs.filter((library) => library.folder === null);
+  const folders = new Map<string, LibraryRef[]>();
+
+  for (const library of localRefs) {
     if (library.folder === null) continue;
     const existing = folders.get(library.folder) ?? [];
     folders.set(library.folder, [...existing, library]);
@@ -72,6 +111,9 @@ function buildLibraryTree(): LibraryTreeNode[] {
     })),
   ];
 
+  const asLeaves = (list: LibraryRef[]): LibraryTreeNode[] =>
+    list.map((library) => ({ id: library.id, label: library.name, selectable: true }));
+
   return [
     {
       id: "user-libraries",
@@ -79,8 +121,20 @@ function buildLibraryTree(): LibraryTreeNode[] {
       selectable: false,
       defaultExpanded: true,
       children: [
-        { id: "documents", label: "Documents", selectable: false },
-        { id: "cloud", label: "Cloud", selectable: false },
+        {
+          id: "documents",
+          label: "Documents",
+          selectable: false,
+          defaultExpanded: documentsRefs.length > 0,
+          children: asLeaves(documentsRefs),
+        },
+        {
+          id: "cloud",
+          label: "Cloud",
+          selectable: false,
+          defaultExpanded: cloudRefs.length > 0,
+          children: asLeaves(cloudRefs),
+        },
         {
           id: "local",
           label: "Local",
@@ -92,8 +146,6 @@ function buildLibraryTree(): LibraryTreeNode[] {
     },
   ];
 }
-
-const LIBRARY_TREE = buildLibraryTree();
 
 /**
  * Joint readiness for a stored solid. Fusion imports these frames from the STEP
@@ -144,6 +196,137 @@ function ToolbarIconBtn({
   );
 }
 
+/**
+ * Filters the browser applies to the current library.
+ *
+ * Sets rather than arrays so many-of choices toggle cheaply; the search term
+ * lives on the toolbar itself, since it is one input rather than a stack of
+ * checkboxes.
+ */
+interface Filters {
+  /** Show only tool blocks — the machine-side root of an assembly. */
+  blockOnly: boolean;
+  types: Set<string>;
+  vendors: Set<string>;
+}
+
+function emptyFilters(): Filters {
+  return { blockOnly: false, types: new Set(), vendors: new Set() };
+}
+
+function hasActiveFilters(filters: Filters): boolean {
+  return filters.blockOnly || filters.types.size > 0 || filters.vendors.size > 0;
+}
+
+/** Toggle one entry of a set-valued filter without mutating the previous state. */
+function toggleIn(set: Set<string>, value: string): Set<string> {
+  const next = new Set(set);
+  if (next.has(value)) {
+    next.delete(value);
+  } else {
+    next.add(value);
+  }
+  return next;
+}
+
+function FiltersPanel({
+  filters,
+  onChange,
+  types,
+  vendors,
+  resultCount,
+  totalCount,
+}: {
+  filters: Filters;
+  onChange: (next: Filters) => void;
+  types: string[];
+  vendors: string[];
+  resultCount: number;
+  totalCount: number;
+}) {
+  return (
+    <div className="tlb-filters">
+      <p className="tlb-info__crumb">
+        Showing {resultCount} of {totalCount}
+        {hasActiveFilters(filters) ? " (filtered)" : ""}
+      </p>
+
+      <FilterGroup title="Kind">
+        <FilterCheckbox
+          label="Tool block"
+          hint="Only tool blocks — the machine-side root of an assembly."
+          checked={filters.blockOnly}
+          onChange={(checked) => onChange({ ...filters, blockOnly: checked })}
+        />
+      </FilterGroup>
+
+      <FilterGroup title="Type">
+        {types.length === 0 ? (
+          <p className="tlb-filters__empty">No tools in this library.</p>
+        ) : (
+          types.map((type) => (
+            <FilterCheckbox
+              key={type}
+              label={type}
+              checked={filters.types.has(type)}
+              onChange={() =>
+                onChange({ ...filters, types: toggleIn(filters.types, type) })
+              }
+            />
+          ))
+        )}
+      </FilterGroup>
+
+      {vendors.length > 0 && (
+        <FilterGroup title="Vendor">
+          {vendors.map((vendor) => (
+            <FilterCheckbox
+              key={vendor}
+              label={vendor}
+              checked={filters.vendors.has(vendor)}
+              onChange={() =>
+                onChange({ ...filters, vendors: toggleIn(filters.vendors, vendor) })
+              }
+            />
+          ))}
+        </FilterGroup>
+      )}
+    </div>
+  );
+}
+
+function FilterGroup({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <section className="tlb-filters__group">
+      <h4 className="tlb-filters__title">{title}</h4>
+      <div className="tlb-filters__items">{children}</div>
+    </section>
+  );
+}
+
+function FilterCheckbox({
+  label,
+  hint,
+  checked,
+  onChange,
+}: {
+  label: string;
+  hint?: string;
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+}) {
+  return (
+    <label className="tlb-filters__item" title={hint}>
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={(event) => onChange(event.target.checked)}
+      />
+      <span>{label}</span>
+    </label>
+  );
+}
+
 function InfoProp({ label, value }: { label: string; value: string }) {
   return (
     <div className="tlb-info__prop">
@@ -157,12 +340,20 @@ function LibraryTreeBranch({
   node,
   depth,
   selectedLibraryId,
+  renamingId,
   onSelectLibrary,
+  onContextMenu,
+  onCommitRename,
+  onCancelRename,
 }: {
   node: LibraryTreeNode;
   depth: number;
   selectedLibraryId: string;
+  renamingId: string | null;
   onSelectLibrary: (id: string) => void;
+  onContextMenu: (id: string, x: number, y: number) => void;
+  onCommitRename: (id: string, name: string) => void;
+  onCancelRename: () => void;
 }) {
   const hasChildren = node.children !== undefined && node.children.length > 0;
   const isSelectable = node.selectable === true;
@@ -179,7 +370,11 @@ function LibraryTreeBranch({
             node={child}
             depth={depth + 1}
             selectedLibraryId={selectedLibraryId}
+            renamingId={renamingId}
             onSelectLibrary={onSelectLibrary}
+            onContextMenu={onContextMenu}
+            onCommitRename={onCommitRename}
+            onCancelRename={onCancelRename}
           />
         ))}
       </details>
@@ -191,6 +386,19 @@ function LibraryTreeBranch({
       <div className="tlb-tree__leaf" style={{ paddingLeft: `${18 + depth * 10}px`, cursor: "default" }}>
         {node.label}
       </div>
+    );
+  }
+
+  if (renamingId === node.id) {
+    return (
+      <LibraryNameInput
+        name={node.label}
+        depth={depth}
+        onCommit={(name) => {
+          onCommitRename(node.id, name);
+        }}
+        onCancel={onCancelRename}
+      />
     );
   }
 
@@ -207,9 +415,286 @@ function LibraryTreeBranch({
       onClick={() => {
         onSelectLibrary(node.id);
       }}
+      onContextMenu={(event) => {
+        event.preventDefault();
+        onSelectLibrary(node.id);
+        onContextMenu(node.id, event.clientX, event.clientY);
+      }}
     >
       {node.label}
     </button>
+  );
+}
+
+/** The leaf while it is being renamed: Enter or blur keeps it, Escape drops it. */
+function LibraryNameInput({
+  name,
+  depth,
+  onCommit,
+  onCancel,
+}: {
+  name: string;
+  depth: number;
+  onCommit: (name: string) => void;
+  onCancel: () => void;
+}) {
+  const [value, setValue] = useState(name);
+
+  return (
+    <input
+      className="tlb-tree__rename"
+      style={{ marginLeft: `${18 + depth * 10}px` }}
+      value={value}
+      autoFocus
+      aria-label={`Rename ${name}`}
+      onFocus={(event) => {
+        event.target.select();
+      }}
+      onChange={(event) => {
+        setValue(event.target.value);
+      }}
+      onBlur={() => {
+        onCommit(value);
+      }}
+      onKeyDown={(event) => {
+        if (event.key === "Enter") onCommit(value);
+        if (event.key === "Escape") onCancel();
+      }}
+    />
+  );
+}
+
+/** Right-click menu over a library in the tree. */
+function LibraryContextMenu({
+  x,
+  y,
+  renamed,
+  onRename,
+  onReset,
+  onDelete,
+  onClose,
+}: {
+  x: number;
+  y: number;
+  renamed: boolean;
+  onRename: () => void;
+  onReset: () => void;
+  onDelete: () => void;
+  onClose: () => void;
+}) {
+  useEffect(() => {
+    const dismiss = () => {
+      onClose();
+    };
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+    };
+
+    window.addEventListener("mousedown", dismiss);
+    window.addEventListener("keydown", onKey);
+    return () => {
+      window.removeEventListener("mousedown", dismiss);
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [onClose]);
+
+  return (
+    <div
+      className="tlb-menu"
+      role="menu"
+      style={{ top: y, left: x }}
+      onMouseDown={(event) => {
+        event.stopPropagation();
+      }}
+    >
+      <button type="button" className="tlb-menu__item" role="menuitem" onClick={onRename}>
+        Rename
+      </button>
+      <button
+        type="button"
+        className="tlb-menu__item"
+        role="menuitem"
+        disabled={!renamed}
+        title={renamed ? undefined : "This library still has its exported name"}
+        onClick={onReset}
+      >
+        Reset name
+      </button>
+      <div className="tlb-menu__separator" role="separator" />
+      <button
+        type="button"
+        className="tlb-menu__item tlb-menu__item--danger"
+        role="menuitem"
+        onClick={onDelete}
+        title="Remove this library from the browser for this session"
+      >
+        Delete
+      </button>
+    </div>
+  );
+}
+
+function AssemblyContextMenu({
+  x,
+  y,
+  onEdit,
+  onDelete,
+  onClose,
+}: {
+  x: number;
+  y: number;
+  onEdit: () => void;
+  onDelete: () => void;
+  onClose: () => void;
+}) {
+  useEffect(() => {
+    const dismiss = () => {
+      onClose();
+    };
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+    };
+
+    window.addEventListener("mousedown", dismiss);
+    window.addEventListener("keydown", onKey);
+    return () => {
+      window.removeEventListener("mousedown", dismiss);
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [onClose]);
+
+  return (
+    <div
+      className="tlb-menu"
+      role="menu"
+      style={{ top: y, left: x }}
+      onMouseDown={(event) => {
+        event.stopPropagation();
+      }}
+    >
+      <button type="button" className="tlb-menu__item" role="menuitem" onClick={onEdit}>
+        Edit assembly
+      </button>
+      <div className="tlb-menu__separator" role="separator" />
+      <button
+        type="button"
+        className="tlb-menu__item tlb-menu__item--danger"
+        role="menuitem"
+        onClick={onDelete}
+      >
+        Delete
+      </button>
+    </div>
+  );
+}
+
+/**
+ * Rows for the saved-assembly accordion.
+ *
+ * Each saved assembly gets a row of its own with an expand chevron; when
+ * expanded, its block plus every component in every position is listed
+ * beneath it, indented, so the user can see what the assembly holds without
+ * leaving the browser.
+ */
+function AssemblyRows({
+  assemblies,
+  expanded,
+  onToggle,
+  onEdit,
+  onOpenMenu,
+}: {
+  assemblies: SavedAssembly[];
+  expanded: Set<string>;
+  onToggle: (id: string) => void;
+  onEdit: (id: string) => void;
+  onOpenMenu: (id: string, x: number, y: number) => void;
+}) {
+  return (
+    <>
+      {assemblies.map((assembly) => {
+        const isOpen = expanded.has(assembly.id);
+        const componentIds = [
+          ...(assembly.blockToolId ? [assembly.blockToolId] : []),
+          ...assembly.slots.flatMap((slot) => slot.stack),
+        ];
+        return (
+          <Fragment key={assembly.id}>
+            <tr
+              className="tlb-table__row tlb-table__row--assembly"
+              onDoubleClick={() => {
+                onEdit(assembly.id);
+              }}
+              onContextMenu={(event) => {
+                event.preventDefault();
+                onOpenMenu(assembly.id, event.clientX, event.clientY);
+              }}
+            >
+              <td>
+                <span className="tlb-table__name">
+                  <button
+                    type="button"
+                    className="tlb-table__chevron"
+                    aria-label={isOpen ? "Collapse assembly" : "Expand assembly"}
+                    aria-expanded={isOpen}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      onToggle(assembly.id);
+                    }}
+                  >
+                    <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden>
+                      <path
+                        d={isOpen ? "M1 3 L5 7 L9 3" : "M3 1 L7 5 L3 9"}
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.4"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  </button>
+                  <span className="tlb-table__thumb" aria-hidden="true" />
+                  {assembly.name}
+                  <span className="tlb-table__edited" title="Saved this session">
+                    saved
+                  </span>
+                </span>
+              </td>
+              <td>Tool assembly</td>
+              <td>—</td>
+              <td>—</td>
+              <td>{`${componentIds.length} component${componentIds.length === 1 ? "" : "s"}`}</td>
+            </tr>
+            {isOpen &&
+              componentIds.map((id, index) => {
+                const record = toolById(id);
+                if (record === undefined) return null;
+                const station = stationNumber(record);
+                const frames = framesFor(record.geometryId);
+                return (
+                  <tr
+                    key={`${assembly.id}-${index}-${id}`}
+                    className="tlb-table__row tlb-table__row--child"
+                  >
+                    <td>
+                      <span
+                        className="tlb-table__name"
+                        style={{ paddingLeft: 28 }}
+                      >
+                        <span className="tlb-table__thumb" aria-hidden="true" />
+                        {displayName(record)}
+                      </span>
+                    </td>
+                    <td>{record.type}</td>
+                    <td>{overallLength(record)}</td>
+                    <td>{station !== null ? station : "—"}</td>
+                    <td>{jointSummary(frames)}</td>
+                  </tr>
+                );
+              })}
+          </Fragment>
+        );
+      })}
+    </>
   );
 }
 
@@ -219,20 +704,88 @@ export function ToolLibraryDialog({
   onCreateTool,
   picker = false,
   initialLibraryId,
+  initialToolId,
+  openEditor = false,
   pickKind,
   onPick,
+  onEditAssembly,
 }: ToolLibraryDialogProps) {
+  const initialTool = initialToolId === undefined ? undefined : toolById(initialToolId);
   const [search, setSearch] = useState("");
   const [selectedLibraryId, setSelectedLibraryId] = useState(
-    () => initialLibraryId ?? LIBRARIES[0]?.id ?? "",
+    () => initialTool?.libraryId ?? initialLibraryId ?? LIBRARIES[0]?.id ?? "",
   );
   const [selectedToolId, setSelectedToolId] = useState(
-    () => toolsForLibrary(initialLibraryId ?? LIBRARIES[0]?.id ?? "")[0]?.id ?? "",
+    () =>
+      initialTool?.id ??
+      toolsForLibrary(initialLibraryId ?? LIBRARIES[0]?.id ?? "")[0]?.id ??
+      "",
   );
   const [infoTab, setInfoTab] = useState<"filters" | "info">("info");
+  /**
+   * Filters live here rather than on the workflow, because they are the way the
+   * user prunes what a picker offers — outside picker mode they only limit
+   * what the browser lists, without changing the assembly.
+   */
+  const [filters, setFilters] = useState<Filters>(() => emptyFilters());
+  /** Brings the record the caller asked for into view when the list is long. */
+  const revealRef = useRef<HTMLTableRowElement | null>(null);
   const [showTurnedOff, setShowTurnedOff] = useState(true);
+  const [editing, setEditing] = useState(openEditor);
+  const [renamingId, setRenamingId] = useState<string | null>(null);
+  const [menu, setMenu] = useState<{ id: string; x: number; y: number } | null>(null);
+  /** Assemblies whose component list is expanded, keyed by id. */
+  const [expandedAssemblies, setExpandedAssemblies] = useState<Set<string>>(
+    () => new Set(),
+  );
+  /** Assembly the user right-clicked, for its own context menu. */
+  const [assemblyMenu, setAssemblyMenu] = useState<{
+    id: string;
+    x: number;
+    y: number;
+  } | null>(null);
+  const editRevision = useLibraryRevision();
 
-  const tools = useMemo(() => toolsForLibrary(selectedLibraryId), [selectedLibraryId]);
+  const tree = useMemo(() => buildLibraryTree(libraries()), [editRevision]);
+
+  const tools = useMemo(
+    () => toolsForLibrary(selectedLibraryId),
+    [selectedLibraryId, editRevision],
+  );
+
+  /** Saved assemblies stored under this library, if any. */
+  const assemblies = useMemo(
+    () => sessionAssembliesForLibrary(selectedLibraryId),
+    [selectedLibraryId, editRevision],
+  );
+
+  const filteredAssemblies = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    if (query === "") return assemblies;
+    return assemblies.filter((assembly) =>
+      assembly.name.toLowerCase().includes(query),
+    );
+  }, [assemblies, search]);
+
+  const toggleAssemblyExpanded = useCallback((id: string) => {
+    setExpandedAssemblies((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+
+  /** Types and vendors on offer for the filters panel, from the current library. */
+  const typesInLibrary = useMemo(
+    () => Array.from(new Set(tools.map((tool) => tool.type))).sort(),
+    [tools],
+  );
+  const vendorsInLibrary = useMemo(
+    () =>
+      Array.from(new Set(tools.map((tool) => tool.vendor).filter((v) => v !== ""))).sort(),
+    [tools],
+  );
 
   const filteredTools = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -240,17 +793,24 @@ export function ToolLibraryDialog({
       if (query !== "" && !displayName(tool).toLowerCase().includes(query)) {
         return false;
       }
+      if (filters.blockOnly && !isBlockType(tool.type)) return false;
+      if (filters.types.size > 0 && !filters.types.has(tool.type)) return false;
+      if (filters.vendors.size > 0 && !filters.vendors.has(tool.vendor)) return false;
       // In picker mode only offer items that can fill the chosen role.
       if (pickKind === "block") return isBlockType(tool.type);
       if (pickKind === "tool") return !isBlockType(tool.type);
       return true;
     });
-  }, [tools, search, pickKind]);
+  }, [tools, search, pickKind, filters]);
 
   const selectedTool = useMemo(
     () => tools.find((tool) => tool.id === selectedToolId) ?? filteredTools[0],
     [tools, selectedToolId, filteredTools],
   );
+
+  useEffect(() => {
+    revealRef.current?.scrollIntoView({ block: "center" });
+  }, []);
 
   if (!open) {
     return null;
@@ -322,13 +882,24 @@ export function ToolLibraryDialog({
               aria-label="Search libraries"
             />
             <nav className="tlb-tree">
-              {LIBRARY_TREE.map((node) => (
+              {tree.map((node) => (
                 <LibraryTreeBranch
                   key={node.id}
                   node={node}
                   depth={0}
                   selectedLibraryId={selectedLibraryId}
+                  renamingId={renamingId}
                   onSelectLibrary={handleLibrarySelect}
+                  onContextMenu={(id, x, y) => {
+                    setMenu({ id, x, y });
+                  }}
+                  onCommitRename={(id, name) => {
+                    renameLibrary(id, name);
+                    setRenamingId(null);
+                  }}
+                  onCancelRename={() => {
+                    setRenamingId(null);
+                  }}
                 />
               ))}
             </nav>
@@ -358,7 +929,12 @@ export function ToolLibraryDialog({
                       </svg>
                     </ToolbarIconBtn>
                   )}
-                  <ToolbarIconBtn label="Edit">
+                  <ToolbarIconBtn
+                    label="Edit"
+                    onClick={() => {
+                      if (selectedTool !== undefined) setEditing(true);
+                    }}
+                  >
                     <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden>
                       <path
                         fill="none"
@@ -392,7 +968,15 @@ export function ToolLibraryDialog({
                   </ToolbarIconBtn>
                 </div>
                 <span className="tlb-toolbar__spacer" />
-                <button type="button" className="tlb-toolbar__clear">
+                <button
+                  type="button"
+                  className="tlb-toolbar__clear"
+                  disabled={!hasActiveFilters(filters) && search === ""}
+                  onClick={() => {
+                    setFilters(emptyFilters());
+                    setSearch("");
+                  }}
+                >
                   Clear filters
                 </button>
               </div>
@@ -408,7 +992,20 @@ export function ToolLibraryDialog({
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredTools.length === 0 ? (
+                    {!picker && filteredAssemblies.length > 0 && (
+                      <AssemblyRows
+                        assemblies={filteredAssemblies}
+                        expanded={expandedAssemblies}
+                        onToggle={toggleAssemblyExpanded}
+                        onEdit={(id) => {
+                          onEditAssembly?.(id);
+                        }}
+                        onOpenMenu={(id, x, y) => {
+                          setAssemblyMenu({ id, x, y });
+                        }}
+                      />
+                    )}
+                    {filteredTools.length === 0 && filteredAssemblies.length === 0 ? (
                       <tr>
                         <td colSpan={5} style={{ color: "#9aa8b8", padding: "12px 8px" }}>
                           {pickKind === "block"
@@ -424,6 +1021,7 @@ export function ToolLibraryDialog({
                         return (
                           <tr
                             key={tool.id}
+                            ref={tool.id === initialToolId ? revealRef : undefined}
                             className={[
                               "tlb-table__row",
                               selectedTool?.id === tool.id ? "tlb-table__row--selected" : "",
@@ -436,12 +1034,18 @@ export function ToolLibraryDialog({
                             onDoubleClick={() => {
                               setSelectedToolId(tool.id);
                               if (picker) onPick?.(tool.id);
+                              else setEditing(true);
                             }}
                           >
                             <td>
                               <span className="tlb-table__name">
                                 <span className="tlb-table__thumb" aria-hidden="true" />
                                 {displayName(tool)}
+                                {isToolEdited(tool.id) && (
+                                  <span className="tlb-table__edited" title="Edited this session">
+                                    edited
+                                  </span>
+                                )}
                               </span>
                             </td>
                             <td>{tool.type}</td>
@@ -544,7 +1148,14 @@ export function ToolLibraryDialog({
             </div>
             <div className="tlb-info__body">
               {infoTab === "filters" ? (
-                <p style={{ color: "#9aa8b8", margin: 0 }}>Filter tools by type, vendor, or geometry (prototype).</p>
+                <FiltersPanel
+                  filters={filters}
+                  onChange={setFilters}
+                  types={typesInLibrary}
+                  vendors={vendorsInLibrary}
+                  resultCount={filteredTools.length}
+                  totalCount={tools.length}
+                />
               ) : selectedTool !== undefined ? (
                 <>
                   <p className="tlb-info__crumb">
@@ -552,7 +1163,20 @@ export function ToolLibraryDialog({
                   </p>
                   <h3 className="tlb-info__title">{displayName(selectedTool)}</h3>
                   <div className="tlb-info__preview">
-                    <ToolLibraryInsertPreview />
+                    {(() => {
+                      const mesh = meshPreviewFor(selectedTool);
+                      return mesh !== null ? (
+                        <ToolLibrarySolidPreview preview={mesh} />
+                      ) : (
+                        <ToolSilhouette
+                          record={selectedTool}
+                          className="tlb-info__art"
+                        />
+                      );
+                    })()}
+                    <span className="tlb-info__cube" aria-hidden="true">
+                      FRONT
+                    </span>
                   </div>
                   <dl className="tlb-info__props">
                     <InfoProp label="Type" value={selectedTool.type} />
@@ -628,6 +1252,67 @@ export function ToolLibraryDialog({
           )}
         </footer>
       </section>
+
+      {menu !== null && (
+        <LibraryContextMenu
+          x={menu.x}
+          y={menu.y}
+          renamed={isLibraryRenamed(menu.id)}
+          onRename={() => {
+            setRenamingId(menu.id);
+            setMenu(null);
+          }}
+          onReset={() => {
+            resetLibraryName(menu.id);
+            setMenu(null);
+          }}
+          onDelete={() => {
+            hideLibrary(menu.id);
+            // If the deleted library was the one on screen, hop to whichever
+            // library still has records, so the info pane never points at a
+            // library the tree can no longer reach.
+            if (menu.id === selectedLibraryId) {
+              const next = libraries().find((library) => library.id !== menu.id);
+              if (next !== undefined) setSelectedLibraryId(next.id);
+            }
+            setMenu(null);
+          }}
+          onClose={() => {
+            setMenu(null);
+          }}
+        />
+      )}
+
+      {assemblyMenu !== null && (
+        <AssemblyContextMenu
+          x={assemblyMenu.x}
+          y={assemblyMenu.y}
+          onEdit={() => {
+            onEditAssembly?.(assemblyMenu.id);
+            setAssemblyMenu(null);
+          }}
+          onDelete={() => {
+            removeSessionAssembly(assemblyMenu.id);
+            setAssemblyMenu(null);
+          }}
+          onClose={() => {
+            setAssemblyMenu(null);
+          }}
+        />
+      )}
+
+      {editing && selectedTool !== undefined && (
+        <ToolRecordEditor
+          record={selectedTool}
+          onClose={() => {
+            setEditing(false);
+            // Callers that opened the library only to edit — the assembly's
+            // "Edit in library" button, chiefly — expect to be handed back
+            // straight from the editor, without the library sitting in front.
+            if (openEditor) onClose();
+          }}
+        />
+      )}
     </div>
   );
 }

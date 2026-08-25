@@ -39,13 +39,22 @@ GEOMETRY_SUFFIX = ".3DTool"
 HEADER_READ_BYTES = 64 * 1024
 
 # Geometry keys worth carrying through for display, per real library schema.
+# assemblyGaugeLength / shoulder-length / SFDM come from the mill-drill libraries
+# and are what Fusion itself measures gauge length with; the turning tools stay
+# on the joint-frame chain but share the same key set.
 GEOMETRY_KEYS = (
     "OAL", "RE", "SC", "SCTY", "TC", "INSD", "S", "EPSR", "RA", "LH",
-    "DC", "LCF", "NOF", "TP", "SIG", "adaptiveItemSize",
-    "numberOfAttachmentPoints", "numberOfTools", "orientationType",
-    "machineSideConnectionType",
+    "DC", "LCF", "NOF", "TP", "SIG", "LB", "SFDM", "CSP", "HAND",
+    "assemblyGaugeLength", "shoulder-length", "shoulder-diameter",
+    "tip-diameter", "tip-length", "tip-offset",
+    "adaptiveItemSize", "numberOfAttachmentPoints", "numberOfTools",
+    "orientationType", "machineSideConnectionType",
 )
 HOLDER_KEYS = ("OAL", "CW", "H", "W", "LH", "HAND", "MTP", "THSC")
+
+# Root-level fields that belong to the record itself (not to `geometry`) which
+# extension-style holders and modern mill-drill records carry.
+RECORD_TOP_KEYS = ("gaugeLength", "product-link", "segments")
 
 
 def read_geometry_header(path: str) -> Optional[Dict[str, Any]]:
@@ -144,6 +153,7 @@ def convert_block(block: Any) -> Optional[Dict[str, Any]]:
 def convert_tool(entry: Dict[str, Any], library_id: str, index: int) -> Dict[str, Any]:
     post = entry.get("post-process") or {}
     geometry_3d = (entry.get("geometry") or {}).get("3DGeometry") or {}
+    segments = entry.get("segments") if isinstance(entry.get("segments"), list) else None
 
     return {
         "id": str(entry.get("guid") or f"{library_id}-{index}"),
@@ -152,11 +162,17 @@ def convert_tool(entry: Dict[str, Any], library_id: str, index: int) -> Dict[str
         "description": entry.get("description") or "",
         "vendor": entry.get("vendor") or "",
         "productId": str(entry.get("product-id") or ""),
+        "productLink": str(entry.get("product-link") or ""),
         "unit": entry.get("unit") or "millimeters",
         "geometry": pick(entry.get("geometry"), GEOMETRY_KEYS),
         "holder": pick(entry.get("holder"), HOLDER_KEYS) or None,
         "geometryId": geometry_id_of(entry),
         "stepFileName": geometry_3d.get("fileName"),
+        # Extension-style holders describe themselves as a stack of frusta rather
+        # than through the cutter-holder split, so segments come off the record
+        # rather than out of `geometry`.
+        "segments": segments,
+        "gaugeLength": entry.get("gaugeLength"),
         "postProcess": {
             "number": post.get("number"),
             "turret": post.get("turret"),

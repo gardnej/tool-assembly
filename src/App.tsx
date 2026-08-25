@@ -33,17 +33,40 @@ export default function App() {
     typeof window !== "undefined" &&
     new URLSearchParams(window.location.search).get("assembly") === "1",
   );
+  /**
+   * Assembly id passed to the workflow when the user picks Edit on a saved
+   * assembly in the library dialog. Cleared once the dialog consumes it so a
+   * fresh open goes back to a blank workflow.
+   */
+  const [editAssemblyId, setEditAssemblyId] = useState<string | null>(null);
 
   const handleRibbonWorkspaceChange = useCallback((w: RibbonWorkspaceId) => {
     setRibbonWorkspace(w);
     setRibbonTab(defaultTabForWorkspace(w));
   }, []);
 
-  const openToolLibrary = useCallback(() => {
-    setRibbonWorkspace("manufacturing");
-    setRibbonTab("mfg_utilities");
-    setToolLibraryOpen(true);
-  }, []);
+  /**
+   * Ribbon commands the prototype answers, keyed by Fusion's own command id.
+   * The tool assembly dialog lives under Manage ▸ Solid Holder in the product,
+   * so that is where it opens from here too.
+   */
+  const runRibbonCommand = useCallback(
+    (commandId: string) => {
+      switch (commandId) {
+        case "IronToolLibrary":
+          setToolLibraryOpen(true);
+          break;
+        case "IronToolAssembly":
+        case "IronToolBlock":
+        case "IronTurningToolHolder":
+          setToolHolderOpen(true);
+          break;
+        default:
+          break;
+      }
+    },
+    [],
+  );
 
   const closeToolLibrary = useCallback(() => {
     setToolLibraryOpen(false);
@@ -68,6 +91,13 @@ export default function App() {
 
   const closeToolHolder = useCallback(() => {
     setToolHolderOpen(false);
+    setEditAssemblyId(null);
+  }, []);
+
+  const openAssemblyEditor = useCallback((assemblyId: string) => {
+    setEditAssemblyId(assemblyId);
+    setToolLibraryOpen(false);
+    setToolHolderOpen(true);
   }, []);
 
   const viewportEmphasis = useMemo(
@@ -86,7 +116,7 @@ export default function App() {
             activeTab={ribbonTab}
             onWorkspaceChange={handleRibbonWorkspaceChange}
             onTabChange={setRibbonTab}
-            onOpenToolLibrary={openToolLibrary}
+            onCommand={runRibbonCommand}
           />
         </header>
         <div className="app-shell__body">
@@ -113,6 +143,7 @@ export default function App() {
         open={toolLibraryOpen}
         onClose={closeToolLibrary}
         onCreateTool={openNewToolPicker}
+        onEditAssembly={openAssemblyEditor}
       />
 
       <NewToolDialog
@@ -121,7 +152,11 @@ export default function App() {
         onSelectToolType={handleNewToolTypeSelect}
       />
 
-      <ToolHolderDialog open={toolHolderOpen} onClose={closeToolHolder} />
+      <ToolHolderDialog
+        open={toolHolderOpen}
+        onClose={closeToolHolder}
+        editAssemblyId={editAssemblyId}
+      />
     </>
   );
 }

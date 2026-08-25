@@ -6,12 +6,15 @@ import {
   TOOLS,
   assemblies,
   chainFor,
+  adaptiveItems,
   cuttingTools,
   displayName,
   hasCompleteFrames,
+  isAdaptiveType,
   isBlockType,
   isHalfIndex,
   isTurningType,
+  libraryById,
   measuredStackUpMm,
   missingFrameLabel,
   solidSpanMm,
@@ -20,6 +23,13 @@ import {
   toolById,
   toolsForLibrary,
 } from "../src/data/realLibrary";
+import {
+  clearLibraryRenames,
+  clearToolEdits,
+  renameLibrary,
+  saveToolEdit,
+  toolEditDraft,
+} from "../src/data/libraryEdits";
 import { closeTo } from "./helpers";
 
 describe("snapshot shape", () => {
@@ -57,7 +67,23 @@ describe("type predicates", () => {
   });
 
   it("partitions the snapshot with no overlap", () => {
-    assert.equal(toolBlocks().length + cuttingTools().length, TOOLS.length);
+    // Three kinds now, not two: adaptive items are neither blocks nor cutters.
+    const adaptive =
+      adaptiveItems("extension").length + adaptiveItems("collet").length;
+    assert.equal(
+      toolBlocks().length + cuttingTools().length + adaptive,
+      TOOLS.length,
+    );
+  });
+
+  it("keeps adaptive items out of the cutting tools", () => {
+    // A record is adaptive either by its type ("extension"/"collet") or by
+    // being a mill-drill holder recorded as a stack of segments; either way it
+    // is not a cutter and not a block.
+    for (const item of [...adaptiveItems("extension"), ...adaptiveItems("collet")]) {
+      assert.equal(isBlockType(item.type), false);
+      assert.ok(!cuttingTools().some((tool) => tool.id === item.id));
+    }
   });
 });
 
@@ -97,8 +123,15 @@ describe("existing assemblies in the real data", () => {
   });
 
   it("measures the EWS block span from its stored frames", () => {
+    // Anchored to the ToolsandBlocks EWS record, which is the one the 101.828
+    // measurement comes from. More than one library now ships a block with
+    // stored frames, so a plain `.find()` would race between them.
     const block = TOOLS.find(
-      (tool) => tool.type === BLOCK_TYPE && tool.geometryId !== null,
+      (tool) =>
+        tool.type === BLOCK_TYPE &&
+        tool.geometryId !== null &&
+        tool.libraryId === "toolsand-blocks-toolsandblocks" &&
+        tool.description === "",
     );
     assert.ok(block !== undefined);
     closeTo(solidSpanMm(block.geometryId) ?? 0, 101.828, 3);
@@ -152,5 +185,57 @@ describe("naming", () => {
     const first = TOOLS[0];
     assert.equal(toolById(first.id)?.id, first.id);
     assert.equal(toolById("no-such-tool"), undefined);
+  });
+});
+
+describe("session edits", () => {
+  it("reads a record back with the editor's changes, and reverts them", () => {
+    const record = TOOLS[0];
+    const draft = toolEditDraft(record);
+
+    saveToolEdit(record.id, {
+      ...draft,
+      description: "Renamed in session",
+      postProcess: { ...draft.postProcess, stationNumber: 7 },
+    });
+
+    const edited = toolById(record.id);
+    assert.equal(edited?.description, "Renamed in session");
+    assert.equal(displayName(edited!), "Renamed in session");
+    assert.equal(stationNumber(edited!), 7);
+    // The snapshot itself stays as exported.
+    assert.notEqual(TOOLS[0].description, "Renamed in session");
+
+    clearToolEdits();
+    assert.equal(toolById(record.id)?.description, record.description);
+  });
+
+  it("leaves a record it has no edit for alone", () => {
+    const record = TOOLS[1];
+    assert.equal(toolById(record.id)?.description, record.description);
+  });
+
+  it("renames a library, and its breadcrumb with it", () => {
+    const library = LIBRARIES[0];
+    const trail = library.breadcrumb.split(" > ").slice(0, -1).join(" > ");
+
+    renameLibrary(library.id, "Cell 3 turning");
+
+    assert.equal(libraryById(library.id)?.name, "Cell 3 turning");
+    assert.equal(
+      libraryById(library.id)?.breadcrumb,
+      `${trail} > Cell 3 turning`,
+    );
+    // The snapshot itself stays as exported.
+    assert.notEqual(LIBRARIES[0].name, "Cell 3 turning");
+
+    clearLibraryRenames();
+    assert.equal(libraryById(library.id)?.name, library.name);
+  });
+
+  it("ignores a rename that is only whitespace", () => {
+    const library = LIBRARIES[0];
+    renameLibrary(library.id, "   ");
+    assert.equal(libraryById(library.id)?.name, library.name);
   });
 });

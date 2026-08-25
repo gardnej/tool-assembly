@@ -11,9 +11,21 @@
 
 import snapshot from "./realLibrarySnapshot.json";
 import {
+  applyLibraryRename,
+  applyToolEdit,
+  isLibraryHidden,
+  sessionLibraries,
+  sessionTools,
+} from "./libraryEdits";
+import { PREVIEW_LIBRARY, PREVIEW_TOOLS } from "./previewGeometry";
+import {
   assemblyLength,
+  chainPlacements,
+  multiply,
+  originOf,
   type JointPair,
   type Matrix,
+  type Vector,
 } from "./joints";
 
 export interface LibraryRef {
@@ -25,6 +37,15 @@ export interface LibraryRef {
   toolCount: number;
   blockCount: number;
   assemblyCount: number;
+  /**
+   * Which User Libraries parent the library sits under.
+   *
+   * Real libraries exported from Fusion always sit under ``local``; session
+   * libraries created by the app itself (saved assemblies, for one) can
+   * declare a different parent so the tree groups them alongside Fusion's
+   * own ``Documents`` and ``Cloud`` roots.
+   */
+  parent?: "local" | "documents" | "cloud";
 }
 
 export interface BlockPostProcess {
@@ -60,6 +81,13 @@ export interface ToolPostProcess {
   halfIndex: boolean | null;
 }
 
+/** One frustum of an adaptive item, machine-side first. Heights are millimetres. */
+export interface HolderSegment {
+  height: number;
+  "lower-diameter": number;
+  "upper-diameter": number;
+}
+
 export interface LibraryToolRecord {
   id: string;
   libraryId: string;
@@ -67,11 +95,19 @@ export interface LibraryToolRecord {
   description: string;
   vendor: string;
   productId: string;
+  productLink: string;
   unit: string;
   geometry: Record<string, number | string | boolean>;
   holder: Record<string, number | string | boolean> | null;
   geometryId: string | null;
   stepFileName: string | null;
+  /**
+   * Frusta describing an adaptive item's profile. Empty for cutting tools and
+   * standalone holders, since those are described by their `geometry` fields.
+   */
+  segments: HolderSegment[] | null;
+  /** Fusion's own gauge length for an adaptive item, in millimetres. */
+  gaugeLength: number | null;
   postProcess: ToolPostProcess;
   block: NestedBlock | null;
 }
@@ -95,11 +131,91 @@ interface Snapshot {
 const DATA = snapshot as unknown as Snapshot;
 
 export const SNAPSHOT_GENERATED_AT = DATA.generatedAt;
-export const LIBRARIES: LibraryRef[] = DATA.libraries;
-export const TOOLS: LibraryToolRecord[] = DATA.tools;
+
+// Prototype-only records come last so anything scanning for real data still
+// meets the snapshot's own items first. See `previewGeometry.ts`.
+/** The libraries as exported. Read them through `libraries()` to see renames. */
+export const LIBRARIES: LibraryRef[] = [...DATA.libraries, PREVIEW_LIBRARY];
+/** The records as exported. Read them through `libraryTools()` to see edits. */
+export const TOOLS: LibraryToolRecord[] = [...DATA.tools, ...PREVIEW_TOOLS];
 export const JOINT_FRAMES: Record<string, StoredJointFrames> = DATA.jointFrames;
 
+/** Every record, with whatever the tool editor changed this session applied. */
+export function libraryTools(): LibraryToolRecord[] {
+  return [...TOOLS, ...sessionTools()]
+    .filter((tool) => !isLibraryHidden(tool.libraryId))
+    .map(applyToolEdit);
+}
+
+/** Every library, under whatever it was renamed to this session. */
+export function libraries(): LibraryRef[] {
+  return [...LIBRARIES, ...sessionLibraries()]
+    .filter((library) => !isLibraryHidden(library.id))
+    .map(applyLibraryRename);
+}
+
 export const BLOCK_TYPE = "tool block";
+
+/**
+ * Adaptive items: components that adapt a position to a tool rather than cut.
+ *
+ * An extension mounts in a position on the block and packs it out; a collet sits
+ * in the extension and grips the tool. Neither removes material, which is why
+ * they are listed apart from the cutting tools.
+ */
+export const ADAPTIVE_TYPES: Record<"extension" | "collet", string> = {
+  extension: "extension",
+  collet: "collet",
+};
+
+/**
+ * Whether a record plays an adaptive role in a position.
+ *
+ * Fusion tags a modern mill-drill extension or collet as ``type: "holder"``
+ * with a ``segments`` array, not as ``type: "extension"``/``"collet"``, so
+ * anything with segments is treated as adaptive as well. Turning holders never
+ * carry segments — their profile is on their nested ``holder`` object — so
+ * they still fall through to the cutting-tool side.
+ */
+export function isAdaptiveType(type: string): boolean {
+  return type === ADAPTIVE_TYPES.extension || type === ADAPTIVE_TYPES.collet;
+}
+
+export function isAdaptiveRecord(record: LibraryToolRecord): boolean {
+  if (isAdaptiveType(record.type)) return true;
+  return record.type === "holder" && Array.isArray(record.segments);
+}
+
+/**
+ * Whether an adaptive record acts as a collet — the part inside an extension
+ * that grips the tool — rather than as the extension itself.
+ *
+ * Fusion does not tag it explicitly, but the description always names it,
+ * because the same solid can be sold as both roles and the record makes the
+ * choice.
+ */
+export function isColletRecord(record: LibraryToolRecord): boolean {
+  if (record.type === ADAPTIVE_TYPES.collet) return true;
+  return record.type === "holder" && /collet/i.test(record.description);
+}
+
+/**
+ * Gauge length Fusion has already computed for this record.
+ *
+ * Milling and drilling records carry an ``assemblyGaugeLength`` on their
+ * geometry that is what Fusion itself shows in its Manufacture tab; extension-
+ * style holders carry a top-level ``gaugeLength`` for their own reach. Where
+ * both are absent this reader returns null and callers fall back to measuring
+ * through the joint chain.
+ */
+export function storedGaugeLengthMm(record: LibraryToolRecord): number | null {
+  const geo = record.geometry as Record<string, number | string | boolean>;
+  const assembly = geo["assemblyGaugeLength"];
+  if (typeof assembly === "number" && Number.isFinite(assembly)) return assembly;
+  const own = record.gaugeLength;
+  if (typeof own === "number" && Number.isFinite(own)) return own;
+  return null;
+}
 
 /** Turning types carry a holder that takes part in the joint chain. */
 const TURNING_TYPES = new Set([
@@ -120,33 +236,107 @@ export function isTurningType(type: string): boolean {
 }
 
 export function libraryById(id: string): LibraryRef | undefined {
-  return LIBRARIES.find((library) => library.id === id);
+  const library = LIBRARIES.find((entry) => entry.id === id);
+  return library === undefined ? undefined : applyLibraryRename(library);
 }
 
 export function toolsForLibrary(libraryId: string): LibraryToolRecord[] {
-  return TOOLS.filter((tool) => tool.libraryId === libraryId);
+  return libraryTools().filter((tool) => tool.libraryId === libraryId);
 }
 
 export function toolById(id: string): LibraryToolRecord | undefined {
-  return TOOLS.find((tool) => tool.id === id);
+  const record = TOOLS.find((tool) => tool.id === id);
+  return record === undefined ? undefined : applyToolEdit(record);
 }
 
 /** Standalone tool block items, usable as the machine-side root. */
 export function toolBlocks(libraryId?: string): LibraryToolRecord[] {
-  const pool = libraryId === undefined ? TOOLS : toolsForLibrary(libraryId);
+  const pool = libraryId === undefined ? libraryTools() : toolsForLibrary(libraryId);
   return pool.filter((tool) => isBlockType(tool.type));
 }
 
-/** Cutting tools, i.e. everything that is not itself a block. */
+/** Cutting tools: everything that is neither a block nor an adaptive item. */
 export function cuttingTools(libraryId?: string): LibraryToolRecord[] {
-  const pool = libraryId === undefined ? TOOLS : toolsForLibrary(libraryId);
-  return pool.filter((tool) => !isBlockType(tool.type));
+  const pool = libraryId === undefined ? libraryTools() : toolsForLibrary(libraryId);
+  return pool.filter((tool) => !isBlockType(tool.type) && !isAdaptiveRecord(tool));
+}
+
+/** Adaptive items of one kind, for the level of a position that takes them. */
+export function adaptiveItems(
+  kind: "extension" | "collet",
+  libraryId?: string,
+): LibraryToolRecord[] {
+  const pool = libraryId === undefined ? libraryTools() : toolsForLibrary(libraryId);
+  return pool.filter((tool) => {
+    if (!isAdaptiveRecord(tool)) return false;
+    return kind === "collet" ? isColletRecord(tool) : !isColletRecord(tool);
+  });
 }
 
 /** Tools that already carry a nested tool block, i.e. existing assemblies. */
 export function assemblies(libraryId?: string): LibraryToolRecord[] {
-  const pool = libraryId === undefined ? TOOLS : toolsForLibrary(libraryId);
+  const pool = libraryId === undefined ? libraryTools() : toolsForLibrary(libraryId);
   return pool.filter((tool) => tool.block !== null);
+}
+
+/** A parent tool block implied by the tools that carry a copy of it. */
+export interface DerivedBlock {
+  /** Grouping key, normally the block guid Fusion stores in every copy. */
+  key: string;
+  block: NestedBlock;
+  /** Positions of the occupants that imply this block, in first-use order. */
+  occupants: number[];
+}
+
+function blockKey(block: NestedBlock, fallback: string): string {
+  if (block.guid.trim() !== "") return block.guid;
+  if (block.description.trim() !== "") return block.description;
+  return fallback;
+}
+
+/**
+ * The parent tool blocks a set of occupants implies, grouped by block guid.
+ *
+ * Fusion has no record that says a block holds these tools — each tool holds a
+ * copy of the block instead — so the parent row has to be read back out of the
+ * occupants. More than one entry means the occupants disagree about which block
+ * they sit in, which is a conflict rather than a two-block assembly.
+ */
+export function derivedBlocks(
+  occupants: (LibraryToolRecord | null | undefined)[],
+): DerivedBlock[] {
+  const list: DerivedBlock[] = [];
+  const byKey = new Map<string, DerivedBlock>();
+
+  occupants.forEach((tool, index) => {
+    const block = tool?.block;
+    if (block == null) return;
+
+    const key = blockKey(block, `row-${index}`);
+    let entry = byKey.get(key);
+    if (entry === undefined) {
+      entry = { key, block, occupants: [] };
+      byKey.set(key, entry);
+      list.push(entry);
+    } else if (
+      entry.block.description.trim() === "" &&
+      block.description.trim() !== ""
+    ) {
+      // Copies of one block do not always agree about their description in real
+      // data, so the named copy represents the group and reordering rows cannot
+      // rename the parent.
+      entry.block = block;
+    }
+    entry.occupants.push(index);
+  });
+
+  return list;
+}
+
+/** Seats a block declares it can hold, from its own `numberOfTools` field. */
+export function blockCapacity(block: NestedBlock): number | null {
+  const value = block.geometry.numberOfTools;
+  return typeof value === "number" ? value : null;
 }
 
 /**
@@ -199,11 +389,14 @@ export interface ChainComponent {
  * The assembly chain for a cutting tool: its nested block, then the tool itself.
  *
  * A block may also be supplied separately, for a chain being assembled in the UI
- * before it has been written back to the tool.
+ * before it has been written back to the tool. Adaptive items sit between the
+ * two, in the order they are mounted, since a tool reaches the block through
+ * them and the stack-up has to be measured the same way.
  */
 export function chainFor(
   tool: LibraryToolRecord,
   blockOverride?: LibraryToolRecord | null,
+  adaptive: LibraryToolRecord[] = [],
 ): ChainComponent[] {
   const components: ChainComponent[] = [];
 
@@ -226,6 +419,16 @@ export function chainFor(
     });
   }
 
+  for (const item of adaptive) {
+    components.push({
+      role: "holder",
+      name: displayName(item),
+      geometryId: item.geometryId,
+      frames: framesFor(item.geometryId),
+      spanMm: solidSpanMm(item.geometryId),
+    });
+  }
+
   components.push({
     role: "holder",
     name: displayName(tool),
@@ -235,6 +438,22 @@ export function chainFor(
   });
 
   return components;
+}
+
+/**
+ * The chain for one position of a block: the block, then the stack mounted in
+ * it, machine side first.
+ *
+ * The stack is however much of the extension, collet and tool has been chosen so
+ * far, so a half-built position still measures as far as it goes.
+ */
+export function stackChain(
+  stack: LibraryToolRecord[],
+  blockOverride?: LibraryToolRecord | null,
+): ChainComponent[] {
+  if (stack.length === 0) return [];
+  const last = stack[stack.length - 1];
+  return chainFor(last, blockOverride, stack.slice(0, -1));
 }
 
 /**
@@ -255,6 +474,56 @@ export function measuredStackUpMm(components: ChainComponent[]): number | null {
   }
 
   return assemblyLength(chain);
+}
+
+/**
+ * Gauge length for each component: how far it reaches past the tool block's
+ * face, in millimetres, positionally matching `components`.
+ *
+ * The block is what everything else mounts on rather than something that sticks
+ * out of it, so it has no gauge length of its own. A frame gap anywhere makes
+ * the whole chain unplaceable, so every entry comes back null together.
+ */
+export function gaugeLengthsMm(
+  components: ChainComponent[],
+): (number | null)[] {
+  const pairs: JointPair[] = [];
+  for (const component of components) {
+    const pair = component.frames === undefined ? null : jointPair(component.frames);
+    if (pair === null) return components.map(() => null);
+    pairs.push(pair);
+  }
+
+  const placements = chainPlacements(pairs);
+  const blockIndex = components.findIndex((component) => component.role === "block");
+
+  // Without a block the turret face is the only datum available.
+  const datum: Vector =
+    blockIndex === -1
+      ? [0, 0, 0]
+      : originOf(multiply(placements[blockIndex], pairs[blockIndex][1]));
+
+  return components.map((_, index) => {
+    if (index <= blockIndex) return null;
+    const tip = originOf(multiply(placements[index], pairs[index][1]));
+    return Math.hypot(tip[0] - datum[0], tip[1] - datum[1], tip[2] - datum[2]);
+  });
+}
+
+/**
+ * Gauge length of one occupant of a block, in millimetres.
+ *
+ * Each occupant is measured through its own chain — the block, then the tool —
+ * because a block seats every one of its tools against the same cutting face.
+ */
+export function occupantGaugeLengthMm(
+  tool: LibraryToolRecord,
+  blockOverride?: LibraryToolRecord | null,
+): number | null {
+  const components = chainFor(tool, blockOverride);
+  const index = components.findIndex((component) => component.role === "holder");
+  if (index === -1) return null;
+  return gaugeLengthsMm(components)[index];
 }
 
 /** Which joint frame a component is missing, for reporting gaps. */
