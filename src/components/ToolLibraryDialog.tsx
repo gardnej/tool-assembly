@@ -64,6 +64,11 @@ interface ToolLibraryDialogProps {
    * pre-loaded for editing.
    */
   onEditAssembly?: (assemblyId: string) => void;
+  /**
+   * Opens on this saved assembly, in the library that holds it. Used when a
+   * fresh save wants to land the user on the assembly it just wrote.
+   */
+  initialAssemblyId?: string;
 }
 
 interface LibraryTreeNode {
@@ -82,34 +87,42 @@ function buildLibraryTree(refs: LibraryRef[]): LibraryTreeNode[] {
   const localRefs = refs.filter((library) => (library.parent ?? "local") === "local");
   const documentsRefs = refs.filter((library) => library.parent === "documents");
   const cloudRefs = refs.filter((library) => library.parent === "cloud");
+  const hubRefs = refs.filter((library) => library.parent === "hub");
 
-  const rootLibraries = localRefs.filter((library) => library.folder === null);
-  const folders = new Map<string, LibraryRef[]>();
-
-  for (const library of localRefs) {
-    if (library.folder === null) continue;
-    const existing = folders.get(library.folder) ?? [];
-    folders.set(library.folder, [...existing, library]);
-  }
-
-  const localChildren: LibraryTreeNode[] = [
-    ...[...folders.entries()].map(([folder, contents]) => ({
-      id: `folder-${folder}`,
-      label: folder,
-      selectable: false,
-      defaultExpanded: true,
-      children: contents.map((library) => ({
+  /**
+   * Group libraries by their ``folder`` field, keeping folder-less ones apart
+   * so the caller can list them at the root of the category.
+   */
+  const groupByFolder = (list: LibraryRef[], keyPrefix: string): LibraryTreeNode[] => {
+    const rootMembers = list.filter((library) => library.folder === null);
+    const folders = new Map<string, LibraryRef[]>();
+    for (const library of list) {
+      if (library.folder === null) continue;
+      const existing = folders.get(library.folder) ?? [];
+      folders.set(library.folder, [...existing, library]);
+    }
+    return [
+      ...[...folders.entries()].map(([folder, contents]) => ({
+        id: `${keyPrefix}-folder-${folder}`,
+        label: folder,
+        selectable: false,
+        defaultExpanded: true,
+        children: contents.map((library) => ({
+          id: library.id,
+          label: library.name,
+          selectable: true,
+        })),
+      })),
+      ...rootMembers.map((library) => ({
         id: library.id,
         label: library.name,
         selectable: true,
       })),
-    })),
-    ...rootLibraries.map((library) => ({
-      id: library.id,
-      label: library.name,
-      selectable: true,
-    })),
-  ];
+    ];
+  };
+
+  const localChildren: LibraryTreeNode[] = groupByFolder(localRefs, "local");
+  const hubChildren: LibraryTreeNode[] = groupByFolder(hubRefs, "hub");
 
   const asLeaves = (list: LibraryRef[]): LibraryTreeNode[] =>
     list.map((library) => ({ id: library.id, label: library.name, selectable: true }));
@@ -134,6 +147,13 @@ function buildLibraryTree(refs: LibraryRef[]): LibraryTreeNode[] {
           selectable: false,
           defaultExpanded: cloudRefs.length > 0,
           children: asLeaves(cloudRefs),
+        },
+        {
+          id: "hub",
+          label: "Hub",
+          selectable: false,
+          defaultExpanded: true,
+          children: hubChildren,
         },
         {
           id: "local",
@@ -599,13 +619,21 @@ function AssemblyContextMenu({
 function AssemblyRows({
   assemblies,
   expanded,
+  selectedAssemblyId,
+  selectedToolId,
   onToggle,
+  onSelectAssembly,
+  onSelectComponent,
   onEdit,
   onOpenMenu,
 }: {
   assemblies: SavedAssembly[];
   expanded: Set<string>;
+  selectedAssemblyId: string | null;
+  selectedToolId: string;
   onToggle: (id: string) => void;
+  onSelectAssembly: (id: string) => void;
+  onSelectComponent: (toolId: string) => void;
   onEdit: (id: string) => void;
   onOpenMenu: (id: string, x: number, y: number) => void;
 }) {
@@ -620,7 +648,16 @@ function AssemblyRows({
         return (
           <Fragment key={assembly.id}>
             <tr
-              className="tlb-table__row tlb-table__row--assembly"
+              className={[
+                "tlb-table__row",
+                "tlb-table__row--assembly",
+                selectedAssemblyId === assembly.id ? "tlb-table__row--selected" : "",
+              ]
+                .filter(Boolean)
+                .join(" ")}
+              onClick={() => {
+                onSelectAssembly(assembly.id);
+              }}
               onDoubleClick={() => {
                 onEdit(assembly.id);
               }}
@@ -673,7 +710,16 @@ function AssemblyRows({
                 return (
                   <tr
                     key={`${assembly.id}-${index}-${id}`}
-                    className="tlb-table__row tlb-table__row--child"
+                    className={[
+                      "tlb-table__row",
+                      "tlb-table__row--child",
+                      selectedToolId === id ? "tlb-table__row--selected" : "",
+                    ]
+                      .filter(Boolean)
+                      .join(" ")}
+                    onClick={() => {
+                      onSelectComponent(id);
+                    }}
                   >
                     <td>
                       <span
@@ -698,6 +744,103 @@ function AssemblyRows({
   );
 }
 
+/**
+ * Info-panel view for a saved assembly.
+ *
+ * Shows a block preview plus a per-position component list so the panel reads
+ * as an assembled tool rather than a single record. Clicking a component in
+ * the list drills into that component's own record view — the ordinary
+ * ``selectedTool`` pane — mirroring how the accordion works in the table.
+ */
+function AssemblyInfo({
+  assembly,
+  breadcrumb,
+  onSelectComponent,
+}: {
+  assembly: SavedAssembly;
+  breadcrumb: string;
+  onSelectComponent: (toolId: string) => void;
+}) {
+  const blockRecord =
+    assembly.blockToolId === null
+      ? null
+      : toolById(assembly.blockToolId) ?? null;
+  const blockMesh = blockRecord === null ? null : meshPreviewFor(blockRecord);
+  const totalComponents =
+    (blockRecord === null ? 0 : 1) +
+    assembly.slots.reduce((sum, slot) => sum + slot.stack.length, 0);
+
+  return (
+    <>
+      <p className="tlb-info__crumb">{breadcrumb}</p>
+      <h3 className="tlb-info__title">{assembly.name}</h3>
+      <div className="tlb-info__preview">
+        {blockMesh !== null && blockRecord !== null ? (
+          <ToolLibrarySolidPreview preview={blockMesh} />
+        ) : blockRecord !== null ? (
+          <ToolSilhouette record={blockRecord} className="tlb-info__art" />
+        ) : (
+          <div className="tlb-info__art tlb-info__art--empty">No block</div>
+        )}
+        <span className="tlb-info__cube" aria-hidden="true">
+          FRONT
+        </span>
+      </div>
+      <dl className="tlb-info__props">
+        <InfoProp label="Type" value="Tool assembly" />
+        <InfoProp
+          label="Block"
+          value={blockRecord === null ? "—" : displayName(blockRecord)}
+        />
+        <InfoProp label="Vendor" value={assembly.vendor === "" ? "—" : assembly.vendor} />
+        <InfoProp
+          label="Product ID"
+          value={assembly.productId === "" ? "—" : assembly.productId}
+        />
+        <InfoProp label="Positions" value={String(assembly.slots.length)} />
+        <InfoProp label="Total components" value={String(totalComponents)} />
+      </dl>
+
+      <div className="tlb-info__section-title">Components</div>
+      <ul className="tlb-info__components">
+        {blockRecord !== null && (
+          <li>
+            <button
+              type="button"
+              className="tlb-info__component"
+              onClick={() => onSelectComponent(blockRecord.id)}
+            >
+              <span className="tlb-info__component-label">Block</span>
+              <span className="tlb-info__component-name">{displayName(blockRecord)}</span>
+            </button>
+          </li>
+        )}
+        {assembly.slots.map((slot, slotIndex) =>
+          slot.stack.map((toolId, depth) => {
+            const record = toolById(toolId);
+            if (record === undefined) return null;
+            return (
+              <li key={`${slotIndex}-${depth}-${toolId}`}>
+                <button
+                  type="button"
+                  className="tlb-info__component"
+                  onClick={() => onSelectComponent(toolId)}
+                >
+                  <span className="tlb-info__component-label">
+                    Position {slot.stationNumber ?? slotIndex + 1}
+                    {slot.stack.length > 1 ? ` · Layer ${depth + 1}` : ""}
+                  </span>
+                  <span className="tlb-info__component-name">{displayName(record)}</span>
+                </button>
+              </li>
+            );
+          }),
+        )}
+      </ul>
+    </>
+  );
+}
+
 export function ToolLibraryDialog({
   open,
   onClose,
@@ -709,6 +852,7 @@ export function ToolLibraryDialog({
   pickKind,
   onPick,
   onEditAssembly,
+  initialAssemblyId,
 }: ToolLibraryDialogProps) {
   const initialTool = initialToolId === undefined ? undefined : toolById(initialToolId);
   const [search, setSearch] = useState("");
@@ -736,7 +880,11 @@ export function ToolLibraryDialog({
   const [menu, setMenu] = useState<{ id: string; x: number; y: number } | null>(null);
   /** Assemblies whose component list is expanded, keyed by id. */
   const [expandedAssemblies, setExpandedAssemblies] = useState<Set<string>>(
-    () => new Set(),
+    () => (initialAssemblyId ? new Set([initialAssemblyId]) : new Set()),
+  );
+  /** Saved assembly the user picked in the list, if any. */
+  const [selectedAssemblyId, setSelectedAssemblyId] = useState<string | null>(
+    initialAssemblyId ?? null,
   );
   /** Assembly the user right-clicked, for its own context menu. */
   const [assemblyMenu, setAssemblyMenu] = useState<{
@@ -766,6 +914,14 @@ export function ToolLibraryDialog({
       assembly.name.toLowerCase().includes(query),
     );
   }, [assemblies, search]);
+
+  const selectedAssembly = useMemo(
+    () =>
+      selectedAssemblyId === null
+        ? undefined
+        : assemblies.find((assembly) => assembly.id === selectedAssemblyId),
+    [assemblies, selectedAssemblyId],
+  );
 
   const toggleAssemblyExpanded = useCallback((id: string) => {
     setExpandedAssemblies((prev) => {
@@ -804,7 +960,13 @@ export function ToolLibraryDialog({
   }, [tools, search, pickKind, filters]);
 
   const selectedTool = useMemo(
-    () => tools.find((tool) => tool.id === selectedToolId) ?? filteredTools[0],
+    () =>
+      tools.find((tool) => tool.id === selectedToolId) ??
+      // Drilling into a saved-assembly component reaches records that live in
+      // other libraries than the one selected in the tree — fall back to the
+      // global accessor so the info pane can still preview those tools.
+      toolById(selectedToolId) ??
+      filteredTools[0],
     [tools, selectedToolId, filteredTools],
   );
 
@@ -825,6 +987,7 @@ export function ToolLibraryDialog({
   const handleLibrarySelect = (libraryId: string) => {
     setSelectedLibraryId(libraryId);
     setSelectedToolId(toolsForLibrary(libraryId)[0]?.id ?? "");
+    setSelectedAssemblyId(null);
   };
 
   const wrongKind =
@@ -996,7 +1159,16 @@ export function ToolLibraryDialog({
                       <AssemblyRows
                         assemblies={filteredAssemblies}
                         expanded={expandedAssemblies}
+                        selectedAssemblyId={selectedAssemblyId}
+                        selectedToolId={selectedToolId}
                         onToggle={toggleAssemblyExpanded}
+                        onSelectAssembly={(id) => {
+                          setSelectedAssemblyId(id);
+                        }}
+                        onSelectComponent={(toolId) => {
+                          setSelectedAssemblyId(null);
+                          setSelectedToolId(toolId);
+                        }}
                         onEdit={(id) => {
                           onEditAssembly?.(id);
                         }}
@@ -1030,9 +1202,11 @@ export function ToolLibraryDialog({
                               .join(" ")}
                             onClick={() => {
                               setSelectedToolId(tool.id);
+                              setSelectedAssemblyId(null);
                             }}
                             onDoubleClick={() => {
                               setSelectedToolId(tool.id);
+                              setSelectedAssemblyId(null);
                               if (picker) onPick?.(tool.id);
                               else setEditing(true);
                             }}
@@ -1155,6 +1329,15 @@ export function ToolLibraryDialog({
                   vendors={vendorsInLibrary}
                   resultCount={filteredTools.length}
                   totalCount={tools.length}
+                />
+              ) : selectedAssembly !== undefined ? (
+                <AssemblyInfo
+                  assembly={selectedAssembly}
+                  breadcrumb={libraryById(selectedLibraryId)?.breadcrumb ?? "Tool library"}
+                  onSelectComponent={(toolId) => {
+                    setSelectedAssemblyId(null);
+                    setSelectedToolId(toolId);
+                  }}
                 />
               ) : selectedTool !== undefined ? (
                 <>

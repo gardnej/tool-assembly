@@ -3,13 +3,13 @@ import {
   emptySlot,
   insertSlotComponent,
   moveSlot,
-  removeSlot,
   runValidation,
   setSlotComponent,
   slotAccepts,
   slotIsOccupied,
   slotKind,
   slotStation,
+  swapStackItems,
   syncSlotCount,
 } from "../data/assembly";
 import {
@@ -69,6 +69,8 @@ const THREE_X_AXIAL_LIBRARY_IDS = new Set(["3x-axial", "3x-axial-1"]);
 const SAVED_ASSEMBLIES_LIBRARY_ID = "documents-saved-assemblies";
 /** Id of the 3X Axial 1 library, the second target for saved assemblies. */
 const AXIAL_1_LIBRARY_ID = "3x-axial-1";
+/** Id of the prototype Team Hub library, seeded in ``libraryEdits.ts``. */
+const HUB_LIBRARY_ID = "hub-team";
 
 /** Library holding the real tool blocks, preferred as the starting point. */
 function defaultLibraryId(): string {
@@ -624,18 +626,49 @@ export function useToolAssemblyWorkflow() {
   }, []);
 
   /**
-   * Drop a position. `numberOfTools` follows it so the row count and the spinner
-   * agree, but only for this session — nothing writes that field back.
+   * Swap two neighbouring components inside one position's stack.
+   *
+   * The reordered stack must still pass the acceptance rules; if it would
+   * strand a collet above an extension the swap is refused and the arrows
+   * appear disabled next time the button state is recomputed.
+   */
+  const swapStackItemBy = useCallback(
+    (index: number, depth: number, delta: number) => {
+      setState((prev) => {
+        const slots = swapStackItems(prev.slots, index, depth, delta);
+        if (slots === prev.slots) return prev;
+        return {
+          ...prev,
+          slots,
+          selectedRowId: slotRowId(index, depth + delta),
+          validationStatus: "idle",
+          validationIssues: [],
+        };
+      });
+    },
+    [],
+  );
+
+  /**
+   * Empty a position's stack, leaving the row itself in place.
+   *
+   * The row stays so the user can pick a new stack for it without having to
+   * add a fresh position back onto the block. Nothing about ``numberOfTools``
+   * changes.
    */
   const removeSlotAt = useCallback((index: number) => {
     setState((prev) => {
-      const slots = removeSlot(prev.slots, index);
-      if (slots === prev.slots) return prev;
+      if (index < 0 || index >= prev.slots.length) return prev;
+      const current = prev.slots[index];
+      if (current.stack.length === 0 && current.stationNumber === null) {
+        return prev;
+      }
+      const slots = [...prev.slots];
+      slots[index] = { ...current, stack: [], stationNumber: null, halfIndex: false };
       return {
         ...prev,
         slots,
-        config: { ...prev.config, numberOfTools: slots.length },
-        selectedRowId: `slot-${Math.min(index, slots.length - 1)}`,
+        selectedRowId: `slot-${index}`,
         validationStatus: "idle",
         validationIssues: [],
       };
@@ -745,12 +778,16 @@ export function useToolAssemblyWorkflow() {
    * When ``editingAssemblyId`` is set the record replaces the one saved under
    * that id (an in-place edit); otherwise a fresh id is minted.
    *
-   * Returns the number of libraries the assembly was written to, or ``0`` if
-   * there was nothing to save.
+   * Returns the ids and libraries the assembly was written to, or ``null``
+   * if there was nothing to save.
    */
-  const saveAssembly = useCallback((): number => {
+  const saveAssembly = useCallback((): {
+    baseId: string;
+    hubAssemblyId: string;
+    hubLibraryId: string;
+  } | null => {
     const occupied = state.slots.filter(slotIsOccupied);
-    if (occupied.length === 0) return 0;
+    if (occupied.length === 0) return null;
 
     const blockRow = rows.find((row) => row.role === "block");
     const blockRecord = blockRow?.toolId ? toolById(blockRow.toolId) : undefined;
@@ -811,7 +848,12 @@ export function useToolAssemblyWorkflow() {
 
     writeTo(SAVED_ASSEMBLIES_LIBRARY_ID, "docs");
     writeTo(AXIAL_1_LIBRARY_ID, "axial1");
-    return 2;
+    writeTo(HUB_LIBRARY_ID, "hub");
+    return {
+      baseId,
+      hubAssemblyId: `${baseId}-hub`,
+      hubLibraryId: HUB_LIBRARY_ID,
+    };
   }, [state, rows]);
 
   /**
@@ -826,10 +868,10 @@ export function useToolAssemblyWorkflow() {
     const record = sessionAssemblyById(assemblyId);
     if (record === undefined) return false;
 
-    // Two copies of every assembly are written, one per target library, and
-    // they share a base id with a per-library suffix. Editing tracks the base
-    // so a resave replaces both.
-    const editingBase = assemblyId.replace(/-(docs|axial1)$/, "");
+    // Copies of every assembly are written to each target library, sharing a
+    // base id with per-library suffixes. Editing tracks the base so a resave
+    // replaces all of them.
+    const editingBase = assemblyId.replace(/-(docs|axial1|hub)$/, "");
 
     setState((prev) => ({
       ...prev,
@@ -881,6 +923,7 @@ export function useToolAssemblyWorkflow() {
     selectSlotTool,
     insertSlotTool,
     moveSlotBy,
+    swapStackItemBy,
     removeSlotAt,
     loadExistingAssembly,
     setActiveTab,

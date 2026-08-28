@@ -43,9 +43,9 @@ export interface LibraryRef {
    * Real libraries exported from Fusion always sit under ``local``; session
    * libraries created by the app itself (saved assemblies, for one) can
    * declare a different parent so the tree groups them alongside Fusion's
-   * own ``Documents`` and ``Cloud`` roots.
+   * own ``Documents``, ``Cloud`` and prototype ``Hub`` roots.
    */
-  parent?: "local" | "documents" | "cloud";
+  parent?: "local" | "documents" | "cloud" | "hub";
 }
 
 export interface BlockPostProcess {
@@ -147,10 +147,37 @@ export function libraryTools(): LibraryToolRecord[] {
     .map(applyToolEdit);
 }
 
+/**
+ * Prototype-only relocations that override the exported layout.
+ *
+ * Fusion's snapshot places every real library under ``Local``, but the
+ * prototype wants some of them grouped under ``Hub`` so the "team library"
+ * demo has content the moment it is opened. The overrides sit here rather
+ * than in the snapshot so a regenerated export doesn't clobber them.
+ */
+const LIBRARY_LAYOUT_OVERRIDES: Record<string, Pick<LibraryRef, "parent" | "folder" | "breadcrumb">> = {
+  "3x-axial": {
+    parent: "hub",
+    folder: "3X Axial",
+    breadcrumb: "User Libraries > Hub > 3X Axial > 3X Axial",
+  },
+  "3x-axial-1": {
+    parent: "hub",
+    folder: "3X Axial",
+    breadcrumb: "User Libraries > Hub > 3X Axial > 3X Axial 1",
+  },
+};
+
+function applyLibraryLayoutOverride(library: LibraryRef): LibraryRef {
+  const override = LIBRARY_LAYOUT_OVERRIDES[library.id];
+  return override === undefined ? library : { ...library, ...override };
+}
+
 /** Every library, under whatever it was renamed to this session. */
 export function libraries(): LibraryRef[] {
   return [...LIBRARIES, ...sessionLibraries()]
     .filter((library) => !isLibraryHidden(library.id))
+    .map(applyLibraryLayoutOverride)
     .map(applyLibraryRename);
 }
 

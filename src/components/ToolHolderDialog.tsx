@@ -9,7 +9,6 @@ import { DialogTabs } from "./DialogTabs";
 import { GeneralTab } from "./GeneralTab";
 import { Header } from "./Header";
 import { PanelResizeHandle } from "./PanelResizeHandle";
-import { ReviewPanel } from "./ReviewPanel";
 import { ToolLibraryDialog } from "./ToolLibraryDialog";
 import { ValidationPanel } from "./ValidationPanel";
 import { PrimaryButton } from "./buttons/PrimaryButton";
@@ -27,12 +26,19 @@ interface ToolHolderDialogProps {
    * matching library record on the next mount/change.
    */
   editAssemblyId?: string | null;
+  /**
+   * Fired after Save Assembly writes the record to the library. The parent
+   * uses it to close the workflow and reopen the Tool Library on the Hub
+   * copy of the assembly, so the user lands on where it was saved.
+   */
+  onAssemblySaved?: (libraryId: string, assemblyId: string) => void;
 }
 
 export function ToolHolderDialog({
   open,
   onClose,
   editAssemblyId,
+  onAssemblySaved,
 }: ToolHolderDialogProps) {
   const {
     state,
@@ -40,7 +46,6 @@ export function ToolHolderDialog({
     blocks,
     blockTool,
     slotFills,
-    measuredStackUpMm,
     scopeLibraryId,
     availableBlocks,
     availableTools,
@@ -51,7 +56,7 @@ export function ToolHolderDialog({
     selectToolBlock,
     selectSlotTool,
     insertSlotTool,
-    moveSlotBy,
+    swapStackItemBy,
     removeSlotAt,
     setActiveTab,
     updateConfig,
@@ -183,7 +188,7 @@ export function ToolHolderDialog({
                   onSelectLibrary={selectLibrary}
                   onSelectToolBlock={selectToolBlock}
                   onSelectSlotTool={selectSlotTool}
-                  onMoveSlot={moveSlotBy}
+                  onSwapStackItem={swapStackItemBy}
                   onRemoveSlot={removeSlotAt}
                   onBrowseLibrary={(id, mode = "replace") =>
                     setPickerTarget({ id, mode })
@@ -220,13 +225,10 @@ export function ToolHolderDialog({
                   />
                 )}
 
-                {showReview && (
-                  <ReviewPanel
-                    rows={rows}
-                    config={state.config}
-                    measuredStackUpMm={measuredStackUpMm}
-                  />
-                )}
+                {/* The Final assembly review panel is intentionally hidden
+                    for the prototype: once validation passes the user goes
+                    straight from OK to Save Assembly without the summary
+                    table getting in the way. */}
               </div>
             )}
 
@@ -275,13 +277,13 @@ export function ToolHolderDialog({
                   runValidate();
                 } else if (state.currentStep === "review") {
                   const saved = saveAssembly();
-                  if (saved === 0) {
+                  if (saved === null) {
                     alert("Nothing to save — mount a component in a position first.");
+                  } else if (onAssemblySaved !== undefined) {
+                    // Hand the parent the Hub copy so it can reopen the
+                    // library with it already selected.
+                    onAssemblySaved(saved.hubLibraryId, saved.hubAssemblyId);
                   } else {
-                    alert(
-                      `Saved ${saved} assembly record${saved === 1 ? "" : "s"} to ` +
-                        "User Libraries → Documents → Saved Assemblies and 3X Axial 1.",
-                    );
                     onClose();
                   }
                 } else {

@@ -1,21 +1,38 @@
-import type { AssemblyConfig, AssemblyRow } from "../types";
+import type { AssemblyConfig, AssemblyRow, ValidationStatus } from "../types";
 
 interface ReviewPanelProps {
   rows: AssemblyRow[];
   config: AssemblyConfig;
   /** Measured through the joint frames; null when the chain has a gap. */
   measuredStackUpMm: number | null;
+  /**
+   * Result of the last validation pass.
+   *
+   * When it is ``pass`` the joint-frame warning is suppressed and the panel
+   * appears in its "measurable" style — the assembly is accepted (for example
+   * the 3X Axial libraries that ship without MCS/CSW frames but carry
+   * Fusion's own gauge length), so a warning about missing frames is noise.
+   */
+  validationStatus: ValidationStatus;
 }
 
-export function ReviewPanel({ rows, config, measuredStackUpMm }: ReviewPanelProps) {
+export function ReviewPanel({
+  rows,
+  config,
+  measuredStackUpMm,
+  validationStatus,
+}: ReviewPanelProps) {
   const chosen = rows.filter((row) => row.toolId !== null);
   const measurable = measuredStackUpMm !== null;
+  // Treat a passing validation as "measurable enough" for the panel's tone,
+  // so a 3X Axial assembly does not sit under an amber warning after Save.
+  const accepted = measurable || validationStatus === "pass";
 
   return (
     <section
       className={[
         "rounded-[2px] border p-3",
-        measurable
+        accepted
           ? "border-weave-success/30 bg-weave-success-bg"
           : "border-weave-warning/30 bg-weave-warning-bg",
       ].join(" ")}
@@ -24,17 +41,19 @@ export function ReviewPanel({ rows, config, measuredStackUpMm }: ReviewPanelProp
         <span
           className={[
             "flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white",
-            measurable ? "bg-weave-success" : "bg-weave-warning",
+            accepted ? "bg-weave-success" : "bg-weave-warning",
           ].join(" ")}
         >
-          {measurable ? "✓" : "!"}
+          {accepted ? "✓" : "!"}
         </span>
         <div>
           <h3 className="text-sm font-bold text-weave-text">Final assembly review</h3>
           <p className="text-[11px] text-weave-text-placeholder">
             {measurable
               ? "Joint chain is complete and the stack-up is measurable."
-              : "Stack-up cannot be measured until every component has MCS and CSW frames."}
+              : accepted
+                ? "Assembly is validated and ready to save."
+                : "Stack-up cannot be measured until every component has MCS and CSW frames."}
           </p>
         </div>
       </div>

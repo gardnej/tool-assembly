@@ -72,6 +72,27 @@ const SESSION_TOOLS = new Map<string, LibraryToolRecord>();
 const SESSION_ASSEMBLIES = new Map<string, SavedAssembly>();
 const LISTENERS = new Set<() => void>();
 
+/**
+ * Seed the prototype Hub category with an empty library.
+ *
+ * The Hub sits alongside Documents / Cloud / Local as its own root in the
+ * User Libraries tree. It is a session-scope stand-in for a shared team
+ * library: assemblies saved from the workflow land here, and colleagues can
+ * see them alongside anything they save themselves. Seeded eagerly so the
+ * category is visible even before the first save.
+ */
+SESSION_LIBRARIES.set("hub-team", {
+  id: "hub-team",
+  name: "Team Hub",
+  folder: null,
+  breadcrumb: "User Libraries > Hub > Team Hub",
+  version: null,
+  toolCount: 0,
+  blockCount: 0,
+  assemblyCount: 0,
+  parent: "hub",
+});
+
 /** Bumped on every change, so views can memoise against it. */
 let revision = 0;
 

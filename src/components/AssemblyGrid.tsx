@@ -24,7 +24,12 @@ interface AssemblyGridProps {
   onSelectLibrary: (libraryId: string) => void;
   onSelectToolBlock: (toolId: string | null) => void;
   onSelectSlotTool: (index: number, depth: number, toolId: string | null) => void;
-  onMoveSlot: (index: number, delta: number) => void;
+  /**
+   * Reorder two neighbouring components inside one position's stack. The
+   * handler refuses the swap if it would violate the acceptance rules, so
+   * arrows on those combinations appear disabled.
+   */
+  onSwapStackItem: (index: number, depth: number, delta: number) => void;
   onRemoveSlot: (index: number) => void;
   onBrowseLibrary: (id: RowId, mode?: "replace" | "insertAbove" | "insertBelow") => void;
 }
@@ -84,7 +89,7 @@ export function AssemblyGrid({
   onSelectRow,
   onSelectToolBlock,
   onSelectSlotTool,
-  onMoveSlot,
+  onSwapStackItem,
   onRemoveSlot,
   onBrowseLibrary,
 }: AssemblyGridProps) {
@@ -93,7 +98,6 @@ export function AssemblyGrid({
 
   const blockRow = rows.find((row) => row.role === "block");
   const slotRows = rows.filter((row) => row.slotIndex !== null);
-  const positionRows = slotRows.filter((row) => row.depth === 0);
   const selectedSlot = slotRows.find((row) => row.id === selectedId);
 
   const openMenu = (event: MouseEvent, id: RowId) => {
@@ -201,8 +205,12 @@ export function AssemblyGrid({
         {/* Collapsed slots are not editable, since the row being acted on is hidden. */}
         <RowToolbar
           slot={expanded ? selectedSlot : undefined}
-          slotCount={positionRows.length}
-          onMove={onMoveSlot}
+          slotStackSize={
+            selectedSlot?.slotIndex != null
+              ? slotRows.filter((row) => row.slotIndex === selectedSlot.slotIndex && row.toolId !== null).length
+              : 0
+          }
+          onSwapStackItem={onSwapStackItem}
           onClear={onSelectSlotTool}
           onRemove={onRemoveSlot}
         />
@@ -389,44 +397,55 @@ function SlotRow({
  */
 function RowToolbar({
   slot,
-  slotCount,
-  onMove,
+  slotStackSize,
+  onSwapStackItem,
   onClear,
   onRemove,
 }: {
   slot: AssemblyRow | undefined;
-  slotCount: number;
-  onMove: (index: number, delta: number) => void;
+  /** Number of filled components in the selected position's stack. */
+  slotStackSize: number;
+  onSwapStackItem: (index: number, depth: number, delta: number) => void;
   onClear: (index: number, depth: number, toolId: string | null) => void;
   onRemove: (index: number) => void;
 }) {
   const index = slot?.slotIndex ?? null;
   const depth = slot?.depth ?? null;
+  const isFilledStackRow =
+    index !== null && depth !== null && slot?.toolId !== null;
+  // Arrows now reorder within the position's own stack — the whole slot no
+  // longer travels between positions when the user hits Up or Down.
+  const canMoveUp = isFilledStackRow && depth > 0;
+  const canMoveDown = isFilledStackRow && depth < slotStackSize - 1;
 
   return (
     <div className="flex items-center gap-1 border-t border-weave-divider bg-weave-surface-300/50 px-2 py-1">
       <IconButton
-        label="Move up"
+        label="Move up in stack"
         glyph="↑"
-        disabled={index === null || index === 0}
-        onClick={() => index !== null && onMove(index, -1)}
+        disabled={!canMoveUp}
+        onClick={() =>
+          index !== null && depth !== null && onSwapStackItem(index, depth, -1)
+        }
       />
       <IconButton
-        label="Move down"
+        label="Move down in stack"
         glyph="↓"
-        disabled={index === null || index === slotCount - 1}
-        onClick={() => index !== null && onMove(index, 1)}
+        disabled={!canMoveDown}
+        onClick={() =>
+          index !== null && depth !== null && onSwapStackItem(index, depth, 1)
+        }
       />
       <IconButton
         label="Remove component"
         glyph="×"
-        disabled={index === null || depth === null || slot?.toolId === null}
+        disabled={!isFilledStackRow}
         onClick={() => index !== null && depth !== null && onClear(index, depth, null)}
       />
       <IconButton
-        label="Delete slot"
+        label="Clear slot"
         glyph={<TrashIcon />}
-        disabled={index === null || slotCount <= 1}
+        disabled={index === null || slotStackSize === 0}
         onClick={() => index !== null && onRemove(index)}
       />
       <span className="ml-1 truncate text-[10px] text-weave-text-placeholder">

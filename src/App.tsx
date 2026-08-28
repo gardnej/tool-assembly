@@ -39,6 +39,14 @@ export default function App() {
    * fresh open goes back to a blank workflow.
    */
   const [editAssemblyId, setEditAssemblyId] = useState<string | null>(null);
+  /**
+   * Where the Tool Library dialog should open. Set by the assembly workflow
+   * after a save so the library lands on the Hub copy of the assembly it
+   * just wrote.
+   */
+  const [libraryTarget, setLibraryTarget] = useState<
+    { libraryId: string; assemblyId: string } | null
+  >(null);
 
   const handleRibbonWorkspaceChange = useCallback((w: RibbonWorkspaceId) => {
     setRibbonWorkspace(w);
@@ -72,6 +80,7 @@ export default function App() {
     setToolLibraryOpen(false);
     setNewToolOpen(false);
     setToolHolderOpen(false);
+    setLibraryTarget(null);
   }, []);
 
   const openNewToolPicker = useCallback(() => {
@@ -98,6 +107,18 @@ export default function App() {
     setEditAssemblyId(assemblyId);
     setToolLibraryOpen(false);
     setToolHolderOpen(true);
+  }, []);
+
+  /**
+   * After Save Assembly writes to the libraries, close the workflow and
+   * reopen the Tool Library on the Hub copy of the assembly so the user
+   * lands on where it was saved.
+   */
+  const handleAssemblySaved = useCallback((libraryId: string, assemblyId: string) => {
+    setToolHolderOpen(false);
+    setEditAssemblyId(null);
+    setLibraryTarget({ libraryId, assemblyId });
+    setToolLibraryOpen(true);
   }, []);
 
   const viewportEmphasis = useMemo(
@@ -140,10 +161,15 @@ export default function App() {
       </div>
 
       <ToolLibraryDialog
+        // Re-mounts when the target changes so ``initialLibraryId`` and
+        // ``initialAssemblyId`` are picked up fresh after each save.
+        key={libraryTarget ? `${libraryTarget.libraryId}:${libraryTarget.assemblyId}` : "default"}
         open={toolLibraryOpen}
         onClose={closeToolLibrary}
         onCreateTool={openNewToolPicker}
         onEditAssembly={openAssemblyEditor}
+        initialLibraryId={libraryTarget?.libraryId}
+        initialAssemblyId={libraryTarget?.assemblyId}
       />
 
       <NewToolDialog
@@ -156,6 +182,7 @@ export default function App() {
         open={toolHolderOpen}
         onClose={closeToolHolder}
         editAssemblyId={editAssemblyId}
+        onAssemblySaved={handleAssemblySaved}
       />
     </>
   );

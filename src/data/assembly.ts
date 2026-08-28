@@ -131,6 +131,50 @@ export function moveSlot(
 }
 
 /**
+ * Swap two neighbouring components within one position's stack.
+ *
+ * The move only lands if the resulting stack still passes ``slotAccepts`` end
+ * to end — swapping a collet above an extension would strand it, so the
+ * caller sees the original slots back and can leave the button disabled. The
+ * position's station-carrying occupant may change, so the station is
+ * recomputed off the new first component.
+ */
+export function swapStackItems(
+  slots: AssemblySlot[],
+  index: number,
+  depth: number,
+  delta: number,
+): AssemblySlot[] {
+  if (delta !== 1 && delta !== -1) return slots;
+  if (index < 0 || index >= slots.length) return slots;
+
+  const slot = slots[index];
+  const targetDepth = depth + delta;
+  if (depth < 0 || depth >= slot.stack.length) return slots;
+  if (targetDepth < 0 || targetDepth >= slot.stack.length) return slots;
+
+  const stack = [...slot.stack];
+  [stack[depth], stack[targetDepth]] = [stack[targetDepth], stack[depth]];
+
+  // Reject the swap if the reordered stack no longer satisfies the rules.
+  const kinds = slotKinds(stack);
+  if (keepValid([], kinds) !== kinds.length) return slots;
+
+  const firstOccupant =
+    stack.length > 0 ? toolById(stack[0]) ?? null : null;
+
+  const next = [...slots];
+  next[index] = {
+    ...slot,
+    stack,
+    stationNumber:
+      firstOccupant === null ? slot.stationNumber : stationNumber(firstOccupant),
+    halfIndex: firstOccupant === null ? slot.halfIndex : isHalfIndex(firstOccupant),
+  };
+  return next;
+}
+
+/**
  * Put a component at one step of a position, or clear that step.
  *
  * Clearing takes everything the component was holding with it, since a collet
