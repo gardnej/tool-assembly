@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import type { MouseEvent } from "react";
 import { libraries } from "../data/realLibrary";
-import type { RowId, SlotLevel } from "../types";
+import type { RowId } from "../types";
 import { AssemblyGrid } from "./AssemblyGrid";
 import { AssemblyViewer } from "./AssemblyViewer";
 import { ConfigurationPanel } from "./ConfigurationPanel";
@@ -69,12 +69,18 @@ export function ToolHolderDialog({
     resetWorkflow,
   } = useToolAssemblyWorkflow();
 
-  // Pull a saved assembly into the workflow whenever the parent hands one in.
+  // On open, either reopen the assembly the parent handed in for editing, or —
+  // when none was given — start from a blank workflow. The dialog stays mounted
+  // between sessions, so without this reset a fresh "create assembly" would
+  // still be showing the assembly that was just saved.
   useEffect(() => {
-    if (open && editAssemblyId !== null && editAssemblyId !== undefined) {
+    if (!open) return;
+    if (editAssemblyId !== null && editAssemblyId !== undefined) {
       loadAssembly(editAssemblyId);
+    } else {
+      resetWorkflow();
     }
-  }, [open, editAssemblyId, loadAssembly]);
+  }, [open, editAssemblyId, loadAssembly, resetWorkflow]);
 
   /**
    * Which row the library picker is filling, or null when it is closed.
@@ -94,20 +100,28 @@ export function ToolHolderDialog({
   /** Part the viewer highlights: the selected row, mapped back to the mesh. */
   const selectedRow = rows.find((row) => row.id === state.selectedRowId);
   const selectedViewerPart =
-    selectedRow?.slotIndex != null && selectedRow.level !== null
-      ? { slotIndex: selectedRow.slotIndex, level: selectedRow.level }
+    selectedRow?.slotIndex != null && selectedRow.depth !== null && selectedRow.level !== null
+      ? { slotIndex: selectedRow.slotIndex, depth: selectedRow.depth }
       : null;
+  /**
+   * Position the viewer should light up as a whole region. Set whenever any row
+   * belonging to a position is selected — including the empty position row —
+   * so selecting a position confirms which physical seat it maps to even before
+   * anything is mounted in it.
+   */
+  const selectedSlotIndex = selectedRow?.slotIndex ?? null;
 
   /**
-   * Which row a picked part of the mesh belongs to.
+   * Which row a picked seat of the mesh belongs to, by mount depth.
    *
-   * The mesh has a seat for each kind, while a position holds only what was put
-   * in it, so a part with nothing behind it selects the position instead.
+   * Seats are painted in mount order, so the nth seat maps to the row at depth
+   * n. A seat deeper than the position's stack has nothing in it, so it selects
+   * the position row instead.
    */
   const rowIdAt = useCallback(
-    (slotIndex: number, level: SlotLevel): RowId | null => {
+    (slotIndex: number, depth: number): RowId | null => {
       const row = rows.find(
-        (item) => item.slotIndex === slotIndex && item.level === level,
+        (item) => item.slotIndex === slotIndex && item.depth === depth,
       );
       return row?.id ?? (slotIndex < state.slots.length ? `slot-${slotIndex}` : null);
     },
@@ -258,6 +272,7 @@ export function ToolHolderDialog({
             blockGeometryId={blocks[0]?.block.geometryId ?? blockTool?.geometryId ?? null}
             slots={slotFills}
             selected={selectedViewerPart}
+            selectedSlotIndex={selectedSlotIndex}
             blockSelected={state.selectedRowId === "block"}
             selectedTool={selectedTool}
             rowIdAt={rowIdAt}
@@ -305,6 +320,17 @@ export function ToolHolderDialog({
           initialLibraryId={scopeLibraryId}
           // A block seats against the turret; anything else is a cutting tool.
           pickKind={pickerSlot === null ? "block" : "tool"}
+          pickLabel={
+            pickerSlot === null
+              ? "tool block"
+              : pickerRow?.accepts !== undefined && pickerRow.accepts.length > 0
+                ? pickerRow.accepts
+                    .map((kind) =>
+                      kind === "tool" ? "cutting tool" : kind,
+                    )
+                    .join(" / ")
+                : "component"
+          }
           onPick={(toolId) => {
             if (pickerSlot === null || pickerRow?.depth == null) {
               // Blocks always replace: there is no depth above the root.

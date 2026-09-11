@@ -12,12 +12,21 @@ type BrowserPanelProps = {
   root?: DemoBlockBrowserNode;
   selectedId: string;
   onSelect: (nodeId: string, meta?: BrowserSelectMeta) => void;
+  /** Right-click on a row, so the host can raise a context menu for it. */
+  onContextMenuNode?: (nodeId: string, x: number, y: number) => void;
+  /** Double-click / activate a row, e.g. to open the turret setup dialog. */
+  onActivateNode?: (nodeId: string) => void;
+  /** A row's show/hide was toggled; hidden is its new state. */
+  onVisibilityChange?: (nodeId: string, hidden: boolean) => void;
 };
 
 export function BrowserPanel({
   root = DEMO_BLOCK_BROWSER_ROOT,
   selectedId,
   onSelect,
+  onContextMenuNode,
+  onActivateNode,
+  onVisibilityChange,
 }: BrowserPanelProps) {
   const [expandedById, setExpandedById] = useState<Record<string, boolean>>({});
   const [hiddenById, setHiddenById] = useState<Record<string, boolean>>({});
@@ -26,9 +35,16 @@ export function BrowserPanel({
     setExpandedById((prev) => ({ ...prev, [nodeId]: !(prev[nodeId] ?? fallback) }));
   }, []);
 
-  const toggleVisibility = useCallback((nodeId: string) => {
-    setHiddenById((prev) => ({ ...prev, [nodeId]: prev[nodeId] !== true }));
-  }, []);
+  const toggleVisibility = useCallback(
+    (nodeId: string) => {
+      setHiddenById((prev) => {
+        const hidden = prev[nodeId] !== true;
+        onVisibilityChange?.(nodeId, hidden);
+        return { ...prev, [nodeId]: hidden };
+      });
+    },
+    [onVisibilityChange],
+  );
 
   return (
     <section className="browser-hud" aria-label="Browser">
@@ -44,6 +60,8 @@ export function BrowserPanel({
             hiddenById={hiddenById}
             onToggleExpanded={toggleExpanded}
             onToggleVisibility={toggleVisibility}
+            onContextMenuNode={onContextMenuNode}
+            onActivateNode={onActivateNode}
           />
         </ul>
       </div>
@@ -60,6 +78,8 @@ type BranchProps = {
   hiddenById: Record<string, boolean>;
   onToggleExpanded: (nodeId: string, fallback: boolean) => void;
   onToggleVisibility: (nodeId: string) => void;
+  onContextMenuNode?: (nodeId: string, x: number, y: number) => void;
+  onActivateNode?: (nodeId: string) => void;
 };
 
 function BrowserBranch({
@@ -71,6 +91,8 @@ function BrowserBranch({
   hiddenById,
   onToggleExpanded,
   onToggleVisibility,
+  onContextMenuNode,
+  onActivateNode,
 }: BranchProps) {
   const selectable = node.selectable !== false;
   const children = node.children ?? [];
@@ -108,6 +130,20 @@ function BrowserBranch({
         onToggleVisibility={() => {
           onToggleVisibility(node.id);
         }}
+        onContextMenu={
+          onContextMenuNode !== undefined
+            ? (x, y) => {
+                onContextMenuNode(node.id, x, y);
+              }
+            : undefined
+        }
+        onDoubleActivate={
+          onActivateNode !== undefined
+            ? () => {
+                onActivateNode(node.id);
+              }
+            : undefined
+        }
       />
       {expanded ? (
         <ul role="group">
@@ -122,6 +158,8 @@ function BrowserBranch({
               hiddenById={hiddenById}
               onToggleExpanded={onToggleExpanded}
               onToggleVisibility={onToggleVisibility}
+              onContextMenuNode={onContextMenuNode}
+              onActivateNode={onActivateNode}
             />
           ))}
         </ul>
@@ -140,6 +178,8 @@ type TreeRowProps = {
   onActivate: () => void;
   onToggleExpanded: () => void;
   onToggleVisibility: () => void;
+  onContextMenu?: (x: number, y: number) => void;
+  onDoubleActivate?: () => void;
 };
 
 /**
@@ -160,6 +200,8 @@ function TreeRow({
   onActivate,
   onToggleExpanded,
   onToggleVisibility,
+  onContextMenu,
+  onDoubleActivate,
 }: TreeRowProps) {
   const chevron = browserIconUrl(expanded ? "collapse" : "expand");
   const eye = browserIconUrl(hidden ? "hidden" : "visible");
@@ -180,6 +222,15 @@ function TreeRow({
       tabIndex={0}
       style={{ paddingLeft: 11 + depth * 18 + (expandable ? 0 : 25) }}
       onClick={onActivate}
+      onDoubleClick={onDoubleActivate}
+      onContextMenu={
+        onContextMenu !== undefined
+          ? (e) => {
+              e.preventDefault();
+              onContextMenu(e.clientX, e.clientY);
+            }
+          : undefined
+      }
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") {
           e.preventDefault();

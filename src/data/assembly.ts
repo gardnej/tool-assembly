@@ -45,16 +45,17 @@ export function slotKind(record: LibraryToolRecord): SlotLevel {
 /**
  * What a position can take next, given what it already holds.
  *
- * An empty position takes a cutting tool as readily as an extension: the
- * adaptive items are there to make a tool fit, not to be mounted for their
- * own sake. An extension can then take another extension, a collet or a tool
- * — stacking extensions is common when a tool needs more reach than any one
- * extension gives. A collet takes the tool it grips, and a cutting tool ends
- * the stack, since nothing mounts on the far side of the part that cuts.
+ * An empty position takes a collet or a cutting tool as readily as an
+ * extension: the assembly hierarchy is flexible, so a collet may seat straight
+ * into a position without an extension in front of it. An extension can then
+ * take another extension, a collet or a tool — stacking extensions is common
+ * when a tool needs more reach than any one extension gives. A collet takes the
+ * tool it grips, and a cutting tool ends the stack, since nothing mounts on the
+ * far side of the part that cuts.
  */
 export function slotAccepts(kinds: SlotLevel[]): SlotLevel[] {
   const top = kinds[kinds.length - 1];
-  if (top === undefined) return ["extension", "tool"];
+  if (top === undefined) return ["extension", "collet", "tool"];
   if (top === "extension") return ["extension", "collet", "tool"];
   if (top === "collet") return ["tool"];
   return [];
@@ -63,6 +64,40 @@ export function slotAccepts(kinds: SlotLevel[]): SlotLevel[] {
 /** True once a position is finished: it holds a cutting tool at the end. */
 export function slotIsComplete(kinds: SlotLevel[]): boolean {
   return kinds[kinds.length - 1] === "tool";
+}
+
+/**
+ * Whether a component could be inserted *above* the one at ``depth`` — i.e. on
+ * its machine side, pushing it outward — without stranding it.
+ *
+ * There has to be some kind the steps before this one accept that in turn
+ * accepts what is already here. Nothing sits above a component that seats
+ * straight against the block if the only things that fit before it cannot then
+ * carry it, so the caller can grey the menu item out.
+ */
+export function canInsertAbove(kinds: SlotLevel[], depth: number): boolean {
+  const current = kinds[depth];
+  if (current === undefined) return false;
+  const before = kinds.slice(0, depth);
+  return slotAccepts(before).some((kind) =>
+    slotAccepts([...before, kind]).includes(current),
+  );
+}
+
+/**
+ * Whether a component could be inserted *below* the one at ``depth`` — on its
+ * cutting side — keeping whatever already follows it.
+ *
+ * Nothing follows a cutting tool, so inserting below one is never possible.
+ */
+export function canInsertBelow(kinds: SlotLevel[], depth: number): boolean {
+  if (kinds[depth] === undefined) return false;
+  const base = kinds.slice(0, depth + 1);
+  const options = slotAccepts(base);
+  if (options.length === 0) return false;
+  const next = kinds[depth + 1];
+  if (next === undefined) return true;
+  return options.some((kind) => slotAccepts([...base, kind]).includes(next));
 }
 
 /**
@@ -368,7 +403,7 @@ export function runValidation({
       id: `incomplete-slot-${index}`,
       severity: "warning",
       message:
-        `Slot ${index + 1} holds no cutting tool yet — an extension or collet ` +
+        `Position ${index + 1} holds no cutting tool yet — an extension or collet ` +
         "is there to hold one.",
     });
   });

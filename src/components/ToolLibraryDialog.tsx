@@ -28,7 +28,6 @@ import {
 import {
   hideLibrary,
   isLibraryRenamed,
-  isToolEdited,
   removeSessionAssembly,
   renameLibrary,
   resetLibraryName,
@@ -57,6 +56,13 @@ interface ToolLibraryDialogProps {
   openEditor?: boolean;
   /** Restricts picking to tool blocks or to cutting tools. */
   pickKind?: "block" | "tool";
+  /**
+   * What the picker is choosing, for the heading — e.g. "extension", "collet"
+   * or "component". Components of different kinds often live in separate
+   * libraries or folders, so the picker names what it is after rather than
+   * assuming it is always a cutting tool.
+   */
+  pickLabel?: string;
   onPick?: (toolId: string) => void;
   /**
    * Called when the user picks Edit on a saved assembly. The parent should
@@ -691,9 +697,6 @@ function AssemblyRows({
                   </button>
                   <span className="tlb-table__thumb" aria-hidden="true" />
                   {assembly.name}
-                  <span className="tlb-table__edited" title="Saved this session">
-                    saved
-                  </span>
                 </span>
               </td>
               <td>Tool assembly</td>
@@ -850,6 +853,7 @@ export function ToolLibraryDialog({
   initialToolId,
   openEditor = false,
   pickKind,
+  pickLabel,
   onPick,
   onEditAssembly,
   initialAssemblyId,
@@ -1024,11 +1028,21 @@ export function ToolLibraryDialog({
             <span className="tlb-traffic__dot tlb-traffic__dot--yellow" />
             <span className="tlb-traffic__dot tlb-traffic__dot--green" />
           </div>
-          <h2 id="tlb-title" className="tlb-head__title">
-            {picker
-              ? `Tool Library — select ${pickKind === "block" ? "tool block" : "cutting tool"}`
-              : "Tool Library"}
-          </h2>
+          <div className="tlb-head__titlewrap">
+            <h2 id="tlb-title" className="tlb-head__title">
+              {picker
+                ? `Tool Library — select ${
+                    pickLabel ?? (pickKind === "block" ? "tool block" : "cutting tool")
+                  }`
+                : "Tool Library"}
+            </h2>
+            {picker && (
+              <span className="tlb-head__hint">
+                Browse any library or folder in the tree — compatible components
+                may live in different locations.
+              </span>
+            )}
+          </div>
           <span className="tlb-head__spacer" aria-hidden="true" />
         </header>
 
@@ -1215,11 +1229,6 @@ export function ToolLibraryDialog({
                               <span className="tlb-table__name">
                                 <span className="tlb-table__thumb" aria-hidden="true" />
                                 {displayName(tool)}
-                                {isToolEdited(tool.id) && (
-                                  <span className="tlb-table__edited" title="Edited this session">
-                                    edited
-                                  </span>
-                                )}
                               </span>
                             </td>
                             <td>{tool.type}</td>
@@ -1416,7 +1425,8 @@ export function ToolLibraryDialog({
                 title={
                   pickableToolId === undefined
                     ? `This library item cannot be used as a ${
-                        pickKind === "block" ? "tool block" : "cutting tool"
+                        pickLabel ??
+                        (pickKind === "block" ? "tool block" : "cutting tool")
                       }`
                     : undefined
                 }

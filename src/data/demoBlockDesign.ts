@@ -323,6 +323,46 @@ export const DEMO_BLOCK_BROWSER_ROOT: DemoBlockBrowserNode = {
   ],
 };
 
+/** Browser id of the turret node, so the context menu can key off it. */
+export const TURRET_BROWSER_NODE_ID = "cam-turret";
+/** Browser id of the machine node. */
+export const MACHINE_BROWSER_NODE_ID = "cam-machine";
+
+/**
+ * The document tree with the selected machine and its turret spliced in.
+ *
+ * Fusion surfaces the machine a setup runs on in the browser; here it appears as
+ * a Machine node carrying the turret, placed just above Setups. Right-clicking
+ * the turret is how the design enters Turret Setup, so the node id is stable.
+ */
+export function browserRootWithTurret(
+  machineName: string,
+  turretLabel: string,
+  root: DemoBlockBrowserNode = DEMO_BLOCK_BROWSER_ROOT,
+): DemoBlockBrowserNode {
+  const machineNode: DemoBlockBrowserNode = {
+    id: MACHINE_BROWSER_NODE_ID,
+    label: machineName,
+    kind: "component",
+    selectable: true,
+    defaultExpanded: true,
+    children: [
+      {
+        id: TURRET_BROWSER_NODE_ID,
+        label: turretLabel,
+        kind: "body",
+        selectable: true,
+      },
+    ],
+  };
+
+  const children = root.children ?? [];
+  const setupsIndex = children.findIndex((child) => child.id === "cam-setups");
+  const insertAt = setupsIndex >= 0 ? setupsIndex : children.length;
+  const next = [...children.slice(0, insertAt), machineNode, ...children.slice(insertAt)];
+  return { ...root, children: next };
+}
+
 function collectPropertyLabels(
   node: DemoBlockBrowserNode,
   acc: Record<string, string>,

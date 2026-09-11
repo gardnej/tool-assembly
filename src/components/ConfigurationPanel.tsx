@@ -9,7 +9,6 @@ import {
 import type {
   AssemblyConfig,
   AssemblyRow,
-  Orientation,
   SlotLevel,
 } from "../types";
 
@@ -88,7 +87,14 @@ export function ConfigurationPanel({
           onClick={() => {
             if (tool !== undefined) onEditInLibrary?.(tool.id);
           }}
-          className="inline-flex h-6 items-center gap-1 rounded-[2px] border border-weave-divider-heavy px-3 text-xs font-semibold text-weave-text hover:bg-weave-surface-250 disabled:cursor-default disabled:opacity-45 disabled:hover:bg-transparent"
+          className={
+            tool === undefined
+              ? // No component yet: a quiet, disabled hint.
+                "inline-flex h-7 items-center gap-1.5 rounded-[2px] border border-weave-divider-heavy px-3 text-xs font-semibold text-weave-text opacity-45 disabled:cursor-default"
+              : // Assigned: a filled, primary-weight button so editing is an
+                // obvious next action rather than a faint outline.
+                "inline-flex h-7 items-center gap-1.5 rounded-[2px] border border-weave-primary bg-weave-primary px-3 text-xs font-semibold text-white shadow-sm hover:bg-weave-primary-hover"
+          }
         >
           <PencilIcon />
           Edit {noun} in library
@@ -220,14 +226,6 @@ function BlockFields({
         </button>
       </FormRow>
 
-      <FormRow label="Orientation">
-        <OrientationPicker
-          value={config.orientation}
-          onChange={(v) => onConfigChange({ orientation: v })}
-          disabled={readOnly}
-        />
-      </FormRow>
-
       <FormRow label="Machine side connection">
         <SelectField
           value={config.machineSideConnectionType}
@@ -237,57 +235,11 @@ function BlockFields({
         />
       </FormRow>
 
-      <FormRow label="Adaptive item size">
-        <NumericField
-          value={config.adaptiveItemSize}
-          suffix="mm"
-          onChange={(v) => onConfigChange({ adaptiveItemSize: v })}
-          disabled={readOnly}
-        />
-      </FormRow>
-
-      <FormRow label="Number of tools">
-        <NumericField
-          value={config.numberOfTools}
-          onChange={(v) => onConfigChange({ numberOfTools: v })}
-          disabled={readOnly}
-          min={1}
-          max={8}
-        />
-      </FormRow>
-
-      <FormRow label="Attachment points">
-        <NumericField
-          value={config.numberOfAttachmentPoints}
-          onChange={(v) => onConfigChange({ numberOfAttachmentPoints: v })}
-          disabled={readOnly}
-          min={0}
-          max={12}
-        />
-      </FormRow>
-
-      <FormRow label="Turret station">
-        <NumericField
-          value={config.stationNumber ?? 0}
-          onChange={(v) => onConfigChange({ stationNumber: v })}
-          disabled={readOnly}
-          min={0}
-          max={99}
-        />
-      </FormRow>
-
-      <FormRow label="Half index">
-        <label className="inline-flex cursor-pointer items-center gap-1.5 py-1 text-xs">
-          <input
-            type="checkbox"
-            checked={config.halfIndex}
-            disabled={readOnly}
-            onChange={(event) => onConfigChange({ halfIndex: event.target.checked })}
-            className="accent-weave-primary"
-          />
-          Station offset by half an index
-        </label>
-      </FormRow>
+      {/* Number of tools and Attachment points are not editable block
+          settings: the number of mounting positions is read straight off the
+          block and shown by the assembly table above. Orientation, adaptive
+          item size, turret station and half index are properties of the
+          machine rather than of the tool block, so they are not shown here. */}
     </>
   );
 }
@@ -325,53 +277,6 @@ function FormRow({
   );
 }
 
-function OrientationPicker({
-  value,
-  onChange,
-  disabled,
-}: {
-  value: Orientation;
-  onChange: (v: Orientation) => void;
-  disabled?: boolean;
-}) {
-  return (
-    <div className="flex gap-3">
-      {(["axial", "radial"] as Orientation[]).map((opt) => (
-        <label
-          key={opt}
-          className={[
-            "inline-flex cursor-pointer items-center gap-1.5 text-xs capitalize",
-            disabled ? "opacity-55" : "",
-          ].join(" ")}
-        >
-          <input
-            type="radio"
-            name="orientation"
-            checked={value === opt}
-            disabled={disabled}
-            onChange={() => onChange(opt)}
-            className="accent-weave-primary"
-          />
-          <OrientationGlyph type={opt} />
-          {opt}
-        </label>
-      ))}
-    </div>
-  );
-}
-
-function OrientationGlyph({ type }: { type: Orientation }) {
-  return (
-    <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true" className="text-weave-text">
-      {type === "axial" ? (
-        <rect x="8" y="3" width="4" height="14" fill="currentColor" opacity="0.35" />
-      ) : (
-        <rect x="3" y="8" width="14" height="4" fill="currentColor" opacity="0.35" />
-      )}
-    </svg>
-  );
-}
-
 function SelectField({
   value,
   options,
@@ -396,62 +301,6 @@ function SelectField({
         </option>
       ))}
     </select>
-  );
-}
-
-function NumericField({
-  value,
-  onChange,
-  suffix,
-  disabled,
-  min = 0,
-  max = 999,
-}: {
-  value: number;
-  onChange: (v: number) => void;
-  suffix?: string;
-  disabled?: boolean;
-  min?: number;
-  max?: number;
-}) {
-  return (
-    <div className="flex h-6 w-full items-center border-0 bg-weave-input">
-      <input
-        type="number"
-        value={value}
-        min={min}
-        max={max}
-        disabled={disabled}
-        onChange={(e) => {
-          const n = Number(e.target.value);
-          if (!Number.isNaN(n)) onChange(Math.min(max, Math.max(min, n)));
-        }}
-        className="min-w-0 flex-1 border-0 bg-transparent px-2 text-xs font-semibold outline-none disabled:opacity-55"
-      />
-      {suffix !== undefined && (
-        <span className="border-l border-weave-divider px-2 text-[10px] text-weave-text-placeholder">
-          {suffix}
-        </span>
-      )}
-      <div className="flex flex-col border-l border-weave-divider">
-        <button
-          type="button"
-          disabled={disabled}
-          onClick={() => onChange(Math.min(max, value + 1))}
-          className="flex h-3 w-6 items-center justify-center text-[8px] hover:bg-weave-surface-250 disabled:opacity-40"
-        >
-          ▲
-        </button>
-        <button
-          type="button"
-          disabled={disabled}
-          onClick={() => onChange(Math.max(min, value - 1))}
-          className="flex h-3 w-6 items-center justify-center text-[8px] hover:bg-weave-surface-250 disabled:opacity-40"
-        >
-          ▼
-        </button>
-      </div>
-    </div>
   );
 }
 

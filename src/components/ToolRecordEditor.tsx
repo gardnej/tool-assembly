@@ -27,7 +27,8 @@ interface ToolRecordEditorProps {
   onClose: () => void;
 }
 
-const TABS = [
+/** Full tab set for a cutting tool. */
+const TOOL_TABS = [
   "General",
   "Cutter",
   "Shaft",
@@ -37,7 +38,14 @@ const TABS = [
   "Post processor",
 ] as const;
 
-type TabId = (typeof TABS)[number];
+/**
+ * A tool block is agnostic to spindle direction and carries no cutter, shaft or
+ * holder, so its editor is pared back to the three tabs that describe the block
+ * itself: identity, its own geometry, and how it posts.
+ */
+const BLOCK_TABS = ["General", "Geometry", "Post processor"] as const;
+
+type TabId = (typeof TOOL_TABS)[number] | (typeof BLOCK_TABS)[number];
 
 /** The cutter fields Fusion lists for a milling or drilling tool, in its order. */
 const MILLING_FIELDS = [
@@ -66,10 +74,15 @@ const TURNING_FIELDS = [
   "OAL",
 ];
 
+/**
+ * Block geometry fields shown on the block's Geometry tab.
+ *
+ * `numberOfTools` and `numberOfAttachmentPoints` are intentionally omitted: the
+ * number of mounting positions is read straight off the block and shown by the
+ * assembly table, so it is not an editable field of the block itself.
+ */
 const BLOCK_FIELDS = [
   "adaptiveItemSize",
-  "numberOfTools",
-  "numberOfAttachmentPoints",
   "orientationType",
   "machineSideConnectionType",
 ];
@@ -85,6 +98,8 @@ const MATERIALS = ["", "HSS", "Carbide", "Cobalt", "Ceramic", "Diamond"];
  * whole rather than showing a shortened form of itself.
  */
 export function ToolRecordEditor({ record, onClose }: ToolRecordEditorProps) {
+  const isBlock = isBlockType(record.type);
+  const tabs = isBlock ? BLOCK_TABS : TOOL_TABS;
   const [tab, setTab] = useState<TabId>("General");
   const [draft, setDraft] = useState<ToolRecordEdit>(() => toolEditDraft(record));
   const library = libraryById(record.libraryId);
@@ -132,7 +147,6 @@ export function ToolRecordEditor({ record, onClose }: ToolRecordEditorProps) {
           <span className="te-crumbs__sep">/</span>
           <span className="te-crumbs__icon" aria-hidden="true" />
           <span className="te-crumbs__tool">{toolCaption(record, draft)}</span>
-          {edited && <span className="te-crumbs__edited">Edited</span>}
           <span className="te-crumbs__spacer" />
           <button
             type="button"
@@ -145,7 +159,7 @@ export function ToolRecordEditor({ record, onClose }: ToolRecordEditorProps) {
         </header>
 
         <nav className="te-tabs" role="tablist" aria-label="Tool">
-          {TABS.map((id) => (
+          {tabs.map((id) => (
             <button
               key={id}
               type="button"
@@ -196,6 +210,14 @@ export function ToolRecordEditor({ record, onClose }: ToolRecordEditorProps) {
                   />
                 </Field>
               </Card>
+            )}
+
+            {tab === "Geometry" && (
+              <BlockGeometryTab
+                record={record}
+                draft={draft}
+                onGeometry={setGeometry}
+              />
             )}
 
             {tab === "Cutter" && (
@@ -260,6 +282,65 @@ function toolCaption(record: LibraryToolRecord, draft: ToolRecordEdit): string {
   const label = named !== "" ? named : displayName(record);
 
   return `${number !== null ? `${number} - ` : ""}${label} (${record.type})`;
+}
+
+/**
+ * The block's own geometry, shown in place of the cutter tab.
+ *
+ * A tool block has no cutter, so this lists only the block's dimensional and
+ * connection fields. The position count is deliberately not here — it is read
+ * off the block and shown by the assembly table instead.
+ */
+function BlockGeometryTab({
+  record,
+  draft,
+  onGeometry,
+}: {
+  record: LibraryToolRecord;
+  draft: ToolRecordEdit;
+  onGeometry: (key: string, value: number | string | boolean | null) => void;
+}) {
+  const span = solidSpanMm(record.geometryId);
+
+  return (
+    <div className="te-column">
+      <Card>
+        <Field label="Type">
+          <input
+            className="te-input"
+            value={record.type}
+            readOnly
+            title="A record's type decides where it can sit in an assembly, so it is fixed here"
+          />
+        </Field>
+        <Field label="Unit">
+          <input className="te-input" value={draft.unit} readOnly />
+        </Field>
+      </Card>
+
+      <Card title="Geometry">
+        {BLOCK_FIELDS.map((key) => (
+          <GeometryField
+            key={key}
+            fieldKey={key}
+            value={draft.geometry[key]}
+            unit={draft.unit}
+            onChange={onGeometry}
+          />
+        ))}
+      </Card>
+
+      <Card title="Tool assembly">
+        <Field label="Gauge length">
+          <input
+            className="te-input"
+            readOnly
+            value={span !== null ? `${span.toFixed(4)} mm` : "No solid to measure"}
+          />
+        </Field>
+      </Card>
+    </div>
+  );
 }
 
 function CutterTab({

@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import type { CSSProperties } from "react";
-import previewBlockUrl from "../assets/models/3x-spot-drill-tap.glb?url";
+import previewBlockUrl from "../assets/models/3x-spot-drill-tap-caps.glb?url";
 import {
   PREVIEW_BLOCK_GEOMETRY_ID,
   PREVIEW_BLOCK_MATERIAL,
   PREVIEW_SEATS,
+  PREVIEW_SEAT_CAPS,
 } from "../data/previewGeometry";
 
 /**
@@ -48,20 +49,24 @@ import { displayName } from "../data/realLibrary";
 import { meshPreviewFor, ToolLibrarySolidPreview } from "./ToolLibrarySolidPreview";
 import { ToolSilhouette } from "./ToolSilhouette";
 
-/** What one position holds, per level. */
-export interface ViewerSlotFill {
-  extension: boolean;
-  collet: boolean;
-  tool: boolean;
-}
-
 interface AssemblyViewerProps {
   /** Geometry of the chosen block; only some blocks have a mesh to show. */
   blockGeometryId: string | null;
-  /** One entry per position, saying which levels of it are filled. */
-  slots: ViewerSlotFill[];
-  /** Position and level to pick out, or null when the block row is selected. */
-  selected: { slotIndex: number; level: SlotLevel } | null;
+  /**
+   * One entry per position: the kinds it holds, machine side first. The viewer
+   * seats them by this order, so the first component fills the bore seat flush
+   * with the block face and the rest stack outward — a collet mounted straight
+   * in the block reads as seated rather than floating.
+   */
+  slots: SlotLevel[][];
+  /** Position and depth to pick out, or null when the block row is selected. */
+  selected: { slotIndex: number; depth: number } | null;
+  /**
+   * Position whose empty bore seat should be marked, or null. Set even for an
+   * empty position, so selecting one confirms which hole on the block it maps
+   * to without drawing a ghost of a whole assembly.
+   */
+  selectedSlotIndex: number | null;
   blockSelected: boolean;
   /**
    * The record the properties panel is on, if any.
@@ -73,13 +78,13 @@ interface AssemblyViewerProps {
    */
   selectedTool?: LibraryToolRecord;
   /**
-   * The row a picked part belongs to.
+   * The row a picked seat belongs to, by mount depth.
    *
-   * A position's components sit wherever the assembly put them, so which row
-   * holds the collet of position 2 is the assembly's business rather than the
-   * mesh's, and the caller answers it.
+   * Seats are painted in mount order, so clicking the nth seat of a position
+   * asks for the row at depth n; the caller maps that back to a row id (or the
+   * position row when nothing sits that deep).
    */
-  rowIdAt: (slotIndex: number, level: SlotLevel) => RowId | null;
+  rowIdAt: (slotIndex: number, depth: number) => RowId | null;
   onSelectRow: (id: RowId) => void;
 }
 
@@ -118,12 +123,23 @@ type Rgb = [number, number, number];
 /** Whether a part is seated, an empty seat, or beyond the block's capacity. */
 type PartState = "solid" | "ghost" | "hidden";
 
-/** The position and level a material belongs to, for picking. */
-function levelOf(name: string): { slotIndex: number; level: SlotLevel } | null {
+/**
+ * The seat bodies of one position, in mount order from the block face outward:
+ * the bore seat that sits flush in the block, then the middle body, then the
+ * outer body. Mounted components are drawn onto these by depth, whatever their
+ * kind, so a stack always seats flush and contiguous.
+ */
+function orderedBodies(seat: (typeof PREVIEW_SEATS)[number]): string[][] {
+  return [[seat.extension], [seat.collet], seat.tool];
+}
+
+/** The position and mount-order body a material belongs to, for picking. */
+function seatOf(name: string): { slotIndex: number; bodyIndex: number } | null {
   for (const [slotIndex, seat] of PREVIEW_SEATS.entries()) {
-    if (name === seat.extension) return { slotIndex, level: "extension" };
-    if (name === seat.collet) return { slotIndex, level: "collet" };
-    if (seat.tool.includes(name)) return { slotIndex, level: "tool" };
+    const bodies = orderedBodies(seat);
+    for (let bodyIndex = 0; bodyIndex < bodies.length; bodyIndex += 1) {
+      if (bodies[bodyIndex].includes(name)) return { slotIndex, bodyIndex };
+    }
   }
   return null;
 }
@@ -148,6 +164,7 @@ export function AssemblyViewer({
   blockGeometryId,
   slots,
   selected,
+  selectedSlotIndex,
   blockSelected,
   selectedTool,
   rowIdAt,
@@ -167,10 +184,8 @@ export function AssemblyViewer({
   const canPickSeats = mesh?.seatable === true;
   const slotCount = slots.length;
   // Identity of the array changes every render, so compare its contents.
-  const filledKey = slots
-    .map((slot) => `${+slot.extension}${+slot.collet}${+slot.tool}`)
-    .join("");
-  const selectedKey = selected === null ? "" : `${selected.slotIndex}-${selected.level}`;
+  const filledKey = slots.map((kinds) => kinds.join(">")).join("|");
+  const selectedKey = selected === null ? "" : `${selected.slotIndex}-${selected.depth}`;
 
   useEffect(() => {
     const viewer = viewerRef.current;
@@ -229,9 +244,18 @@ export function AssemblyViewer({
         return;
       }
 
-      const found = levelOf(hit.name);
+      // A lit bore cap stands in for its empty position, so clicking it selects
+      // that position row just like clicking a seated part does.
+      const capIndex = PREVIEW_SEAT_CAPS.indexOf(hit.name);
+      if (capIndex !== -1 && capIndex < slotCount) {
+        onSelectRow(`slot-${capIndex}`);
+        return;
+      }
+
+      const found = seatOf(hit.name);
       if (found === null || found.slotIndex >= slotCount) return;
-      const id = rowIdAt(found.slotIndex, found.level);
+      // Seats are painted by mount order, so the body index is the depth.
+      const id = rowIdAt(found.slotIndex, found.bodyIndex);
       if (id !== null) onSelectRow(id);
     };
 
@@ -276,36 +300,63 @@ export function AssemblyViewer({
     paint(PREVIEW_BLOCK_MATERIAL, "solid", blockSelected, BLOCK_COLOUR);
 
     PREVIEW_SEATS.forEach((seat, index) => {
-      const fill = slots[index];
-      const highlighted = (level: SlotLevel) =>
-        selected !== null && selected.slotIndex === index && selected.level === level;
+      const kinds = slots[index];
+      const bodies = orderedBodies(seat);
 
-      const show = (names: string[], level: SlotLevel, state: PartState) => {
-        for (const name of names) {
-          paint(
-            name,
-            state,
-            highlighted(level),
-            state === "solid" ? LEVEL_COLOUR[level] : EMPTY_COLOUR,
-          );
-        }
+      const paintBody = (
+        names: string[],
+        state: PartState,
+        highlighted: boolean,
+        base: Rgb,
+      ) => {
+        for (const name of names) paint(name, state, highlighted, base);
       };
 
       // Seats past the block's tool count are not positions at all.
-      if (fill === undefined) {
-        show([seat.extension], "extension", "hidden");
-        show([seat.collet], "collet", "hidden");
-        show(seat.tool, "tool", "hidden");
+      if (kinds === undefined) {
+        bodies.forEach((names) => paintBody(names, "hidden", false, EMPTY_COLOUR));
+        paint(PREVIEW_SEAT_CAPS[index], "hidden", false, EMPTY_COLOUR);
         return;
       }
 
-      // Only what a position actually holds is drawn — empty seats are hidden,
-      // so the block reads on its own until something is mounted.
-      show([seat.extension], "extension", fill.extension ? "solid" : "hidden");
-      show([seat.collet], "collet", fill.collet ? "solid" : "hidden");
-      show(seat.tool, "tool", fill.tool ? "solid" : "hidden");
+      bodies.forEach((names, bodyIndex) => {
+        const kind = kinds[bodyIndex];
+
+        if (kind !== undefined) {
+          // Mounted: seat the nth component on the nth body, so the stack sits
+          // flush against the block face and stacks outward from there.
+          const highlighted =
+            selected !== null &&
+            selected.slotIndex === index &&
+            selected.depth === bodyIndex;
+          paintBody(names, "solid", highlighted, LEVEL_COLOUR[kind]);
+          return;
+        }
+
+        // Empty depths keep their long adaptor body hidden — it stands proud of
+        // the face like a peg, so it is never the highlight.
+        paintBody(names, "hidden", false, EMPTY_COLOUR);
+      });
+
+      // Show only the active position, and show it as a lit bore: the baked
+      // near-flush cap disc (see add-bore-caps.py) is coloured blue for the
+      // selected empty seat and stays transparent otherwise, so the highlight
+      // reads as the coloured hole rather than a protruding tool. A seat with
+      // anything mounted highlights that part instead, so its cap stays hidden.
+      const isEmpty = kinds.every((kind) => kind === undefined);
+      const litBore = isEmpty && selectedSlotIndex === index;
+      paint(PREVIEW_SEAT_CAPS[index], litBore ? "solid" : "hidden", litBore, EMPTY_COLOUR);
     });
-  }, [canPickSeats, filledKey, slots, selectedKey, selected, blockSelected, loaded]);
+  }, [
+    canPickSeats,
+    filledKey,
+    slots,
+    selectedKey,
+    selected,
+    selectedSlotIndex,
+    blockSelected,
+    loaded,
+  ]);
 
   return (
     <section className="relative flex h-full min-h-0 flex-1 flex-col overflow-hidden bg-weave-viewport">

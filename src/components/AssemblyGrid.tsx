@@ -122,26 +122,39 @@ export function AssemblyGrid({
 
     // Insert options only make sense on a filled position row, since inserting
     // above nothing is the same as filling the open row that is already there.
-    if (index !== null && depth !== null && row?.toolId !== null) {
+    // Each is greyed out when the acceptance rules leave no component that
+    // could actually go there — nothing mounts below a cutting tool, say.
+    if (index !== null && depth !== null && row !== undefined && row.toolId !== null) {
       items.push(
         {
           id: "insert-above",
           label: "Insert component above…",
           separatorBefore: true,
+          disabled: !row.canInsertAbove,
           onSelect: () => onBrowseLibrary(id, "insertAbove"),
         },
         {
           id: "insert-below",
           label: "Insert component below…",
+          disabled: !row.canInsertBelow,
           onSelect: () => onBrowseLibrary(id, "insertBelow"),
         },
       );
     }
 
+    if (index !== null && depth === 0 && row?.toolId !== null) {
+      items.push({
+        id: "clear-position",
+        label: "Clear this position",
+        separatorBefore: true,
+        onSelect: () => onRemoveSlot(index),
+      });
+    }
+
     items.push({
       id: "clear",
-      label: index === null ? "Clear tool block" : "Clear component",
-      separatorBefore: true,
+      label: index === null ? "Clear tool block" : "Remove this component",
+      separatorBefore: index === null || depth !== 0 || row?.toolId === null,
       disabled: row?.toolId === null,
       onSelect: () =>
         index === null || depth === null
@@ -152,8 +165,18 @@ export function AssemblyGrid({
     return items;
   };
 
+  const positionCount = slotRows.filter((row) => row.depth === 0).length;
+
   return (
     <section className="space-y-2">
+      <div className="flex items-center justify-between">
+        <h3 className="text-xs font-semibold text-weave-text">Positions</h3>
+        {/* The count is read off the tool block, not entered by the user. */}
+        <span className="text-[11px] text-weave-text-placeholder">
+          {positionCount} {positionCount === 1 ? "position" : "positions"} on this
+          tool block
+        </span>
+      </div>
       <div className="overflow-hidden rounded-[2px] border border-weave-divider bg-weave-input/40">
         <div className="grid grid-cols-[minmax(180px,1.6fr)_minmax(90px,0.8fr)_minmax(110px,0.9fr)]">
           <GridHeader>Name</GridHeader>
@@ -336,11 +359,27 @@ function SlotRow({
       <GridCell
         selected={selected}
         className="flex items-center gap-1"
-        style={{ paddingLeft: `${1.5 + depth * 1}rem` }}
+        style={{ paddingLeft: `${0.5 + depth * 1}rem` }}
       >
+        {/* Every position keeps a persistent label, whatever it holds, so the
+            row always names the physical position it maps to on the block. */}
+        {depth === 0 ? (
+          <span className="inline-flex h-5 shrink-0 items-center rounded-[2px] bg-weave-surface-300 px-1.5 text-[10px] font-semibold text-weave-text">
+            Position {index + 1}
+          </span>
+        ) : (
+          <span
+            aria-hidden="true"
+            className="shrink-0 text-[11px] leading-none text-weave-text-placeholder"
+          >
+            └
+          </span>
+        )}
         <select
           aria-label={
-            depth === 0 ? `Slot ${index + 1}` : `Slot ${index + 1} step ${depth + 1}`
+            depth === 0
+              ? `Position ${index + 1}`
+              : `Position ${index + 1} step ${depth + 1}`
           }
           title={chosen === null ? `This position takes ${takes} here` : undefined}
           value={chosen ?? ""}
@@ -413,15 +452,35 @@ function RowToolbar({
   const depth = slot?.depth ?? null;
   const isFilledStackRow =
     index !== null && depth !== null && slot?.toolId !== null;
-  // Arrows now reorder within the position's own stack — the whole slot no
-  // longer travels between positions when the user hits Up or Down.
-  const canMoveUp = isFilledStackRow && depth > 0;
-  const canMoveDown = isFilledStackRow && depth < slotStackSize - 1;
+  // Arrows reorder components *within* the selected position's own stack. They
+  // never move a component between positions, so a tool can't be reassigned to
+  // the wrong position by accident.
+  const canMoveUp = isFilledStackRow && (depth as number) > 0;
+  const canMoveDown = isFilledStackRow && (depth as number) < slotStackSize - 1;
+
+  // The trash icon is context-aware. When the position row itself is selected
+  // (the "Position N" row, depth 0) it clears the whole position, leaving it
+  // open with nothing in it. When a mounted component deeper in the stack is
+  // highlighted it removes just that item, leaving the position in place for a
+  // new selection.
+  const isPositionRow = index !== null && depth === 0;
+  const isComponentItem = isFilledStackRow && (depth as number) > 0;
+  const trashLabel = isComponentItem
+    ? "Remove selected component"
+    : "Clear this position";
+  const trashDisabled =
+    index === null ||
+    (isPositionRow ? slotStackSize === 0 : !isComponentItem);
+  const onTrash = () => {
+    if (index === null) return;
+    if (isComponentItem && depth !== null) onClear(index, depth, null);
+    else onRemove(index);
+  };
 
   return (
     <div className="flex items-center gap-1 border-t border-weave-divider bg-weave-surface-300/50 px-2 py-1">
       <IconButton
-        label="Move up in stack"
+        label="Move component up within this position"
         glyph="↑"
         disabled={!canMoveUp}
         onClick={() =>
@@ -429,7 +488,7 @@ function RowToolbar({
         }
       />
       <IconButton
-        label="Move down in stack"
+        label="Move component down within this position"
         glyph="↓"
         disabled={!canMoveDown}
         onClick={() =>
@@ -437,21 +496,17 @@ function RowToolbar({
         }
       />
       <IconButton
-        label="Remove component"
-        glyph="×"
-        disabled={!isFilledStackRow}
-        onClick={() => index !== null && depth !== null && onClear(index, depth, null)}
-      />
-      <IconButton
-        label="Clear slot"
+        label={trashLabel}
         glyph={<TrashIcon />}
-        disabled={index === null || slotStackSize === 0}
-        onClick={() => index !== null && onRemove(index)}
+        disabled={trashDisabled}
+        onClick={onTrash}
       />
       <span className="ml-1 truncate text-[10px] text-weave-text-placeholder">
         {index === null
-          ? "Select a slot to edit"
-          : `Slot ${index + 1}${slot?.level == null ? "" : ` · ${LEVEL_NOUN[slot.level]}`}`}
+          ? "Select a position to edit"
+          : `Position ${index + 1}${
+              slot?.level == null ? "" : ` · ${LEVEL_NOUN[slot.level]}`
+            }`}
       </span>
     </div>
   );
@@ -471,7 +526,7 @@ function SlotSummary({
       className="col-span-3 grid cursor-default grid-cols-subgrid"
     >
       <div className="border-b border-r border-weave-divider bg-weave-surface-300/40 py-1 pl-6 pr-2 text-right text-[11px] font-semibold text-weave-text-placeholder">
-        Slot {index + 1} total
+        Position {index + 1} total
       </div>
       <div className="border-b border-r border-weave-divider bg-weave-surface-300/40" />
       <div className="border-b border-weave-divider bg-weave-surface-300/40 px-2 py-1 text-[11px] font-semibold tabular-nums text-weave-text">
@@ -561,7 +616,7 @@ function Disclosure({
   return (
     <button
       type="button"
-      aria-label={expanded ? "Collapse slots" : "Expand slots"}
+      aria-label={expanded ? "Collapse positions" : "Expand positions"}
       aria-expanded={expanded}
       onClick={(event) => {
         event.stopPropagation();

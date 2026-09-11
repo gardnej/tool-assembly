@@ -1,5 +1,7 @@
 import { useCallback, useMemo, useState } from "react";
 import {
+  canInsertAbove,
+  canInsertBelow,
   emptySlot,
   insertSlotComponent,
   moveSlot,
@@ -179,6 +181,8 @@ const EMPTY_BLOCK_ROW: AssemblyRow = {
   depth: null,
   level: null,
   accepts: [],
+  canInsertAbove: false,
+  canInsertBelow: false,
   toolId: null,
   name: "",
   type: "",
@@ -259,6 +263,8 @@ function slotRowsFrom(
     depth,
     level: null,
     accepts,
+    canInsertAbove: false,
+    canInsertBelow: false,
     toolId: null,
     name: "",
     type: "",
@@ -281,6 +287,7 @@ function slotRowsFrom(
   // The chain leads with the block, so the stack starts one along from it.
   const offset = components.length - chosen.length;
 
+  const allKinds = chosen.map(slotKind);
   const kinds: SlotLevel[] = [];
   const rows: AssemblyRow[] = [];
 
@@ -290,6 +297,8 @@ function slotRowsFrom(
     rows.push({
       ...base(depth, slotAccepts(kinds)),
       level: slotKind(record),
+      canInsertAbove: canInsertAbove(allKinds, depth),
+      canInsertBelow: canInsertBelow(allKinds, depth),
       toolId: record.id,
       name: displayName(record),
       type: record.type,
@@ -345,19 +354,21 @@ export function useToolAssemblyWorkflow() {
    */
   const occupants = useMemo(() => stacks.map((stack) => stack[0]), [stacks]);
 
-  /** Which kinds each position holds, for the viewer's per-seat bodies. */
-  const slotFills = useMemo(
+  /**
+   * The kinds each position holds, machine side first, for the viewer.
+   *
+   * The viewer seats them by mount order rather than by kind, so the first
+   * component always fills the bore seat flush with the block face and the rest
+   * stack outward from it — a collet seated straight in the block reads as
+   * seated, not floating where an extension would have held it.
+   */
+  const slotFills = useMemo<SlotLevel[][]>(
     () =>
-      stacks.map((stack) => {
-        const kinds = stack
+      stacks.map((stack) =>
+        stack
           .filter((record): record is LibraryToolRecord => record !== undefined)
-          .map(slotKind);
-        return {
-          extension: kinds.includes("extension"),
-          collet: kinds.includes("collet"),
-          tool: kinds.includes("tool"),
-        };
-      }),
+          .map(slotKind),
+      ),
     [stacks],
   );
 

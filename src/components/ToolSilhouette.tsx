@@ -43,6 +43,8 @@ interface Drawing {
   /** Widest and longest the part gets, in millimetres. */
   width: number;
   length: number;
+  /** Draw upside down, so a part's wide end reads at the bottom. */
+  flipV?: boolean;
   render: (frame: Frame) => ReactNode;
 }
 
@@ -81,7 +83,15 @@ export function ToolSilhouette({ record, geometry, className }: ToolSilhouettePr
         stroke="#1a1a1a"
         strokeWidth={frame.sw}
       />
-      {drawing.render(frame)}
+      {drawing.flipV === true ? (
+        // Mirror about the part's own centre so the wide end reads at the
+        // bottom while the drawing stays within the same vertical band.
+        <g transform={`translate(0, ${2 * frame.tip - drawing.length}) scale(1, -1)`}>
+          {drawing.render(frame)}
+        </g>
+      ) : (
+        drawing.render(frame)
+      )}
       <circle cx={frame.cx} cy={frame.tip} r={frame.sw * 2.5} fill="#1a1a1a" />
     </svg>
   );
@@ -120,8 +130,15 @@ function drawingFor(
   if (record.segments && record.segments.length > 0) {
     return segmentDrawing(record, record.segments);
   }
-  if (type === "collet") return colletDrawing(record, geo);
-  if (type === "extension") return extensionDrawing(record, geo);
+  // Collets and extensions can be typed either as their own kind or as a plain
+  // "holder" that names itself in its description (e.g. "ER16 Collet"). Route
+  // both to the dedicated drawing so they read as a collet or an extension
+  // rather than as a generic holder.
+  if (type === "collet" || isColletRecord(record)) return colletDrawing(record, geo);
+  if (type === "extension" || /extension/i.test(displayName(record))) {
+    // Extensions read machine-side down here, wide mounting end at the bottom.
+    return { ...extensionDrawing(record, geo), flipV: true };
+  }
   if (type === "holder") return holderDrawing(record.holder ?? geo);
   if (type.startsWith("turning") || "SC" in geo || "INSD" in geo) {
     return turningDrawing(record.holder ?? {}, geo);
@@ -236,59 +253,91 @@ function segmentDrawing(
   };
 }
 
+/**
+ * An ER-style collet, drawn to match its real silhouette: a short collar at the
+ * top that flares to the collet's widest diameter, then a straight taper down to
+ * a narrower nose, with the axial slots the collet closes on. No wide central
+ * bore is drawn — the slots read the part as a collet on their own.
+ */
 function colletDrawing(
   record: LibraryToolRecord,
   geo: Record<string, number | string | boolean>,
 ): Drawing {
-  const bore = num(geo, "DC") ?? namedSize(record) ?? 10;
-  const length = num(geo, "OAL") ?? bore * 4.5;
-  const top = Math.max(bore * 2.4, bore + 12);
-  const nose = Math.max(bore * 1.5, bore + 5);
+  const nominal = num(geo, "DC") ?? namedSize(record) ?? 12;
+  const maxDia = Math.max(nominal * 2.0, nominal + 12);
+  const length = num(geo, "OAL") ?? maxDia * 1.55;
+
+  const collar = maxDia * 0.82; // top, just inside the widest point
+  const flare = maxDia; // widest, a little below the top
+  const nose = maxDia * 0.66; // bottom
+
+  const flareY = 0.16; // where the widest point sits, from the top
 
   return {
-    width: top,
+    width: maxDia,
     length,
-    render: ({ cx, tip, sw }) => (
-      <g>
-        <polygon
-          points={[
-            `${cx - top / 2},${tip - length}`,
-            `${cx + top / 2},${tip - length}`,
-            `${cx + nose / 2},${tip}`,
-            `${cx - nose / 2},${tip}`,
-          ].join(" ")}
-          fill={BODY}
-          stroke={BODY_EDGE}
-          strokeWidth={sw}
-        />
-        {/* The bore the collet grips through. */}
-        <rect
-          x={cx - bore / 2}
-          y={tip - length}
-          width={bore}
-          height={length}
-          fill="#8fa3b3"
-          stroke={BODY_EDGE}
-          strokeWidth={sw}
-        />
-        {/* The slits a collet closes on. */}
-        {[0.3, 0.5, 0.7].flatMap((at) => {
-          const y = tip - length * (1 - at);
-          const edge = (top - (top - nose) * (1 - at)) / 2;
-          return [-1, 1].map((side) => (
-            <line
-              key={`${at}-${side}`}
-              x1={cx + side * edge}
-              y1={y}
-              x2={cx + side * (bore / 2)}
-              y2={y}
-              stroke={BODY_EDGE}
-              strokeWidth={sw * 0.7}
-            />
-          ));
-        })}
-      </g>
-    ),
+    render: ({ cx, tip, sw }) => {
+      const top = tip - length;
+      const flareLine = top + length * flareY;
+      const half = (w: number) => w / 2;
+
+      const outline = [
+        `${cx - half(collar)},${top}`,
+        `${cx + half(collar)},${top}`,
+        `${cx + half(flare)},${flareLine}`,
+        `${cx + half(nose)},${tip}`,
+        `${cx - half(nose)},${tip}`,
+        `${cx - half(flare)},${flareLine}`,
+      ].join(" ");
+
+      // Half of the outer edge at a given height, for clipping the slots.
+      const edgeAt = (y: number): number => {
+        if (y <= flareLine) {
+          const t = (y - top) / (flareLine - top || 1);
+          return (half(collar) + (half(flare) - half(collar)) * t) - sw * 1.5;
+        }
+        const t = (y - flareLine) / (tip - flareLine || 1);
+        return (half(flare) + (half(nose) - half(flare)) * t) - sw * 1.5;
+      };
+
+      return (
+        <g>
+          <polygon
+            points={outline}
+            fill={BODY}
+            stroke={BODY_EDGE}
+            strokeWidth={sw}
+            strokeLinejoin="round"
+          />
+          {/* A groove near the top, where the nut bears on the collet. */}
+          <line
+            x1={cx - half(collar)}
+            y1={top + length * 0.08}
+            x2={cx + half(collar)}
+            y2={top + length * 0.08}
+            stroke={BODY_EDGE}
+            strokeWidth={sw * 0.8}
+          />
+          {/* The axial slots the collet closes on, converging with the taper. */}
+          {[-0.46, -0.15, 0.15, 0.46].map((frac) => {
+            const yTop = top + length * 0.14;
+            const yBot = tip - length * 0.06;
+            const x = (y: number) => cx + frac * 2 * edgeAt(y);
+            return (
+              <line
+                key={frac}
+                x1={x(yTop)}
+                y1={yTop}
+                x2={x(yBot)}
+                y2={yBot}
+                stroke={BODY_EDGE}
+                strokeWidth={sw * 0.8}
+              />
+            );
+          })}
+        </g>
+      );
+    },
   };
 }
 

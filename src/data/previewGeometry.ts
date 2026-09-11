@@ -41,6 +41,16 @@ export const PREVIEW_BLOCK_GEOMETRY_ID = "preview-3x-spot-drill-tap";
  */
 export const PREVIEW_BLOCK_MATERIAL = "part_0";
 
+/**
+ * Bore-cap material per seat, in {@link PREVIEW_SEATS} order.
+ *
+ * `scripts/add-bore-caps.py` bakes a short cylinder into each hole so the viewer
+ * can colour a near-flush disc for the selected empty seat instead of revealing
+ * the full-length adaptor, which stood proud like a peg. Requires the mesh built
+ * with those caps (the `-caps` GLB); a plain export has no such material.
+ */
+export const PREVIEW_SEAT_CAPS = ["cap_0", "cap_1", "cap_2"];
+
 /** Materials of one seat, by what the part is. */
 export interface PreviewSeat {
   extension: string;
@@ -68,6 +78,40 @@ export const PREVIEW_SEATS: PreviewSeat[] = [
 export function seatMaterials(seat: PreviewSeat): string[] {
   return [seat.extension, seat.collet, ...seat.tool];
 }
+
+/** A point on the block, in the mesh's own coordinate space, and its facing. */
+export interface SeatAnchor {
+  position: [number, number, number];
+  normal: [number, number, number];
+  /**
+   * The seat's ring diameter on the face, in the mesh's units.
+   *
+   * Recognised from the block mesh by `scripts/hole-rings.py`: the machined
+   * counterbore around each seat, which is the ring the eye reads on the block.
+   * The viewer draws an outline this wide so it hugs the real hole rather than
+   * sitting as a fixed dot.
+   */
+  ringDiameter: number;
+}
+
+/**
+ * Where each seat's hole opens on the block face, per {@link PREVIEW_SEATS}.
+ *
+ * Read off the GLB with `scripts/seat-hotspots.py`: the tool axis is +X, so the
+ * block's outer face sits at x ≈ 5.25 and each flush (extension) body's y,z give
+ * its hole centre. A `<model-viewer>` hotspot anchored here lands a ring right on
+ * the physical hole and rides the camera, so which position is which is read off
+ * the block itself rather than inferred from a chip. The mouth is nudged just
+ * proud of the face (x = 5.4) so the ring is not swallowed by the solid, and the
+ * +X normal lets the viewer dim rings on holes turned away. `ringDiameter` is the
+ * seat bore each tool passes through, recognised by `scripts/hole-rings.py` — the
+ * tight hole itself, not the wider machined counterbore around it.
+ */
+export const PREVIEW_SEAT_ANCHORS: SeatAnchor[] = [
+  { position: [5.4, 0.0, -8.5], normal: [1, 0, 0], ringDiameter: 2.2 },
+  { position: [5.4, 0.0, -3.81], normal: [1, 0, 0], ringDiameter: 2.2 },
+  { position: [5.4, -6.341, -7.665], normal: [1, 0, 0], ringDiameter: 2.2 },
+];
 
 /** The OBJ came out in Fusion's native centimetres. */
 export const PREVIEW_UNIT_SCALE_MM = 10;

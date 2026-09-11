@@ -255,6 +255,37 @@
   --poster-color: #000;
 }
 
+/**
+ * Turret station numbers, drawn as <model-viewer> hotspots anchored to the
+ * station ring computed by scripts/turret-stations.py. Small numbered chips,
+ * legible over the model and non-interactive to pointer orbit.
+ */
+.turret-hotspot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  border-radius: 50%;
+  background: rgba(17, 22, 28, 0.82);
+  color: #fff;
+  font-family: "Artifakt Element", ArtifaktElement, system-ui, sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1;
+  cursor: default;
+  user-select: none;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+}
+
+/* Fade a number out when the turret face it sits on points away from us. */
+.turret-hotspot[data-visibility="hidden"] {
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
 .viewport__block--emph-body {
   box-shadow:
     0 12px 40px rgba(0, 0, 0, 0.45),

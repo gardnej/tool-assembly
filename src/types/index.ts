@@ -84,6 +84,10 @@ export interface AssemblyRow {
   level: SlotLevel | null;
   /** Kinds this row can take, so an open row offers what actually fits. */
   accepts: SlotLevel[];
+  /** Whether a component can be spliced in above this one (machine side). */
+  canInsertAbove: boolean;
+  /** Whether a component can be spliced in below this one (cutting side). */
+  canInsertBelow: boolean;
   /** Library tool this row came from, or null when nothing is chosen yet. */
   toolId: string | null;
   name: string;
@@ -181,4 +185,75 @@ export interface SavedAssembly {
   }[];
   config: AssemblyConfig;
   createdAt: number;
+}
+
+/* Turret setup ----------------------------------------------------------- */
+
+/**
+ * The turret a machine carries.
+ *
+ * These are properties of the physical turret, fixed by the machine rather than
+ * chosen per setup: the coupling standard (`BMT`, `VDI`, …), how many stations
+ * it indexes to, where it sits and how it is mounted. A `TurretSetup` then
+ * assigns a tool assembly to each of those stations.
+ */
+export type TurretCoupling = "BMT" | "VDI" | "Disc" | "Gang";
+
+export interface TurretDefinition {
+  /** Coupling standard, shown as "Turret type" in the dialog. */
+  coupling: TurretCoupling;
+  /** How many stations the turret indexes to; fixes the station-table length. */
+  stationCount: number;
+  /** e.g. "Outside mounted" / "Inside mounted". */
+  mount: string;
+  /** e.g. "Above main spindle". */
+  position: string;
+}
+
+/**
+ * A machine the document can be set up against.
+ *
+ * The prototype models only what the Setup and Turret Setup dialogs need — the
+ * machine's name, its turret orientation, and the turret it carries — rather
+ * than a full kinematic definition (spindles, axes, tool-change timing).
+ */
+export interface Machine {
+  id: string;
+  /** Display name, e.g. "HAAS ST-20Y". */
+  name: string;
+  /** Turret orientation, shown after the name: "HAAS ST-20Y - Orthogonal". */
+  orientation: string;
+  turret: TurretDefinition;
+  /** Optional glTF asset for the turret, shown and toggled in the canvas. */
+  turretModelUrl?: string;
+}
+
+/** One station of a turret setup, and the assembly assigned to it (if any). */
+export interface TurretStationAssignment {
+  stationNumber: number;
+  /** Base id of a `SavedAssembly` assigned here, or null when empty. */
+  toolAssemblyId: string | null;
+}
+
+/**
+ * A named assignment of tool assemblies to the stations of a machine's turret.
+ *
+ * "Create new turret setup" in the dialog mints one of these; a document can
+ * hold several, each with its own name and per-station assignments.
+ */
+export interface TurretSetup {
+  id: string;
+  name: string;
+  /** Machine whose turret this setup configures. */
+  machineId: string;
+  /** One entry per station, ordered 1..stationCount. */
+  stations: TurretStationAssignment[];
+  createdAt: number;
+}
+
+/** A choosable tool assembly for a station, as offered by the dropdown. */
+export interface ToolAssemblyOption {
+  /** Base id, matching a `SavedAssembly` base id where one exists. */
+  id: string;
+  label: string;
 }

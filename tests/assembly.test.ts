@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
+  canInsertAbove,
+  canInsertBelow,
   emptySlot,
   moveSlot,
   removeSlot,
@@ -64,6 +66,8 @@ function slotRow(
     depth,
     level: "tool",
     accepts: [],
+    canInsertAbove: false,
+    canInsertBelow: false,
     toolId: `tool-${index}-${depth}`,
     name: `Tool ${index}.${depth}`,
     type: "turning general",
@@ -87,6 +91,8 @@ function blockRow(overrides: Partial<AssemblyRow> = {}): AssemblyRow {
     depth: null,
     level: null,
     accepts: [],
+    canInsertAbove: false,
+    canInsertBelow: false,
     toolId: "block-owner",
     name: "Tool block",
     type: "tool block",
@@ -241,8 +247,10 @@ describe("positions under the block", () => {
 describe("what a position accepts next", () => {
   const { extension, collet, tool } = samples();
 
-  it("names an empty position's options as an extension or a cutting tool", () => {
-    assert.deepEqual(slotAccepts([]), ["extension", "tool"]);
+  it("lets an empty position take an extension, a collet or a cutting tool", () => {
+    // The hierarchy is flexible: a collet may seat straight into a position
+    // without an extension in front of it.
+    assert.deepEqual(slotAccepts([]), ["extension", "collet", "tool"]);
   });
 
   it("lets an extension hold another extension, a collet or a cutting tool", () => {
@@ -271,6 +279,21 @@ describe("what a position accepts next", () => {
       slotKinds([extension.id, collet.id, tool.id]),
       ["extension", "collet", "tool"],
     );
+  });
+
+  it("allows inserting above a component whenever something can carry it", () => {
+    // An extension can be spliced in ahead of a collet or a cutting tool that
+    // currently seats straight in the block.
+    assert.equal(canInsertAbove(["collet"], 0), true);
+    assert.equal(canInsertAbove(["tool"], 0), true);
+    assert.equal(canInsertAbove(["extension", "tool"], 1), true);
+  });
+
+  it("forbids inserting below a cutting tool, since nothing follows it", () => {
+    assert.equal(canInsertBelow(["tool"], 0), false);
+    assert.equal(canInsertBelow(["extension", "tool"], 1), false);
+    // An extension can still take something on its cutting side.
+    assert.equal(canInsertBelow(["extension"], 0), true);
   });
 
   it("counts a position as complete once a cutting tool is at the end", () => {
