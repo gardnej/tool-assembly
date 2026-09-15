@@ -280,6 +280,13 @@
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
 }
 
+/* A station with a tool mounted reads as the accent colour. */
+.turret-hotspot--mounted {
+  border-color: #3a9ad9;
+  background: #3a9ad9;
+  color: #fff;
+}
+
 /* Fade a number out when the turret face it sits on points away from us. */
 .turret-hotspot[data-visibility="hidden"] {
   opacity: 0;

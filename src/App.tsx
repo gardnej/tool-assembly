@@ -16,7 +16,7 @@ import {
   getViewportEmphasis,
   TURRET_BROWSER_NODE_ID,
 } from "./data/demoBlockDesign";
-import turretGlbUrl from "./assets/models/turret-drum.glb?url";
+import turretGlbUrl from "./assets/models/turret-stations.glb?url";
 import {
   createDefaultTurretSetup,
   HAAS_ST_20Y,
@@ -168,6 +168,15 @@ export default function App() {
     return browserRootWithTurret(machine.name, turretSetup?.name ?? "Turret1");
   }, [machine, turretSetup]);
 
+  /** Station numbers that currently have a tool assembly mounted. */
+  const assignedStations = useMemo(
+    () =>
+      (turretSetup?.stations ?? [])
+        .filter((station) => station.toolAssemblyId !== null)
+        .map((station) => station.stationNumber),
+    [turretSetup],
+  );
+
   const contextMenuItems = useMemo<ContextMenuItem[]>(() => {
     if (contextMenu === null) return [];
     return [
@@ -295,7 +304,7 @@ export default function App() {
               blockAccentClass={viewportEmphasis.blockClass || undefined}
               turret={
                 machine !== null
-                  ? { url: turretGlbUrl, visible: turretVisible }
+                  ? { url: turretGlbUrl, visible: turretVisible, assignedStations }
                   : undefined
               }
             />

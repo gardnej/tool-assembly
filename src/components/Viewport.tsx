@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import type { RibbonTabId, RibbonWorkspaceId } from "../ribbonConfig";
 import auPartGlbUrl from "../assets/models/au-part-2023.glb?url";
 import turretStations from "../data/turretStations.json";
@@ -10,8 +11,25 @@ type ViewportProps = {
   subtitle?: string;
   /** Extra frame class for feature emphasis rings around viewport preview */
   blockAccentClass?: string | undefined;
-  /** Turret model to overlay, and whether the browser's turret node is shown. */
-  turret?: { url: string; visible: boolean } | undefined;
+  /**
+   * Turret model to overlay, whether the browser's turret node is shown, and
+   * the station numbers that currently have a tool assembly mounted (their
+   * baked ``station-NN`` material is revealed; the rest stay hidden).
+   */
+  turret?: { url: string; visible: boolean; assignedStations: number[] } | undefined;
+};
+
+/** Regex pulling the station number out of a baked ``station-07`` material. */
+const STATION_MATERIAL = /^station-(\d+)$/;
+
+/** The slice of model-viewer's material API we drive to show/hide tools. */
+type MvMaterial = {
+  name?: string;
+  setAlphaMode: (mode: "OPAQUE" | "BLEND" | "MASK") => void;
+  pbrMetallicRoughness: {
+    baseColorFactor: [number, number, number, number];
+    setBaseColorFactor: (rgba: [number, number, number, number]) => void;
+  };
 };
 
 export function Viewport({
@@ -37,6 +55,42 @@ export function Viewport({
       ? `AU Part 2023 · ${subtitle}`
       : `AU Part 2023 · ${mode}`;
 
+  /**
+   * Reveal only the mounted stations' tools. Each station's tool is a baked
+   * ``station-NN`` material; we drop the alpha of unassigned ones to 0 so the
+   * turret reads as bare, and restore it for assigned ones. Re-applied on
+   * every assignment change and whenever the model (re)loads.
+   */
+  const turretRef = useRef<HTMLElement & { model?: unknown }>(null);
+  const assignedKey = turret?.assignedStations.slice().sort((a, b) => a - b).join(",");
+
+  useEffect(() => {
+    const viewer = turretRef.current;
+    if (viewer === null || turret === undefined) return;
+
+    const assigned = new Set(turret.assignedStations);
+    const apply = () => {
+      // model-viewer exposes a symbolic scene graph once the glTF has loaded.
+      const model = (viewer as { model?: { materials?: MvMaterial[] } }).model;
+      if (model?.materials === undefined) return;
+      for (const material of model.materials) {
+        const match = STATION_MATERIAL.exec(material.name ?? "");
+        if (match === null) continue;
+        const on = assigned.has(Number(match[1]));
+        const pbr = material.pbrMetallicRoughness;
+        const [r, g, b] = pbr.baseColorFactor;
+        pbr.setBaseColorFactor([r, g, b, on ? 1 : 0]);
+        material.setAlphaMode(on ? "OPAQUE" : "BLEND");
+      }
+    };
+
+    apply();
+    viewer.addEventListener("load", apply);
+    return () => {
+      viewer.removeEventListener("load", apply);
+    };
+  }, [assignedKey, turret?.url, turret?.visible, turret]);
+
   return (
     <div className="viewport" role="application" aria-label="Design viewport">
       <div className="viewport__grid">
@@ -47,6 +101,7 @@ export function Viewport({
         >
           {turret !== undefined && turret.visible ? (
             <model-viewer
+              ref={turretRef}
               className="viewport__model-viewer"
               src={turret.url}
               alt="Turret assembly"
@@ -57,19 +112,24 @@ export function Viewport({
               exposure="1"
               aria-label="Turret assembly — 3D model. Drag to orbit, scroll to zoom."
             >
-              {turretStations.stations.map((station) => (
-                <button
-                  key={station.number}
-                  className="turret-hotspot"
-                  slot={`hotspot-${station.number}`}
-                  data-position={station.position.join(" ")}
-                  data-normal={station.normal.join(" ")}
-                  data-visibility-attribute="visible"
-                  type="button"
-                >
-                  {station.number}
-                </button>
-              ))}
+              {turretStations.stations.map((station) => {
+                const mounted = turret.assignedStations.includes(station.number);
+                return (
+                  <button
+                    key={station.number}
+                    className={
+                      mounted ? "turret-hotspot turret-hotspot--mounted" : "turret-hotspot"
+                    }
+                    slot={`hotspot-${station.number}`}
+                    data-position={station.position.join(" ")}
+                    data-normal={station.normal.join(" ")}
+                    data-visibility-attribute="visible"
+                    type="button"
+                  >
+                    {station.number}
+                  </button>
+                );
+              })}
             </model-viewer>
           ) : (
             <model-viewer
