@@ -22,6 +22,7 @@ import sys
 from pathlib import Path
 
 TOOL_MATERIALS = {"Opaque(93,148,165)", "Opaque(243,203,124)"}
+DRUM_BODY = "Body1:33"
 STATION_COUNT = 12
 
 
@@ -132,28 +133,30 @@ def main() -> int:
 
     positions, bodies, tool_bodies = parse(in_path)
 
-    tool_centroids = []
-    for name in tool_bodies:
-        idxs = bodies.get(name) or []
-        pts = [positions[i] for i in idxs if 0 <= i < len(positions)]
-        if pts:
-            tool_centroids.append(centroid(pts))
-
-    if len(tool_centroids) < 3:
-        print("not enough tool bodies to fit a ring", file=sys.stderr)
+    # --- Ring geometry comes from the DRUM body, not the tools. -------------
+    # The source OBJ only carried tools on some stations, so the tool cloud is
+    # not symmetric about the drum axis; fitting the ring to it put the centre
+    # ~11 mm off and the radius out at the tool tips. The drum itself is a clean
+    # 12-sided disc, so we take its centroid as the ring centre and its thin
+    # PCA axis as the turret axis.
+    drum_pts = [positions[i] for i in set(bodies.get(DRUM_BODY) or [])
+                if 0 <= i < len(positions)]
+    if len(drum_pts) < 8:
+        print(f"drum body {DRUM_BODY!r} not found / too small", file=sys.stderr)
         return 3
 
-    # Ring axis: normal of the best-fit plane through the tool centroids
-    # (smallest-eigenvalue eigenvector of their covariance).
-    c = centroid(tool_centroids)
+    c = centroid(drum_pts)
     cov = [[0.0] * 3 for _ in range(3)]
-    for p in tool_centroids:
+    for p in drum_pts:
         d = sub(p, c)
         for i in range(3):
             for j in range(3):
                 cov[i][j] += d[i] * d[j]
     values, vectors = jacobi_eigen(cov)
-    axis = norm(vectors[values.index(min(values))])
+    axis = norm(vectors[values.index(min(values))])  # thin direction = axis
+    # Orient axis toward the operator-facing front (the +X-ish, camera side).
+    if axis[0] < 0:
+        axis = tuple(-a for a in axis)
 
     # In-plane basis.
     seed = (1.0, 0.0, 0.0)
@@ -162,33 +165,43 @@ def main() -> int:
     u = norm(sub(seed, tuple(axis[i] * dot(seed, axis) for i in range(3))))
     w = norm(cross(axis, u))
 
-    # Ring centre = tool-centroid mean projected onto the plane through c, and
-    # radius = mean in-plane distance.
-    angles = []
-    radii = []
-    for p in tool_centroids:
-        d = sub(p, c)
-        pu, pw = dot(d, u), dot(d, w)
-        angles.append(math.atan2(pw, pu))
-        radii.append(math.hypot(pu, pw))
-    radius = sum(radii) / len(radii)
+    # Drum extents: front-face plane (max axial) and rim radius (in-plane).
+    axials = [dot(sub(p, c), axis) for p in drum_pts]
+    front_axial = max(axials)
+    plane_r = sorted(math.hypot(dot(sub(p, c), u), dot(sub(p, c), w))
+                     for p in drum_pts)
+    rim = plane_r[int(len(plane_r) * 0.98)]
+    # Seat the numbers on the front face, inboard of the rim, and a hair proud
+    # of the surface so they occlude cleanly when a station turns away.
+    label_r = rim * 0.82
+    label_axial = front_axial + 1.0
 
-    # Phase: align the 12-slot grid to the tools by averaging their offset from
-    # the nearest 30° slot.
+    # Phase: align the 12-slot grid to the real tool/flat angles (measured about
+    # the *correct* centre now), so number N sits on the same flat as tool N.
     step = 2 * math.pi / STATION_COUNT
-    offsets = [((a % step) + step) % step for a in angles]
-    # Circular mean of offsets over [0, step).
-    sin_s = sum(math.sin(o / step * 2 * math.pi) for o in offsets)
-    cos_s = sum(math.cos(o / step * 2 * math.pi) for o in offsets)
-    phase = math.atan2(sin_s, cos_s) / (2 * math.pi) * step
+    tool_angles = []
+    for name in tool_bodies:
+        idxs = set(bodies.get(name) or [])
+        pts = [positions[i] for i in idxs if 0 <= i < len(positions)]
+        if not pts:
+            continue
+        d = sub(centroid(pts), c)
+        tool_angles.append(math.atan2(dot(d, w), dot(d, u)))
+    if tool_angles:
+        offsets = [((a % step) + step) % step for a in tool_angles]
+        sin_s = sum(math.sin(o / step * 2 * math.pi) for o in offsets)
+        cos_s = sum(math.cos(o / step * 2 * math.pi) for o in offsets)
+        phase = math.atan2(sin_s, cos_s) / (2 * math.pi) * step
+    else:
+        phase = 0.0
 
     stations = []
     for k in range(STATION_COUNT):
         theta = phase + k * step
-        pos = tuple(
-            c[i] + radius * (math.cos(theta) * u[i] + math.sin(theta) * w[i])
-            for i in range(3)
-        )
+        rd = tuple(math.cos(theta) * u[i] + math.sin(theta) * w[i]
+                   for i in range(3))
+        pos = tuple(c[i] + axis[i] * label_axial + rd[i] * label_r
+                    for i in range(3))
         stations.append({
             "number": k + 1,
             "position": [round(pos[i], 3) for i in range(3)],
@@ -199,14 +212,16 @@ def main() -> int:
         "count": STATION_COUNT,
         "axis": [round(a, 4) for a in axis],
         "center": [round(c[i], 3) for i in range(3)],
-        "radius": round(radius, 3),
-        "toolCentroids": len(tool_centroids),
+        "radius": round(rim, 3),
+        "labelRadius": round(label_r, 3),
+        "frontAxial": round(front_axial, 3),
+        "toolBodies": len(tool_bodies),
         "stations": stations,
     }
     out_path.write_text(json.dumps(out, indent=2))
     print(
-        f"wrote {out_path} — {len(tool_centroids)} tools, radius {radius:.1f}, "
-        f"axis {out['axis']}"
+        f"wrote {out_path} — drum-based ring, centre {out['center']}, "
+        f"rim {rim:.1f}, labelR {label_r:.1f}, axis {out['axis']}"
     )
     return 0
 

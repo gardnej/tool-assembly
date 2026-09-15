@@ -123,7 +123,6 @@ export function Viewport({
                     slot={`hotspot-${station.number}`}
                     data-position={station.position.join(" ")}
                     data-normal={station.normal.join(" ")}
-                    data-visibility-attribute="visible"
                     type="button"
                   >
                     {station.number}
