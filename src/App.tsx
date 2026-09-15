@@ -18,6 +18,7 @@ import {
 } from "./data/demoBlockDesign";
 import turretGlbUrl from "./assets/models/turret-stations.glb?url";
 import {
+  assemblyBaseId,
   createDefaultTurretSetup,
   HAAS_ST_20Y,
   toolAssemblyOptions,
@@ -25,6 +26,8 @@ import {
   setSelectedMachine,
   upsertTurretSetup,
 } from "./data/turret";
+import { sessionAssemblies, upsertSessionAssembly } from "./data/libraryEdits";
+import { assemblyMount } from "./data/turretSolids";
 import { useTurretRevision } from "./hooks/useTurretRevision";
 import type { Machine, TurretSetup } from "./types";
 import { defaultTabForWorkspace, type RibbonTabId, type RibbonWorkspaceId } from "./ribbonConfig";
@@ -82,10 +85,21 @@ export default function App() {
   const [contextMenu, setContextMenu] = useState<
     { x: number; y: number; nodeId: string } | null
   >(null);
+  /** Station the assembly picker is choosing for; null when the picker is shut. */
+  const [libraryPickStation, setLibraryPickStation] = useState<number | null>(null);
+  /** Assembly the picker chose, handed to the turret dialog to apply. */
+  const [pendingAssignment, setPendingAssignment] = useState<
+    { stationNumber: number; toolAssemblyId: string; token: number } | null
+  >(null);
 
   // Assemblies offered per station, refreshed when the user saves one.
   const assemblyOptions = useMemo(() => toolAssemblyOptions(), [turretRev]);
   const existingSetups = useMemo(() => turretSetups(), [turretRev]);
+  // Open the assembly picker on a library that actually holds a saved assembly.
+  const assemblyPickerLibraryId = useMemo(
+    () => sessionAssemblies()[0]?.libraryId,
+    [turretRev],
+  );
 
   /** Ensure there is a working turret setup for the given machine. */
   const ensureTurretSetup = useCallback(
@@ -143,6 +157,65 @@ export default function App() {
     setTurretDialogOpen(true);
   }, []);
 
+  // Deep link: ?demo=1 mounts a seatable sample assembly on station 1 straight
+  // away — no dialog, no saved data needed — so the seating can be verified on
+  // any fresh browser or origin. Seeds the assembly once if it is not present.
+  useEffect(() => {
+    if (!queryFlag("demo")) return;
+    const seedBase = "demo-seatable";
+    if (!sessionAssemblies().some((a) => assemblyBaseId(a.id) === seedBase)) {
+      upsertSessionAssembly({
+        id: `${seedBase}-hub`,
+        libraryId: "hub-team",
+        name: "3X Spot-Drill-Tap",
+        vendor: "",
+        productId: "",
+        productLink: "",
+        blockToolId: "preview-block-3x-spot-drill-tap",
+        slots: [
+          {
+            stack: ["preview-extension-6", "preview-collet-6", "preview-tool-spot-drill"],
+            stationNumber: null,
+            halfIndex: false,
+          },
+          {
+            stack: ["preview-extension-8", "preview-collet-8", "preview-tool-drill"],
+            stationNumber: null,
+            halfIndex: false,
+          },
+          {
+            stack: ["preview-extension-10", "preview-collet-10", "preview-tool-tap"],
+            stationNumber: null,
+            halfIndex: false,
+          },
+        ],
+        config: {
+          orientation: "axial",
+          machineSideConnectionType: "Unspecified",
+          numberOfTools: 3,
+          numberOfAttachmentPoints: 0,
+          adaptiveItemSize: 0,
+          stationNumber: null,
+          halfIndex: false,
+        },
+        createdAt: Date.now(),
+      });
+    }
+    setMachine((prev) => prev ?? HAAS_ST_20Y);
+    setSelectedMachine(HAAS_ST_20Y.id);
+    setTurretSetup((prev) => {
+      if (prev !== null) return prev;
+      const setup = createDefaultTurretSetup(HAAS_ST_20Y);
+      return {
+        ...setup,
+        stations: setup.stations.map((s) =>
+          s.stationNumber === 1 ? { ...s, toolAssemblyId: seedBase } : s,
+        ),
+      };
+    });
+    setTurretVisible(true);
+  }, []);
+
   const handleBrowserContextMenu = useCallback(
     (nodeId: string, x: number, y: number) => {
       if (nodeId === TURRET_BROWSER_NODE_ID) {
@@ -175,6 +248,26 @@ export default function App() {
         .filter((station) => station.toolAssemblyId !== null)
         .map((station) => station.stationNumber),
     [turretSetup],
+  );
+
+  /**
+   * Per-station real solids to show on the turret: for each assigned station,
+   * the GLB of the assembly's own geometry when we ship one (else null, so the
+   * viewport keeps the baked template). Recomputed when a save adds a solid.
+   */
+  const turretMounts = useMemo(
+    () =>
+      (turretSetup?.stations ?? [])
+        .filter((station) => station.toolAssemblyId !== null)
+        .map((station) => {
+          const mount = assemblyMount(station.toolAssemblyId);
+          return {
+            stationNumber: station.stationNumber,
+            solidUrl: mount?.url ?? null,
+            keepMaterials: mount?.keepMaterials,
+          };
+        }),
+    [turretSetup, turretRev],
   );
 
   const contextMenuItems = useMemo<ContextMenuItem[]>(() => {
@@ -304,7 +397,12 @@ export default function App() {
               blockAccentClass={viewportEmphasis.blockClass || undefined}
               turret={
                 machine !== null
-                  ? { url: turretGlbUrl, visible: turretVisible, assignedStations }
+                  ? {
+                      url: turretGlbUrl,
+                      visible: turretVisible,
+                      assignedStations,
+                      mounts: turretMounts,
+                    }
                   : undefined
               }
             />
@@ -322,6 +420,28 @@ export default function App() {
         onEditAssembly={openAssemblyEditor}
         initialLibraryId={libraryTarget?.libraryId}
         initialAssemblyId={libraryTarget?.assemblyId}
+      />
+
+      {/* Assembly picker opened from a turret station's dropdown. */}
+      <ToolLibraryDialog
+        key={`assembly-picker:${libraryPickStation ?? "none"}`}
+        open={libraryPickStation !== null}
+        picker
+        pickAssembly
+        initialLibraryId={assemblyPickerLibraryId}
+        onClose={() => {
+          setLibraryPickStation(null);
+        }}
+        onPickAssembly={(assemblyId) => {
+          if (libraryPickStation !== null) {
+            setPendingAssignment({
+              stationNumber: libraryPickStation,
+              toolAssemblyId: assemblyBaseId(assemblyId),
+              token: Date.now(),
+            });
+          }
+          setLibraryPickStation(null);
+        }}
       />
 
       <NewToolDialog
@@ -358,6 +478,10 @@ export default function App() {
           }}
           onConfirm={confirmTurret}
           onEditMachine={editMachineFromTurret}
+          onPickFromLibrary={(stationNumber) => {
+            setLibraryPickStation(stationNumber);
+          }}
+          pendingAssignment={pendingAssignment}
         />
       ) : null}
 

@@ -9,7 +9,7 @@
  * turret setup.
  */
 
-import { useCallback, useEffect, useId, useMemo, useState } from "react";
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import type {
   Machine,
   ToolAssemblyOption,
@@ -34,7 +34,22 @@ export type TurretSetupDialogProps = {
   onEditMachine: () => void;
   /** Load a different existing setup into the dialog. */
   onSelectSetup?: (setupId: string) => void;
+  /** Open the Tool Library as an assembly picker for the given station. */
+  onPickFromLibrary?: (stationNumber: number) => void;
+  /**
+   * An assembly the library picker chose for a station. Applied to the working
+   * table when its `token` changes, so it patches one station without
+   * discarding the rest of the in-progress edits.
+   */
+  pendingAssignment?: {
+    stationNumber: number;
+    toolAssemblyId: string;
+    token: number;
+  } | null;
 };
+
+/** Sentinel option value that opens the library picker instead of assigning. */
+const PICK_FROM_LIBRARY = "__library__";
 
 function IconExpand() {
   return (
@@ -115,6 +130,8 @@ export function TurretSetupDialog({
   onConfirm,
   onEditMachine,
   onSelectSetup,
+  onPickFromLibrary,
+  pendingAssignment,
 }: TurretSetupDialogProps) {
   const titleId = useId();
   const [machineOpen, setMachineOpen] = useState(true);
@@ -142,6 +159,17 @@ export function TurretSetupDialog({
       prev.map((s) => (s.stationNumber === stationNumber ? { ...s, toolAssemblyId } : s)),
     );
   }, []);
+
+  // Apply an assembly the library picker chose, once per pick (tracked by
+  // token) so it patches just that station and leaves other edits intact.
+  const appliedPickToken = useRef<number | null>(null);
+  useEffect(() => {
+    if (!pendingAssignment) return;
+    if (appliedPickToken.current === pendingAssignment.token) return;
+    appliedPickToken.current = pendingAssignment.token;
+    setAssembly(pendingAssignment.stationNumber, pendingAssignment.toolAssemblyId);
+    setSelectedStation(pendingAssignment.stationNumber);
+  }, [pendingAssignment, setAssembly]);
 
   // Reorder moves the *assembly* between fixed stations (the numbers stay put),
   // since a BMT turret's station count and numbering are set by the machine.
@@ -324,7 +352,14 @@ export function TurretSetupDialog({
                     value={value}
                     aria-label={`Tool assembly for station ${row.stationNumber}`}
                     onChange={(e) => {
-                      setAssembly(row.stationNumber, e.target.value === "" ? null : e.target.value);
+                      const next = e.target.value;
+                      if (next === PICK_FROM_LIBRARY) {
+                        // Transient: hand off to the library picker; leave the
+                        // stored value untouched so the select reverts.
+                        onPickFromLibrary?.(row.stationNumber);
+                        return;
+                      }
+                      setAssembly(row.stationNumber, next === "" ? null : next);
                     }}
                     onClick={(e) => {
                       e.stopPropagation();
@@ -336,6 +371,9 @@ export function TurretSetupDialog({
                         {opt.label}
                       </option>
                     ))}
+                    {onPickFromLibrary ? (
+                      <option value={PICK_FROM_LIBRARY}>Select from library…</option>
+                    ) : null}
                   </select>
                 </li>
               );

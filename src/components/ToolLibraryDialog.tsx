@@ -57,6 +57,13 @@ interface ToolLibraryDialogProps {
   /** Restricts picking to tool blocks or to cutting tools. */
   pickKind?: "block" | "tool";
   /**
+   * Picks a whole saved tool assembly (rather than a single tool record). The
+   * table keeps its assembly rows visible in picker mode and the footer's
+   * Select returns the chosen assembly's id.
+   */
+  pickAssembly?: boolean;
+  onPickAssembly?: (assemblyId: string) => void;
+  /**
    * What the picker is choosing, for the heading — e.g. "extension", "collet"
    * or "component". Components of different kinds often live in separate
    * libraries or folders, so the picker names what it is after rather than
@@ -855,6 +862,8 @@ export function ToolLibraryDialog({
   pickKind,
   pickLabel,
   onPick,
+  pickAssembly = false,
+  onPickAssembly,
   onEditAssembly,
   initialAssemblyId,
 }: ToolLibraryDialogProps) {
@@ -1032,14 +1041,17 @@ export function ToolLibraryDialog({
             <h2 id="tlb-title" className="tlb-head__title">
               {picker
                 ? `Tool Library — select ${
-                    pickLabel ?? (pickKind === "block" ? "tool block" : "cutting tool")
+                    pickAssembly
+                      ? "assembly"
+                      : pickLabel ?? (pickKind === "block" ? "tool block" : "cutting tool")
                   }`
                 : "Tool Library"}
             </h2>
             {picker && (
               <span className="tlb-head__hint">
-                Browse any library or folder in the tree — compatible components
-                may live in different locations.
+                {pickAssembly
+                  ? "Pick one of your saved tool assemblies to mount on the station."
+                  : "Browse any library or folder in the tree — compatible components may live in different locations."}
               </span>
             )}
           </div>
@@ -1169,7 +1181,7 @@ export function ToolLibraryDialog({
                     </tr>
                   </thead>
                   <tbody>
-                    {!picker && filteredAssemblies.length > 0 && (
+                    {(!picker || pickAssembly) && filteredAssemblies.length > 0 && (
                       <AssemblyRows
                         assemblies={filteredAssemblies}
                         expanded={expandedAssemblies}
@@ -1184,7 +1196,10 @@ export function ToolLibraryDialog({
                           setSelectedToolId(toolId);
                         }}
                         onEdit={(id) => {
-                          onEditAssembly?.(id);
+                          // In assembly-picker mode a double-click is a pick;
+                          // otherwise it opens the assembly for editing.
+                          if (pickAssembly) onPickAssembly?.(id);
+                          else onEditAssembly?.(id);
                         }}
                         onOpenMenu={(id, x, y) => {
                           setAssemblyMenu({ id, x, y });
@@ -1421,16 +1436,30 @@ export function ToolLibraryDialog({
               <button
                 type="button"
                 className="tlb-footer__select"
-                disabled={pickableToolId === undefined}
-                title={
-                  pickableToolId === undefined
-                    ? `This library item cannot be used as a ${
-                        pickLabel ??
-                        (pickKind === "block" ? "tool block" : "cutting tool")
-                      }`
-                    : undefined
+                disabled={
+                  pickAssembly
+                    ? selectedAssembly === undefined
+                    : pickableToolId === undefined
                 }
-                onClick={handlePick}
+                title={
+                  pickAssembly
+                    ? selectedAssembly === undefined
+                      ? "Select one of your saved assemblies first"
+                      : undefined
+                    : pickableToolId === undefined
+                      ? `This library item cannot be used as a ${
+                          pickLabel ??
+                          (pickKind === "block" ? "tool block" : "cutting tool")
+                        }`
+                      : undefined
+                }
+                onClick={() => {
+                  if (pickAssembly) {
+                    if (selectedAssembly !== undefined) onPickAssembly?.(selectedAssembly.id);
+                  } else {
+                    handlePick();
+                  }
+                }}
               >
                 Select
               </button>

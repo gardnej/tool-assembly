@@ -1,8 +1,18 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { RibbonTabId, RibbonWorkspaceId } from "../ribbonConfig";
 import auPartGlbUrl from "../assets/models/au-part-2023.glb?url";
 import turretStations from "../data/turretStations.json";
+import { composeTurretGlb, type SolidPlacement } from "../lib/composeGlb";
+import { CALIBRATION_REVISION, stationPlacementMatrix } from "../data/turretSolids";
 import "./panels.css";
+
+/** A station that has a real assembly solid to show, and where its GLB lives. */
+export type TurretMount = {
+  stationNumber: number;
+  solidUrl: string | null;
+  /** Named materials to reveal on the solid (block + filled seats); optional. */
+  keepMaterials?: string[];
+};
 
 type ViewportProps = {
   ribbonWorkspace: RibbonWorkspaceId;
@@ -16,7 +26,15 @@ type ViewportProps = {
    * the station numbers that currently have a tool assembly mounted (their
    * baked ``station-NN`` material is revealed; the rest stay hidden).
    */
-  turret?: { url: string; visible: boolean; assignedStations: number[] } | undefined;
+  turret?:
+    | {
+        url: string;
+        visible: boolean;
+        assignedStations: number[];
+        /** Per-station real solids to mount; absent stations use the baked tool. */
+        mounts?: TurretMount[];
+      }
+    | undefined;
 };
 
 /** Regex pulling the station number out of a baked ``station-07`` material. */
@@ -64,6 +82,83 @@ export function Viewport({
   const turretRef = useRef<HTMLElement & { model?: unknown }>(null);
   const assignedKey = turret?.assignedStations.slice().sort((a, b) => a - b).join(",");
 
+  /**
+   * Stations that have a real assembly solid to show, and the placements that
+   * seat those solids on the turret. A station with a solid hides its baked
+   * template (the solid stands in for it); one without keeps the template.
+   */
+  const mounts = turret?.mounts ?? [];
+  const mountsKey = mounts
+    .filter((m) => m.solidUrl !== null)
+    .map((m) => `${m.stationNumber}:${m.solidUrl}:${(m.keepMaterials ?? []).join(",")}`)
+    .sort()
+    .join("|");
+
+  // Dev-only nonce so calibration overrides (window.__turretCalib) can force a
+  // recompose from the console without a rebuild. Bumped by window.__recomposeTurret.
+  const [calibNonce, setCalibNonce] = useState(0);
+  useEffect(() => {
+    (window as unknown as { __recomposeTurret?: () => void }).__recomposeTurret = () => {
+      setCalibNonce((n) => n + 1);
+    };
+  }, []);
+
+  const solidStations = useMemo(() => {
+    const set = new Set<number>();
+    for (const mount of mounts) {
+      if (mount.solidUrl !== null) set.add(mount.stationNumber);
+    }
+    return set;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mountsKey]);
+
+  const placements = useMemo<SolidPlacement[]>(() => {
+    return mounts
+      .filter((m): m is TurretMount & { solidUrl: string } => m.solidUrl !== null)
+      .map((m) => ({
+        url: m.solidUrl,
+        matrix: stationPlacementMatrix(m.stationNumber, m.solidUrl),
+        keepMaterials: m.keepMaterials,
+      }));
+    // CALIBRATION_REVISION forces a recompute when turretSolids hot-reloads, so
+    // calibration edits seat the block live without a full reload.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mountsKey, calibNonce, CALIBRATION_REVISION]);
+
+  /**
+   * The GLB the turret viewer loads: the bare turret when nothing carries a
+   * solid, or a runtime-composed model with each mounted solid merged in.
+   */
+  const baseUrl = turret?.url;
+  const [composedSrc, setComposedSrc] = useState<string | undefined>(baseUrl);
+
+  useEffect(() => {
+    if (baseUrl === undefined) return;
+    if (placements.length === 0) {
+      setComposedSrc(baseUrl);
+      return;
+    }
+    let cancelled = false;
+    let created: string | undefined;
+    composeTurretGlb(baseUrl, placements)
+      .then((url) => {
+        if (cancelled) {
+          URL.revokeObjectURL(url);
+          return;
+        }
+        created = url;
+        setComposedSrc(url);
+      })
+      .catch(() => {
+        // Fall back to the bare turret if composition fails for any reason.
+        if (!cancelled) setComposedSrc(baseUrl);
+      });
+    return () => {
+      cancelled = true;
+      if (created !== undefined) URL.revokeObjectURL(created);
+    };
+  }, [baseUrl, placements]);
+
   useEffect(() => {
     const viewer = turretRef.current;
     if (viewer === null || turret === undefined) return;
@@ -76,7 +171,10 @@ export function Viewport({
       for (const material of model.materials) {
         const match = STATION_MATERIAL.exec(material.name ?? "");
         if (match === null) continue;
-        const on = assigned.has(Number(match[1]));
+        const station = Number(match[1]);
+        // Show the baked tool only where a station is assigned but has no real
+        // solid; a solid station hides its template so the solid reads alone.
+        const on = assigned.has(station) && !solidStations.has(station);
         const pbr = material.pbrMetallicRoughness;
         const [r, g, b] = pbr.baseColorFactor;
         pbr.setBaseColorFactor([r, g, b, on ? 1 : 0]);
@@ -89,7 +187,7 @@ export function Viewport({
     return () => {
       viewer.removeEventListener("load", apply);
     };
-  }, [assignedKey, turret?.url, turret?.visible, turret]);
+  }, [assignedKey, mountsKey, composedSrc, turret?.visible, turret, solidStations]);
 
   return (
     <div className="viewport" role="application" aria-label="Design viewport">
@@ -103,7 +201,7 @@ export function Viewport({
             <model-viewer
               ref={turretRef}
               className="viewport__model-viewer"
-              src={turret.url}
+              src={composedSrc ?? turret.url}
               alt="Turret assembly"
               camera-controls
               interaction-prompt="none"

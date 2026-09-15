@@ -328,12 +328,16 @@ export const TURRET_BROWSER_NODE_ID = "cam-turret";
 /** Browser id of the machine node. */
 export const MACHINE_BROWSER_NODE_ID = "cam-machine";
 
+/** Setup node the machine is nested under (Fusion pins the machine to a setup). */
+const SETUP_BROWSER_NODE_ID = "cam-op10";
+
 /**
  * The document tree with the selected machine and its turret spliced in.
  *
- * Fusion surfaces the machine a setup runs on in the browser; here it appears as
- * a Machine node carrying the turret, placed just above Setups. Right-clicking
- * the turret is how the design enters Turret Setup, so the node id is stable.
+ * Fusion pins a machine to the setup that runs on it, so the Machine node lives
+ * *inside* the setup as its first child, carrying the turret beneath it.
+ * Right-clicking the turret is how the design enters Turret Setup, so the node
+ * id is stable.
  */
 export function browserRootWithTurret(
   machineName: string,
@@ -356,11 +360,20 @@ export function browserRootWithTurret(
     ],
   };
 
-  const children = root.children ?? [];
-  const setupsIndex = children.findIndex((child) => child.id === "cam-setups");
-  const insertAt = setupsIndex >= 0 ? setupsIndex : children.length;
-  const next = [...children.slice(0, insertAt), machineNode, ...children.slice(insertAt)];
-  return { ...root, children: next };
+  // Nest the machine as the first child of the setup node, wherever it sits.
+  const nest = (node: DemoBlockBrowserNode): DemoBlockBrowserNode => {
+    if (node.id === SETUP_BROWSER_NODE_ID) {
+      return {
+        ...node,
+        defaultExpanded: true,
+        children: [machineNode, ...(node.children ?? [])],
+      };
+    }
+    if (node.children === undefined) return node;
+    return { ...node, children: node.children.map(nest) };
+  };
+
+  return nest(root);
 }
 
 function collectPropertyLabels(

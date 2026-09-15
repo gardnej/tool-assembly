@@ -42,7 +42,6 @@ import {
   sessionAssemblies,
   sessionAssemblyById,
   upsertSessionAssembly,
-  upsertSessionLibrary,
 } from "../data/libraryEdits";
 import type { SavedAssembly } from "../types";
 import { useLibraryRevision } from "./useLibraryRevision";
@@ -67,10 +66,6 @@ import type {
  */
 const THREE_X_AXIAL_LIBRARY_IDS = new Set(["3x-axial", "3x-axial-1"]);
 
-/** Id of the User Libraries → Documents library that holds saved assemblies. */
-const SAVED_ASSEMBLIES_LIBRARY_ID = "documents-saved-assemblies";
-/** Id of the 3X Axial 1 library, the second target for saved assemblies. */
-const AXIAL_1_LIBRARY_ID = "3x-axial-1";
 /** Id of the prototype Team Hub library, seeded in ``libraryEdits.ts``. */
 const HUB_LIBRARY_ID = "hub-team";
 
@@ -803,25 +798,12 @@ export function useToolAssemblyWorkflow() {
     const blockRow = rows.find((row) => row.role === "block");
     const blockRecord = blockRow?.toolId ? toolById(blockRow.toolId) : undefined;
 
-    // Ensure the Documents-side library exists before writing anything.
-    upsertSessionLibrary({
-      id: SAVED_ASSEMBLIES_LIBRARY_ID,
-      name: "Saved Assemblies",
-      folder: null,
-      breadcrumb: "User Libraries > Documents > Saved Assemblies",
-      version: null,
-      toolCount: 0,
-      blockCount: 0,
-      assemblyCount: 0,
-      parent: "documents",
-    });
-
     const name = state.generalInfo.description.trim() ||
       blockRecord?.description ||
       "Tool Assembly";
 
-    // The two library copies share a base id so we can find and replace them
-    // together on a subsequent edit.
+    // Saved into the Hub library only; the base id (without the ``-hub`` suffix)
+    // lets a later edit find and replace this copy.
     const editingBase = state.editingAssemblyId;
     if (editingBase !== null) {
       for (const record of sessionAssemblies()) {
@@ -857,8 +839,6 @@ export function useToolAssemblyWorkflow() {
       upsertSessionAssembly(record);
     };
 
-    writeTo(SAVED_ASSEMBLIES_LIBRARY_ID, "docs");
-    writeTo(AXIAL_1_LIBRARY_ID, "axial1");
     writeTo(HUB_LIBRARY_ID, "hub");
     return {
       baseId,

@@ -67,10 +67,49 @@ const SESSION_TOOLS = new Map<string, LibraryToolRecord>();
  * Assemblies saved this session, keyed by ``id``.
  *
  * Each entry is the full chain — block + stacks + config — so an edit from
- * the library can reopen the workflow in the same state.
+ * the library can reopen the workflow in the same state. Persisted to
+ * ``localStorage`` so a saved assembly survives a reload and does not have to
+ * be rebuilt each iteration.
  */
 const SESSION_ASSEMBLIES = new Map<string, SavedAssembly>();
 const LISTENERS = new Set<() => void>();
+
+/** localStorage key the saved assemblies persist under. */
+const ASSEMBLIES_STORAGE_KEY = "toolAssembly.savedAssemblies.v1";
+
+/** Load any persisted assemblies into the session pool (best-effort). */
+function loadPersistedAssemblies(): void {
+  if (typeof window === "undefined") return;
+  try {
+    const raw = window.localStorage.getItem(ASSEMBLIES_STORAGE_KEY);
+    if (raw === null) return;
+    // JSON only (no eval/deserialisation of code), and each entry is validated
+    // for the id it is keyed by before being trusted.
+    const parsed: unknown = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return;
+    for (const entry of parsed) {
+      const record = entry as SavedAssembly;
+      if (record !== null && typeof record.id === "string" && record.id !== "") {
+        SESSION_ASSEMBLIES.set(record.id, record);
+      }
+    }
+  } catch {
+    // Corrupt or unavailable storage is non-fatal — start from an empty pool.
+  }
+}
+
+/** Write the current saved assemblies back to localStorage (best-effort). */
+function persistAssemblies(): void {
+  if (typeof window === "undefined") return;
+  try {
+    const records = [...SESSION_ASSEMBLIES.values()];
+    window.localStorage.setItem(ASSEMBLIES_STORAGE_KEY, JSON.stringify(records));
+  } catch {
+    // Quota or private-mode failures are non-fatal; the in-memory pool still works.
+  }
+}
+
+loadPersistedAssemblies();
 
 /**
  * Seed the prototype Hub category with an empty library.
@@ -272,6 +311,7 @@ export function clearSession(): void {
   SESSION_LIBRARIES.clear();
   SESSION_TOOLS.clear();
   SESSION_ASSEMBLIES.clear();
+  persistAssemblies();
   announce();
 }
 
@@ -283,11 +323,15 @@ export function clearSession(): void {
  */
 export function upsertSessionAssembly(assembly: SavedAssembly): void {
   SESSION_ASSEMBLIES.set(assembly.id, assembly);
+  persistAssemblies();
   announce();
 }
 
 export function removeSessionAssembly(id: string): void {
-  if (SESSION_ASSEMBLIES.delete(id)) announce();
+  if (SESSION_ASSEMBLIES.delete(id)) {
+    persistAssemblies();
+    announce();
+  }
 }
 
 export function sessionAssemblies(): SavedAssembly[] {
