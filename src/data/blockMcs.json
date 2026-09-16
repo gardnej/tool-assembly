@@ -1,0 +1,49 @@
+{
+  "source": "3X Spot-Drill-Tap (Origin &MCS).step",
+  "product": "3X Spot-Drill-Tap",
+  "units": "cm",
+  "stepUnits": "mm",
+  "note": "The block's mounting coordinate system (MCS) and Origin datum. The STEP contains no explicitly named MCS/Origin construction entity (no CONSTRUCTIVE_GEOMETRY_REPRESENTATION and no named AXIS2_PLACEMENT_3D); instead the designer re-based the block so its component/world origin coincides with the mounting frame (exactly what the filename '(Origin & MCS)' advertises). Both the assembly-root placement (#11214) and the block body's local placement (#11215) are identity at (0,0,0), confirming the attachment frame is the world origin. Axes are scale-invariant (origin at 0, unit vectors), so this frame applies directly to the mesh at any scale; the mesh and these coordinates are expressed in cm to match the project convention (toolblock-3x-real.glb ~17 cm and the turret joint UCS targets are in cm).",
+  "origin": [0.0, 0.0, 0.0],
+  "intoFaceAxis": [0.0, 0.0, 1.0],
+  "toolForwardAxis": [1.0, 0.0, 0.0],
+  "thirdAxis": [0.0, 1.0, 0.0],
+  "axisSemantics": {
+    "toolForwardAxis": "+X: the drills/taps exit the block toward +X (body ends near x=5.25 cm; tool tips reach x=13.5 cm).",
+    "intoFaceAxis": "+Z: the broad flat mounting flange is the block's top face (normal +Z); the block body hangs below it in -Z, so +Z is the seating/pin direction pointing into the turret. Inferred from the block body AABB relative to the origin (origin sits ~1.2 cm below the +Z top face; body extends -10.6 cm in -Z and -8.8 cm in -Y).",
+    "thirdAxis": "+Y = intoFaceAxis x toolForwardAxis (Z x X), completing a right-handed frame."
+  },
+  "mcs": {
+    "entity": "#11214",
+    "type": "AXIS2_PLACEMENT_3D",
+    "role": "assembly-root placement of the 3X Spot-Drill-Tap shape representation (the block world/MCS frame)",
+    "location": [0.0, 0.0, 0.0],
+    "axis": [0.0, 0.0, 1.0],
+    "refDirection": [1.0, 0.0, 0.0],
+    "locationEntity": "#14490",
+    "axisEntity": "#12152",
+    "refDirectionEntity": "#12153"
+  },
+  "originDatum": {
+    "entity": "#11215",
+    "type": "AXIS2_PLACEMENT_3D",
+    "role": "block body (EWS_222115_DIN4003) local placement; mapped into the assembly root with identity translation",
+    "location": [0.0, 0.0, 0.0],
+    "axis": [0.0, 0.0, 1.0],
+    "refDirection": [1.0, 0.0, 0.0],
+    "locationEntity": "#14491",
+    "axisEntity": "#12154",
+    "refDirectionEntity": "#12155"
+  },
+  "mcsAndOriginCoincide": true,
+  "meshFile": "src/assets/models/toolblock-3x-clean.glb",
+  "mesh": {
+    "vertices": 44491,
+    "triangles": 59486,
+    "aabbMinCm": [-3.75, -8.79, -10.55],
+    "aabbMaxCm": [13.535, 3.75, 1.2],
+    "aabbSizeCm": [17.285, 12.54, 11.75],
+    "bodyAabbMinCm": [-3.75, -8.79, -10.55],
+    "bodyAabbMaxCm": [5.25, 3.75, 1.2]
+  }
+}

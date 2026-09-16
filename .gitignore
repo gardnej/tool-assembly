@@ -7,4 +7,6 @@ dist
 *.tsbuildinfo
 __pycache__/
 *.pyc
+.venv-step/
+.venv/
 .test-build

@@ -12,20 +12,23 @@
  * no solid and the viewport keeps the baked template as a fallback.
  */
 
-import axialBlockUrl from "../assets/models/3x-axial-block.glb?url";
-import previewBlockUrl from "../assets/models/3x-spot-drill-tap.glb?url";
-import seatableBlockUrl from "../assets/models/3x-spot-drill-tap-caps.glb?url";
 import er16ColletUrl from "../assets/models/er16-collet.glb?url";
 import er16ExtensionUrl from "../assets/models/er16-extension.glb?url";
+// The clean block GLB (44,491 verts, cm) whose mesh origin IS the mounting
+// coordinate system (MCS): intoFaceAxis = +Z, toolForwardAxis = +X. Seated on
+// any station by a single rigid MCS→UCS snap (see jointBlockPlacement).
+// Blue-tinted variant of the clean block (block body -> steel blue, drill/tap
+// tools -> gold; collets/springs left metal gray). Same geometry/transforms as
+// `toolblock-3x-clean.glb`; the new filename also guarantees the browser fetches
+// the re-tinted mesh rather than a cached copy of the old gray one. The
+// `/toolblock-3x-clean/` placement regex below still matches this name.
+import cleanBlockUrl from "../assets/models/toolblock-3x-clean-blue.glb?url";
 import ring from "./turretStations.json";
+import turretJoints from "./turretJoints.json";
 import { sessionAssemblies } from "./libraryEdits";
 import { assemblyBaseId } from "./turret";
 import { toolById, type LibraryToolRecord } from "./realLibrary";
-import {
-  PREVIEW_BLOCK_GEOMETRY_ID,
-  PREVIEW_BLOCK_MATERIAL,
-  PREVIEW_SEATS,
-} from "./previewGeometry";
+import { PREVIEW_BLOCK_GEOMETRY_ID } from "./previewGeometry";
 import type { Mat4 } from "../lib/composeGlb";
 
 type V3 = [number, number, number];
@@ -40,9 +43,14 @@ const AXIAL_BLOCK_GEOMETRY_IDS = new Set(["3482e088-0690-4e9f-a4d8-4f1514f4ea90"
  * bare URL so the data layer need not depend on the preview component.
  */
 function solidUrlForRecord(record: LibraryToolRecord): string | null {
-  if (record.geometryId === PREVIEW_BLOCK_GEOMETRY_ID) return previewBlockUrl;
+  // The 3X Spot-Drill-Tap block (and the axial block, same seat layout) now
+  // resolves to the CLEAN block GLB, whose mesh origin is the mounting frame
+  // (MCS). It seats on any station by a single rigid MCS→UCS snap from the
+  // extracted joint frames — see jointBlockPlacement — no hand calibration.
+  // (The older `-real` block URL is retained above but unused.)
+  if (record.geometryId === PREVIEW_BLOCK_GEOMETRY_ID) return cleanBlockUrl;
   if (record.geometryId !== null && AXIAL_BLOCK_GEOMETRY_IDS.has(record.geometryId)) {
-    return axialBlockUrl;
+    return cleanBlockUrl;
   }
   if (record.type === "holder" && /er16.*collet/i.test(record.description)) return er16ColletUrl;
   if (record.type === "holder" && /er16.*extension/i.test(record.description)) {
@@ -71,27 +79,14 @@ export interface AssemblyMount {
   keepMaterials?: string[];
 }
 
-/** True for blocks we can stand in with the seatable three-seat mesh. */
-function isSeatableBlock(block: LibraryToolRecord): boolean {
-  return (
-    block.geometryId === PREVIEW_BLOCK_GEOMETRY_ID ||
-    (block.geometryId !== null && AXIAL_BLOCK_GEOMETRY_IDS.has(block.geometryId))
-  );
-}
-
-/** Seat bodies of one seat, machine side out: bore body, middle body, tool. */
-function seatBodiesByDepth(seat: (typeof PREVIEW_SEATS)[number]): string[][] {
-  return [[seat.extension], [seat.collet], seat.tool];
-}
-
 /**
- * The solid to mount for an assembly, and the parts of it to reveal.
+ * The solid to mount for an assembly.
  *
- * A block we have seat geometry for is shown with the seatable mesh, pruned to
- * the block plus the seat bodies each filled position stacks (machine side
- * out), so the tools the user mounted appear rather than a bare block. Blocks
- * we only have a plain solid for (e.g. ER16 holders) mount whole; assemblies
- * with no solid at all return null and the viewport keeps its baked template.
+ * The block resolves to the real geometry split from the seated BMT65 assembly
+ * (`solidUrlForRecord`), so the mount is the authored block-and-tools shown
+ * whole. It shares a coordinate frame with the turret GLB, so its seat is the
+ * CAD model's own — see `realBlockPlacement`. Assemblies whose block has no
+ * solid return null and the viewport keeps its baked template.
  */
 export function assemblyMount(assemblyBase: string | null): AssemblyMount | null {
   if (assemblyBase === null || assemblyBase === "") return null;
@@ -99,21 +94,6 @@ export function assemblyMount(assemblyBase: string | null): AssemblyMount | null
   if (record === undefined || record.blockToolId === null) return null;
   const block = toolById(record.blockToolId);
   if (block === undefined) return null;
-
-  if (isSeatableBlock(block)) {
-    const keep = new Set<string>([PREVIEW_BLOCK_MATERIAL]);
-    record.slots.forEach((slot, seatIndex) => {
-      const seat = PREVIEW_SEATS[seatIndex];
-      if (seat === undefined) return;
-      const bodies = seatBodiesByDepth(seat);
-      // A component at depth d reveals the d-th seat body, so a stack seats
-      // flush against the block face and fills outward from there.
-      for (let depth = 0; depth < slot.stack.length && depth < bodies.length; depth += 1) {
-        for (const material of bodies[depth]) keep.add(material);
-      }
-    });
-    return { url: seatableBlockUrl, keepMaterials: [...keep] };
-  }
 
   const url = solidUrlForRecord(block);
   return url === null ? null : { url };
@@ -299,7 +279,196 @@ function calibrationFor(url: string): Calibration {
  * scaled to millimetres first, then translated to the facet plus `offset` along
  * [radial (outward), axial (forward), tangent].
  */
+/**
+ * Seat the real block on a station by pure rotation about the drum axis.
+ *
+ * The block GLB was split from the same seated assembly as the turret GLB, so
+ * in its own coordinates it already sits flush on the facet the user modelled —
+ * that facet is station 1 (`build-real-turret-ring.py` reads station 1 from the
+ * block's own angle). Mounting on station N is then a rigid rotation of the
+ * whole block about the drum axis by `(N-1)` facet steps: the drum is 12-fold
+ * symmetric, so the block lands flush on every station, and station 1 is the
+ * identity — no calibration, no gap. Returns a column-major glTF node matrix.
+ */
+/**
+ * Seat the CLEAN block on a station by a single rigid MCS→UCS snap.
+ *
+ * The block GLB's mesh origin IS its mounting coordinate system (MCS): the
+ * block's own axes are identity, with intoFaceAxis = +Z (seats INTO the turret
+ * face) and toolForwardAxis = +X (tools exit forward) — see `blockMcs.json`.
+ * Each station carries a joint UCS frame in turret space (`turretJoints.json`):
+ * an origin `O`, an `intoFaceAxis` (radial-inward toward the drum axis) and a
+ * `toolForwardAxis` (drum-axis forward).
+ *
+ * We build the target frame and map the block's local axes onto it:
+ *   • tool-forward  block +X → tX = toolForwardAxis (w)
+ *   • into-face     block +Z → tZ = intoFaceAxis (f)
+ *   • block +Y      → tY = normalize(tZ × tX)   (block's own Y = Z×X convention)
+ * then re-orthonormalise tX = normalize(tY × tZ) so the frame is exactly
+ * orthogonal. Because the block axes are identity, the rotation R that carries
+ * them onto the targets has columns [tX, tY, tZ] directly. Scale = 1 (both cm)
+ * and the MCS origin is (0,0,0), so translation = O. Returns a column-major
+ * glTF node matrix. det(R) ≈ +1 (proper rotation), verified at build in dev.
+ *
+ * SIGN CONVENTION (confirmed empirically from screenshots): the extracted axes
+ * are used as-is — tX = +toolForwardAxis, tZ = +intoFaceAxis — which seats the
+ * block flush on the facet with its tools pointing forward, away from the drum.
+ */
+/**
+ * Seat parameters for the clean block, anchored to the station LOCATING HOLE.
+ *
+ * The reliable per-station datum is the plug-joint ORIGIN in `turretJoints.json`
+ * — it is the centre of the connection-plate locating hole the block seats onto
+ * (station 1: [32.361, 12.116, 71.541]; radius ≈16.3 cm, axial ≈+8.12 cm from
+ * the ring centre). Measured from `turret-haas-st20y.glb` at that hole (see
+ * `scripts/measure-hole-flat.mjs`), the mounting FLAT the block presses onto is
+ * at that same radius (top-5% contact radius ≈16.3 cm, per-station 16.1–16.5),
+ * i.e. the joint origin lies ON the flat. So we do NOT synthesise a radius — we
+ * put the block's +Z mounting FACE exactly on the joint origin.
+ *
+ * The block's +Z mounting flange face is FACE_OFFSET_CM (=1.2 cm, blockMcs body
+ * AABB max z) out along +Z from the MCS origin; +Z presses radially INWARD, so
+ * the MCS origin must sit FACE_OFFSET_CM radially OUTWARD of the hole for the
+ * face to land on it:  O = jointOrigin + FACE_OFFSET_CM · radialOut.
+ *
+ * This satisfies both of the user's constraints deterministically:
+ *   1. O shares the hole's axial + tangential position, so the block's Z-axis
+ *      (radial) LINE passes through the hole (no drum-axis offset), and
+ *   2. the mounting face contacts the flat (mountFaceGap ≈ 0), dropping the
+ *      block ~3.4 cm from the earlier synthesised radius-20.9 seat.
+ *
+ * `radialNudgeCm`/`axialNudgeCm` (default 0) are live-tune dials via
+ * window.__turretSeat for any residual mesh-vs-datum discrepancy.
+ */
+const CLEAN_SEAT = {
+  /**
+   * Radial offset of the MCS origin from the locating hole (cm, +out).
+   * Set to 0 per user request: the block MCS origin coincides EXACTLY with the
+   * station hole (joint origin), so O = jointOrigin for every station. (The
+   * block's +Z mounting flange is 1.2 cm inboard of its MCS, so with offset 0
+   * the flange sits ~1.2 cm inside the hole datum rather than on it — see the
+   * outer-face sanity-check notes in the task report.)
+   */
+  faceOffsetCm: 0,
+  /** extra radial standoff for dial-in (cm, +out); 0 = face on the flat. */
+  radialNudgeCm: 0,
+  /** axial nudge along the drum axis for dial-in (cm, +forward); 0 = through hole. */
+  axialNudgeCm: 0,
+  /** block mesh scale (cm↔cm). */
+  scale: 1,
+};
+
+// (origin-on-hole: faceOffsetCm=0 per user request)
+function cleanSeatParams(): typeof CLEAN_SEAT {
+  const override =
+    typeof window !== "undefined"
+      ? (window as unknown as { __turretSeat?: Partial<typeof CLEAN_SEAT> }).__turretSeat
+      : undefined;
+  return override === undefined ? CLEAN_SEAT : { ...CLEAN_SEAT, ...override };
+}
+
+/** Drum frame (centre, axis, and outward radial) at a station's locating hole. */
+function holeFrame(stationNumber: number): { hole: V3; radialOut: V3; axis: V3 } | null {
+  const station = turretJoints.stations.find((s) => s.station === stationNumber);
+  if (station === undefined) return null;
+  const center = turretJoints.ringCenterGlb as V3;
+  const axis = normalize(turretJoints.ringAxisGlb as V3); // drum axis, +ve = forward/front
+  const hole = station.origin as V3;
+  const dO = sub(hole, center);
+  const radialOut = normalize(sub(dO, scaleV(axis, dot(dO, axis))));
+  return { hole, radialOut, axis };
+}
+
+/**
+ * Seat the CLEAN block so its mounting face sits on the station locating hole.
+ *
+ * Orientation (verified against the Fusion rigid-joint ground truth in
+ * `turretBlockSeat.json`, unchanged — position-only fix): the block-local axes
+ * map onto the drum frame as
+ *   • block +X (toolForwardAxis) → drum axis pointing FORWARD (toward the
+ *     numbered front / spindle), so the drills/taps cantilever past the front,
+ *   • block +Z (intoFaceAxis)    → radially INWARD, pressing the mounting face
+ *     onto the flat,
+ *   • block +Y                   → cross(+Z, +X), completing the frame.
+ * Its columns are [-1,0,0], [0,0.5736,0.8192], [0,0.8192,-0.5736] in the drum
+ * frame — matching ground truth. det(R)=+1.
+ *
+ * Position: O = jointOrigin + faceOffset·radialOut (+ nudges). Because O sits
+ * radially outward of the hole on the SAME radial line, the block's Z-axis
+ * passes through the hole and the +Z mounting face lands exactly on it.
+ * Returns a column-major glTF node matrix.
+ */
+function jointBlockPlacement(stationNumber: number): Mat4 {
+  const f = holeFrame(stationNumber);
+  if (f === null) {
+    // Missing station: fall back to identity so composition still succeeds
+    // (block sits at the turret origin) rather than throwing.
+    return [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
+  }
+
+  const seat = cleanSeatParams();
+  const { hole, radialOut, axis } = f;
+
+  // Drum-frame target axes for the block's local axes.
+  const tX = axis; // block +X (tool-forward) → drum axis forward
+  const tZ = scaleV(radialOut, -1); // block +Z (into-face) → radially inward
+  const tY = normalize(cross(tZ, tX)); // block +Y = Z × X
+
+  // MCS origin = locating hole + mounting-face offset radially outward, so the
+  // +Z face lands on the hole/flat and the Z-axis passes through the hole.
+  const O: V3 = add(
+    add(hole, scaleV(radialOut, seat.faceOffsetCm + seat.radialNudgeCm)),
+    scaleV(axis, seat.axialNudgeCm),
+  );
+
+  const s = seat.scale;
+  return [
+    tX[0] * s, tX[1] * s, tX[2] * s, 0,
+    tY[0] * s, tY[1] * s, tY[2] * s, 0,
+    tZ[0] * s, tZ[1] * s, tZ[2] * s, 0,
+    O[0], O[1], O[2], 1,
+  ];
+}
+
+function realBlockPlacement(stationNumber: number): Mat4 {
+  const axis = normalize(ring.axis as V3);
+  const center = ring.center as V3;
+  const step = (ring as { stationStep: number }).stationStep;
+  const angle = (stationNumber - 1) * step;
+  const c = Math.cos(angle);
+  const s = Math.sin(angle);
+  const [kx, ky, kz] = axis;
+  const t = 1 - c;
+  // Rodrigues rotation R about the unit drum axis; columns are R·x, R·y, R·z.
+  const col0: V3 = [c + kx * kx * t, ky * kx * t + kz * s, kz * kx * t - ky * s];
+  const col1: V3 = [kx * ky * t - kz * s, c + ky * ky * t, kz * ky * t + kx * s];
+  const col2: V3 = [kx * kz * t + ky * s, ky * kz * t - kx * s, c + kz * kz * t];
+  // Rotate about the axis *through the drum centre*: translation = C − R·C.
+  const rc: V3 = [
+    col0[0] * center[0] + col1[0] * center[1] + col2[0] * center[2],
+    col0[1] * center[0] + col1[1] * center[1] + col2[1] * center[2],
+    col0[2] * center[0] + col1[2] * center[1] + col2[2] * center[2],
+  ];
+  const tr = sub(center, rc);
+  return [
+    col0[0], col0[1], col0[2], 0,
+    col1[0], col1[1], col1[2], 0,
+    col2[0], col2[1], col2[2], 0,
+    tr[0], tr[1], tr[2], 1,
+  ];
+}
+
 export function stationPlacementMatrix(stationNumber: number, solidUrl: string): Mat4 {
+  // The real block shares the turret's coordinate frame, so it seats by rotation
+  // about the drum axis alone (flush by construction). Other solids still use
+  // the per-solid calibration below.
+  if (/toolblock-3x-real/.test(solidUrl)) return realBlockPlacement(stationNumber);
+
+  // The clean block seats by a single rigid MCS→UCS snap from the extracted
+  // per-station joint frames (turretJoints.json) — flush and correctly oriented
+  // with no calibration.
+  if (/toolblock-3x-clean/.test(solidUrl)) return jointBlockPlacement(stationNumber);
+
   const frame = stationFrame(stationNumber);
   const cal = calibrationFor(solidUrl);
 
@@ -370,7 +539,7 @@ function applyMat(m: Mat4, p: V3): V3 {
 
 /** Signed millimetre gaps between the seated block's faces and the turret. */
 export interface SeatingCheck {
-  /** How far the block's +Z mounting face sits off the rim facet (0 = flush). */
+  /** How far the block's +Z mounting face sits off the flat (0 = flush; + = proud). */
   mountFaceGap: number;
   /** How far the block's +X front face sits off the turret's front plane (0 = coplanar). */
   frontFaceGap: number;
@@ -381,17 +550,37 @@ export interface SeatingCheck {
  * seating can be verified numerically rather than by eye. Returns the signed
  * gap of the block's mounting face from the rim facet and of its front face
  * from the turret's numbered front plane; both should be ~0 when seated.
+ *
+ * For the CLEAN block the reference is the station LOCATING HOLE (joint origin):
+ * mountFaceGap is the block's +Z mounting-face radius minus the hole radius (so
+ * 0 = face on the flat), and frontFaceGap is the +X body face's axial position
+ * relative to the drum's front plane.
  */
 export function describeSeating(stationNumber: number, solidUrl: string): SeatingCheck {
-  const frame = stationFrame(stationNumber);
   const m = stationPlacementMatrix(stationNumber, solidUrl);
   const c = CAPS_BODY_AABB;
   const mid = (d: 0 | 1 | 2): number => (c.min[d] + c.max[d]) / 2;
   const mountFaceLocal: V3 = [mid(0), mid(1), c.max[2]]; // +Z face centre (pins side)
-  const frontFaceLocal: V3 = [c.max[0], mid(1), mid(2)]; // +X face centre (tools side)
+  const frontFaceLocal: V3 = [c.max[0], mid(1), mid(2)]; // +X body face centre (tools side)
   const mountWorld = applyMat(m, mountFaceLocal);
   const frontWorld = applyMat(m, frontFaceLocal);
 
+  const clean = /toolblock-3x-clean/.test(solidUrl);
+  const f = clean ? holeFrame(stationNumber) : null;
+  if (clean && f !== null) {
+    const { hole, radialOut, axis } = f;
+    const holeRadius = dot(sub(hole, turretJoints.ringCenterGlb as V3), radialOut);
+    const faceRadius = dot(sub(mountWorld, turretJoints.ringCenterGlb as V3), radialOut);
+    const frontAxial = (ring as { frontAxial: number }).frontAxial;
+    const center = turretJoints.ringCenterGlb as V3;
+    return {
+      // cm → mm; + means the face is radially proud of (outside) the flat.
+      mountFaceGap: (faceRadius - holeRadius) * 10,
+      frontFaceGap: (dot(sub(frontWorld, center), axis) - frontAxial) * 10,
+    };
+  }
+
+  const frame = stationFrame(stationNumber);
   const center = ring.center as V3;
   const axis = normalize(ring.axis as V3);
   const frontAxial = (ring as { frontAxial: number }).frontAxial;
@@ -401,3 +590,5 @@ export function describeSeating(stationNumber: number, solidUrl: string): Seatin
     frontFaceGap: dot(sub(frontWorld, center), axis) - frontAxial,
   };
 }
+
+

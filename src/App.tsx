@@ -16,7 +16,12 @@ import {
   getViewportEmphasis,
   TURRET_BROWSER_NODE_ID,
 } from "./data/demoBlockDesign";
-import turretGlbUrl from "./assets/models/turret-stations.glb?url";
+// User's clean Haas ST-20Y turret, freshly authored and exported from Fusion 360
+// (turret geometry only). Ring/station positions are fitted from its 12 patterned
+// mount features — see scripts/build-haas-turret-ring.py. Block seating frames
+// (block MCS + turret Joint/UCS) are still pending, so mounted blocks won't seat
+// flush against this turret until those frames arrive.
+import turretGlbUrl from "./assets/models/turret-haas-st20y.glb?url";
 import {
   assemblyBaseId,
   createDefaultTurretSetup,

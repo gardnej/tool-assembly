@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Turret Mount Routing Test</title>
+    <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/4.0.0/model-viewer.min.js"></script>
+    <style>
+      html, body { margin: 0; height: 100%; background: #5d6778; }
+      model-viewer { width: 100vw; height: 100vh; }
+      .bar { position: fixed; top: 8px; left: 8px; z-index: 10; color: #fff;
+             font: 11px/1.35 ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+             background: rgba(0,0,0,.62); padding: 8px 10px; border-radius: 4px;
+             white-space: pre; letter-spacing: .1px; }
+      /* 3D coordinate hotspots pinned to world points via model-viewer slots. */
+      .hs { background: transparent; border: none; padding: 0; cursor: default;
+            display: flex; align-items: center; gap: 6px; --mv-hotspot-opacity: 1; }
+      .hs-dot { width: 12px; height: 12px; border-radius: 50%;
+                border: 2px solid #fff; box-shadow: 0 0 0 1px rgba(0,0,0,.6); flex: none; }
+      .hs-label { white-space: nowrap; color: #fff; font: 600 11px/1.2 ui-monospace, Menlo, monospace;
+                  padding: 2px 6px; border-radius: 4px; background: rgba(0,0,0,.72);
+                  border: 1px solid rgba(255,255,255,.25); }
+      /* Block origin: prominent orange. Hole: cyan. Drum center: gray. */
+      .hs-block .hs-dot { background: #ff8c1a; box-shadow: 0 0 0 1px rgba(0,0,0,.6), 0 0 8px #ff8c1a; }
+      .hs-block .hs-label { border-color: #ff8c1a; background: rgba(120,55,0,.82); }
+      .hs-hole .hs-dot { background: #19d0e6; }
+      .hs-hole .hs-label { border-color: #19d0e6; }
+      .hs-drum .hs-dot { background: #cfd3da; }
+      .hs-drum .hs-label { opacity: .9; }
+    </style>
+  </head>
+  <body>
+    <div class="bar" id="bar">composing…</div>
+    <model-viewer id="mv" alt="Turret with mounted block" camera-controls
+      interaction-prompt="none" camera-orbit="90deg 74deg 110%" shadow-intensity="0.4"></model-viewer>
+    <!-- Version query forces the dev server to serve a fresh module transform
+         (its file watcher on this box does not always invalidate the cache). -->
+    <script type="module" src="/src/turretPreview.ts?v=labels2"></script>
+  </body>
+</html>
