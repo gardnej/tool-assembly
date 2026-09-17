@@ -14,15 +14,13 @@
 
 import er16ColletUrl from "../assets/models/er16-collet.glb?url";
 import er16ExtensionUrl from "../assets/models/er16-extension.glb?url";
-// The clean block GLB (44,491 verts, cm) whose mesh origin IS the mounting
-// coordinate system (MCS): intoFaceAxis = +Z, toolForwardAxis = +X. Seated on
-// any station by a single rigid MCS→UCS snap (see jointBlockPlacement).
-// Blue-tinted variant of the clean block (block body -> steel blue, drill/tap
-// tools -> gold; collets/springs left metal gray). Same geometry/transforms as
-// `toolblock-3x-clean.glb`; the new filename also guarantees the browser fetches
-// the re-tinted mesh rather than a cached copy of the old gray one. The
-// `/toolblock-3x-clean/` placement regex below still matches this name.
-import cleanBlockUrl from "../assets/models/toolblock-3x-clean-blue.glb?url";
+// The tool block split from the ground-truth seated CAD assembly (same world
+// frame as `turret-cad.glb`). It sits on its modelled station at the identity
+// transform; other stations are a pure rotation about the drum axis. This
+// replaces the reconstructed-turret + bridged-seat path that mis-placed the
+// block — see `scripts/split-assembly-cad.py` and `cadAssembly.json`.
+import blockCadUrl from "../assets/models/block-cad.glb?url";
+import cadAssembly from "./cadAssembly.json";
 import ring from "./turretStations.json";
 import turretJoints from "./turretJoints.json";
 import { sessionAssemblies } from "./libraryEdits";
@@ -48,9 +46,9 @@ function solidUrlForRecord(record: LibraryToolRecord): string | null {
   // (MCS). It seats on any station by a single rigid MCS→UCS snap from the
   // extracted joint frames — see jointBlockPlacement — no hand calibration.
   // (The older `-real` block URL is retained above but unused.)
-  if (record.geometryId === PREVIEW_BLOCK_GEOMETRY_ID) return cleanBlockUrl;
+  if (record.geometryId === PREVIEW_BLOCK_GEOMETRY_ID) return blockCadUrl;
   if (record.geometryId !== null && AXIAL_BLOCK_GEOMETRY_IDS.has(record.geometryId)) {
-    return cleanBlockUrl;
+    return blockCadUrl;
   }
   if (record.type === "holder" && /er16.*collet/i.test(record.description)) return er16ColletUrl;
   if (record.type === "holder" && /er16.*extension/i.test(record.description)) {
@@ -343,13 +341,23 @@ function calibrationFor(url: string): Calibration {
 const CLEAN_SEAT = {
   /**
    * Radial offset of the MCS origin from the locating hole (cm, +out).
-   * Set to 0 per user request: the block MCS origin coincides EXACTLY with the
-   * station hole (joint origin), so O = jointOrigin for every station. (The
-   * block's +Z mounting flange is 1.2 cm inboard of its MCS, so with offset 0
-   * the flange sits ~1.2 cm inside the hole datum rather than on it — see the
-   * outer-face sanity-check notes in the task report.)
+   *
+   * Value = the EXACT seat read from the Fusion rigid joint (ground truth),
+   * not a heuristic. The block's design origin coincides with its MCS (proven:
+   * in `Haas ST-20Y-25 (Turret Assembly TBMCS).step` the GLB body AABB, frame B,
+   * is contained in the assembly body AABB, frame A, sharing the +x/+z corner —
+   * so frame A origin == frame B origin == MCS). The joint's block-in-turret
+   * transform therefore places the MCS at radial 17.769 cm from the drum axis,
+   * on the locating-hole plane (axial offset 0). The station holes sit at radius
+   * 16.302 cm, so the MCS is 1.467 cm radially OUTWARD of the hole:
+   *     faceOffsetCm = 17.769 − 16.302 = 1.467.
+   * (Supersedes the earlier 0/0.99 guesses — 0 seated the block ~1 cm too deep,
+   * 0.99 was ~0.5 cm too deep. Recompute with
+   * `python3 scripts/compute-block-seat-from-assembly.py` helpers if the joint
+   * changes.) The MCS's off-plane bridge is unreliable (near-planar plug ring),
+   * so this is derived in the ring frame as radial/axial, which is robust.
    */
-  faceOffsetCm: 0,
+  faceOffsetCm: 1.467,
   /** extra radial standoff for dial-in (cm, +out); 0 = face on the flat. */
   radialNudgeCm: 0,
   /** axial nudge along the drum axis for dial-in (cm, +forward); 0 = through hole. */
@@ -430,6 +438,55 @@ function jointBlockPlacement(stationNumber: number): Mat4 {
   ];
 }
 
+/**
+ * Column-major transform that rotates a solid — already modelled flush on its
+ * base station (station 1) — onto `stationNumber` by a rigid rotation of
+ * `(stationNumber-1)·step` about the drum `axis` through `center`. Station 1 is
+ * the identity, so a solid split from the seated assembly lands exactly where
+ * the CAD put it, and the drum's 12-fold symmetry carries it flush to any other.
+ */
+function axisRotationPlacement(
+  axis: V3,
+  center: V3,
+  step: number,
+  stationNumber: number,
+): Mat4 {
+  const k = normalize(axis);
+  const angle = (stationNumber - 1) * step;
+  const c = Math.cos(angle);
+  const s = Math.sin(angle);
+  const [kx, ky, kz] = k;
+  const t = 1 - c;
+  const col0: V3 = [c + kx * kx * t, ky * kx * t + kz * s, kz * kx * t - ky * s];
+  const col1: V3 = [kx * ky * t - kz * s, c + ky * ky * t, kz * ky * t + kx * s];
+  const col2: V3 = [kx * kz * t + ky * s, ky * kz * t - kx * s, c + kz * kz * t];
+  const rc: V3 = [
+    col0[0] * center[0] + col1[0] * center[1] + col2[0] * center[2],
+    col0[1] * center[0] + col1[1] * center[1] + col2[1] * center[2],
+    col0[2] * center[0] + col1[2] * center[1] + col2[2] * center[2],
+  ];
+  const tr = sub(center, rc);
+  return [
+    col0[0], col0[1], col0[2], 0,
+    col1[0], col1[1], col1[2], 0,
+    col2[0], col2[1], col2[2], 0,
+    tr[0], tr[1], tr[2], 1,
+  ];
+}
+
+/**
+ * Seat the CAD block (`block-cad.glb`) on a station. Both it and `turret-cad.glb`
+ * are split from the same seated assembly, so at station 1 the identity places
+ * the block exactly as modelled (matching the `?cad=1` reference); other
+ * stations rotate about the CAD drum axis. Units are metres (assembly frame).
+ */
+function cadBlockPlacement(stationNumber: number): Mat4 {
+  const axis = cadAssembly.drumAxis as V3;
+  const center = cadAssembly.drumCenter as V3;
+  const step = ((cadAssembly.stationStepDeg as number) * Math.PI) / 180;
+  return axisRotationPlacement(axis, center, step, stationNumber);
+}
+
 function realBlockPlacement(stationNumber: number): Mat4 {
   const axis = normalize(ring.axis as V3);
   const center = ring.center as V3;
@@ -463,6 +520,11 @@ export function stationPlacementMatrix(stationNumber: number, solidUrl: string):
   // about the drum axis alone (flush by construction). Other solids still use
   // the per-solid calibration below.
   if (/toolblock-3x-real/.test(solidUrl)) return realBlockPlacement(stationNumber);
+
+  // The CAD block (split from the seated assembly) rotates onto its station
+  // about the CAD drum axis — station 1 is the identity, matching the ?cad=1
+  // reference exactly. This is the correct, ground-truth path.
+  if (/block-cad/.test(solidUrl)) return cadBlockPlacement(stationNumber);
 
   // The clean block seats by a single rigid MCS→UCS snap from the extracted
   // per-station joint frames (turretJoints.json) — flush and correctly oriented

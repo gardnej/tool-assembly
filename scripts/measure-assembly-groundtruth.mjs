@@ -52,10 +52,15 @@ const tangent=nrm(cross(axis,radialOut));
 const sector=[];for(const p of turretV){const q=sub(p,C);const a=dot(q,axis);const rv=sub(q,scv(axis,a));const r=Math.hypot(...rv);const ang=Math.atan2(dot(rv,tangent),dot(rv,radialOut))*180/Math.PI;if(Math.abs(ang)<14&&r>10)sector.push({a,r,ang});}
 const near0=sector.filter(v=>Math.abs(v.ang)<3).sort((x,y)=>y.r-x.r);const flatR=near0.slice(0,Math.max(1,Math.floor(near0.length*0.1))).reduce((s,v)=>s+v.r,0)/Math.max(1,Math.floor(near0.length*0.1));
 console.log(`turret outer flat radius (block sector, ang~0): ${flatR.toFixed(3)}  (sector pts=${sector.length})`);
-// block metrics in drum frame
-const bm=blockV.map(p=>{const q=sub(p,C);const a=dot(q,axis);const rv=sub(q,scv(axis,a));return{a,r:Math.hypot(...rv),rr:dot(rv,radialOut),t:dot(rv,tangent)};});
-const rr=bm.map(x=>x.rr),aa=bm.map(x=>x.a),tt=bm.map(x=>x.t);
-console.log(`block MCS origin (mean of block nodes) radial=${dot(bcv,radialOut).toFixed(2)}  (this is body centroid, not MCS)`);
-console.log(`block radial(rr) span: [${Math.min(...rr).toFixed(2)}, ${Math.max(...rr).toFixed(2)}]  -> flange(outer) radius=${Math.max(...rr).toFixed(2)} vs flatR=${flatR.toFixed(2)}  gap=${((Math.max(...rr)-flatR)*10).toFixed(1)}mm`);
-console.log(`block axial span: [${Math.min(...aa).toFixed(2)}, ${Math.max(...aa).toFixed(2)}]  front=${front.toFixed(2)}  tool overhang past front=${(Math.max(...aa)-front).toFixed(2)}`);
-console.log(`block tangential span: [${Math.min(...tt).toFixed(2)}, ${Math.max(...tt).toFixed(2)}]  (center offset=${((Math.min(...tt)+Math.max(...tt))/2).toFixed(2)})`);
+// block-body metrics in drum frame (flange = outermost radial of body)
+const bm=blockV.map(p=>{const q=sub(p,C);const a=dot(q,axis);const rv=sub(q,scv(axis,a));return{a,rr:dot(rv,radialOut),t:dot(rv,tangent)};});
+const am=blockAll.map(p=>{const q=sub(p,C);const a=dot(q,axis);const rv=sub(q,scv(axis,a));return{a,rr:dot(rv,radialOut),t:dot(rv,tangent)};});
+const rr=bm.map(x=>x.rr),aa=am.map(x=>x.a),tt=bm.map(x=>x.t);
+const flangeR=Math.max(...rr);
+console.log(`\n--- GROUND-TRUTH block seating in drum frame ---`);
+console.log(`block-body radial span: [${Math.min(...rr).toFixed(2)}, ${flangeR.toFixed(2)}]  flange(outer) radius=${flangeR.toFixed(3)}`);
+console.log(`turret outer flat radius            = ${flatR.toFixed(3)}`);
+console.log(`==> flange-vs-flat gap = ${((flangeR-flatR)*10).toFixed(2)} mm  (0 = flush ON flat)`);
+console.log(`block+tool axial span: [${Math.min(...aa).toFixed(2)}, ${Math.max(...aa).toFixed(2)}]  front=${front.toFixed(2)}  tool overhang past front=${(Math.max(...aa)-front).toFixed(2)}`);
+console.log(`block-body axial span: [${Math.min(...bm.map(x=>x.a)).toFixed(2)}, ${Math.max(...bm.map(x=>x.a)).toFixed(2)}]`);
+console.log(`block-body tangential span: [${Math.min(...tt).toFixed(2)}, ${Math.max(...tt).toFixed(2)}]  center=${((Math.min(...tt)+Math.max(...tt))/2).toFixed(2)}`);

@@ -20,7 +20,8 @@ const dot=(a,b)=>a[0]*b[0]+a[1]*b[1]+a[2]*b[2];
 const cross=(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];
 const norm=(a)=>{const m=Math.hypot(...a)||1;return[a[0]/m,a[1]/m,a[2]/m];};
 
-const SEAT = { faceOffsetCm:0, radialNudgeCm:0, axialNudgeCm:0, scale:1 };
+// Keep in sync with CLEAN_SEAT in src/data/turretSolids.ts.
+const SEAT = { faceOffsetCm:1.467, radialNudgeCm:0, axialNudgeCm:0, scale:1 };
 
 function placement(stationNumber){
   const st=joints.stations.find(s=>s.station===stationNumber);

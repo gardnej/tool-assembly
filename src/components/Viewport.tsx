@@ -33,6 +33,12 @@ type ViewportProps = {
         assignedStations: number[];
         /** Per-station real solids to mount; absent stations use the baked tool. */
         mounts?: TurretMount[];
+        /**
+         * Whether to render the numbered station hotspots. Defaults to true;
+         * set false when the src mesh is not the reconstructed turret (e.g. the
+         * seated CAD assembly in `?cad=1`), whose frame the hotspots don't match.
+         */
+        hotspots?: boolean;
       }
     | undefined;
 };
@@ -210,7 +216,8 @@ export function Viewport({
               exposure="1"
               aria-label="Turret assembly — 3D model. Drag to orbit, scroll to zoom."
             >
-              {turretStations.stations.map((station) => {
+              {(turret.hotspots ?? true) &&
+                turretStations.stations.map((station) => {
                 const mounted = turret.assignedStations.includes(station.number);
                 return (
                   <button

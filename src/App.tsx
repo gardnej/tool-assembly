@@ -21,7 +21,15 @@ import {
 // mount features — see scripts/build-haas-turret-ring.py. Block seating frames
 // (block MCS + turret Joint/UCS) are still pending, so mounted blocks won't seat
 // flush against this turret until those frames arrive.
-import turretGlbUrl from "./assets/models/turret-haas-st20y.glb?url";
+// The full Haas ST-20Y assembly (turret + tool block) tessellated straight from
+// the seated CAD STEP via `scripts/convert-assembly-step.py`. In `?cad=1` mode
+// the viewport renders THIS mesh verbatim, so the seat you see is the CAD
+// joint's own — no placement math, no separate-turret bridge.
+import haasAssemblyGlbUrl from "./assets/models/haas-assembly.glb?url";
+// The turret split from the seated CAD assembly (same frame as the CAD block).
+// The interactive path renders THIS so the composed block seats exactly as the
+// CAD joint put it — see `scripts/split-assembly-cad.py`.
+import turretCadUrl from "./assets/models/turret-cad.glb?url";
 import {
   assemblyBaseId,
   createDefaultTurretSetup,
@@ -221,6 +229,18 @@ export default function App() {
     setTurretVisible(true);
   }, []);
 
+  // Deep link: ?cad=1 renders the seated CAD assembly GLB directly (turret +
+  // tool block as modelled), bypassing station mounts and placement math so the
+  // viewport shows the exact CAD joint seat. Just needs a machine + a visible
+  // turret; the assembly mesh carries its own block, so no mounts are set.
+  const cadMode = queryFlag("cad");
+  useEffect(() => {
+    if (!cadMode) return;
+    setMachine((prev) => prev ?? HAAS_ST_20Y);
+    setSelectedMachine(HAAS_ST_20Y.id);
+    setTurretVisible(true);
+  }, [cadMode]);
+
   const handleBrowserContextMenu = useCallback(
     (nodeId: string, x: number, y: number) => {
       if (nodeId === TURRET_BROWSER_NODE_ID) {
@@ -402,12 +422,30 @@ export default function App() {
               blockAccentClass={viewportEmphasis.blockClass || undefined}
               turret={
                 machine !== null
-                  ? {
-                      url: turretGlbUrl,
-                      visible: turretVisible,
-                      assignedStations,
-                      mounts: turretMounts,
-                    }
+                  ? cadMode
+                    ? {
+                        // Seated CAD assembly rendered verbatim: no mounts (the
+                        // mesh already carries the block) and no hotspots (they
+                        // are placed in the reconstructed turret's frame, not
+                        // this mesh's), so the seat you see is the CAD joint's.
+                        url: haasAssemblyGlbUrl,
+                        visible: turretVisible,
+                        assignedStations: [],
+                        mounts: [],
+                        hotspots: false,
+                      }
+                    : {
+                        // CAD turret split from the seated assembly; the block
+                        // mount composes onto it in the same frame (metres), so
+                        // the seat is the CAD joint's. Hotspots are suppressed
+                        // because their positions live in the old reconstructed
+                        // turret's centimetre frame, not this mesh's.
+                        url: turretCadUrl,
+                        visible: turretVisible,
+                        assignedStations,
+                        mounts: turretMounts,
+                        hotspots: false,
+                      }
                   : undefined
               }
             />
