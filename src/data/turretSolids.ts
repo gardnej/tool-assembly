@@ -474,18 +474,11 @@ function axisRotationPlacement(
   ];
 }
 
-/**
- * Seat the CAD block (`block-cad.glb`) on a station. Both it and `turret-cad.glb`
- * are split from the same seated assembly, so at station 1 the identity places
- * the block exactly as modelled (matching the `?cad=1` reference); other
- * stations rotate about the CAD drum axis. Units are metres (assembly frame).
- */
-function cadBlockPlacement(stationNumber: number): Mat4 {
-  const axis = cadAssembly.drumAxis as V3;
-  const center = cadAssembly.drumCenter as V3;
-  const step = ((cadAssembly.stationStepDeg as number) * Math.PI) / 180;
-  return axisRotationPlacement(axis, center, step, stationNumber);
-}
+// The CAD block (`block-cad.glb`) now seats through the attach-point engine
+// below (registered in ATTACH_POINTS with baseStation 1), which composes the
+// same drum rotation about the CAD axis — see `drumRotation` /
+// `attachPointPlacement`. The previous standalone `cadBlockPlacement` helper is
+// therefore folded into that engine with no change in the resulting matrix.
 
 function realBlockPlacement(stationNumber: number): Mat4 {
   const axis = normalize(ring.axis as V3);
@@ -515,16 +508,269 @@ function realBlockPlacement(stationNumber: number): Mat4 {
   ];
 }
 
+/* Attach-point contract (Path B) ---------------------------------------------
+ *
+ * A reusable way to seat ANY tool assembly on ANY station, generalising the
+ * proven CAD-block path without changing it. The whole drum (turret + every
+ * seated block) is 12-fold symmetric, so a block that sits flush on ONE station
+ * lands flush on all the others by a pure rigid rotation about the drum axis.
+ *
+ * We therefore describe each assembly by a single `seatBase` transform: where
+ * the block's own frame sits in the CAD world when mounted on STATION 1. The
+ * station-N placement is then always
+ *
+ *     placement(N) = drumRotation(N) · seatBase
+ *
+ * where `drumRotation(N)` rotates station 1 → N about the CAD drum axis. The
+ * existing CAD block is exactly the special case `seatBase = identity` (it was
+ * split from the seated assembly already sitting on station 1), so routing it
+ * through this engine reproduces `cadBlockPlacement` bit-for-bit — no existing
+ * behaviour changes. New assemblies just supply their own `seatBase`, obtained
+ * either from the split pipeline (`baseStation`) or from an authored mount datum
+ * / MCS (`seatBaseFromDatum`). See the ATTACH_POINTS registry below for the
+ * step-by-step of onboarding a new assembly.
+ */
+
+const IDENTITY4: Mat4 = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
+
+/** Column-major 4×4 product a·b (b applied first, then a). */
+function mul4(a: Mat4, b: Mat4): Mat4 {
+  const out = new Array(16).fill(0) as unknown as Mat4;
+  for (let c = 0; c < 4; c += 1) {
+    for (let r = 0; r < 4; r += 1) {
+      let s = 0;
+      for (let k = 0; k < 4; k += 1) s += a[k * 4 + r] * b[c * 4 + k];
+      out[c * 4 + r] = s;
+    }
+  }
+  return out;
+}
+
+/**
+ * Inverse of a RIGID transform (rotation R + translation t): Rᵀ and −Rᵀ·t.
+ *
+ * Used to turn "the block is modelled seated on station k" into a station-1
+ * `seatBase`, i.e. seatBase = drumRotation(k)⁻¹, so that placement(k) lands the
+ * block exactly as the CAD modelled it and every other station follows by the
+ * drum rotation. Assumes the upper-left 3×3 is orthonormal (it always is here —
+ * these are rigid drum rotations).
+ */
+function invRigid(m: Mat4): Mat4 {
+  // Rᵀ (transpose the rotation block).
+  const r00 = m[0], r01 = m[4], r02 = m[8];
+  const r10 = m[1], r11 = m[5], r12 = m[9];
+  const r20 = m[2], r21 = m[6], r22 = m[10];
+  const tx = m[12], ty = m[13], tz = m[14];
+  // −Rᵀ·t
+  const itx = -(r00 * tx + r01 * ty + r02 * tz);
+  const ity = -(r10 * tx + r11 * ty + r12 * tz);
+  const itz = -(r20 * tx + r21 * ty + r22 * tz);
+  return [
+    r00, r10, r20, 0,
+    r01, r11, r21, 0,
+    r02, r12, r22, 0,
+    itx, ity, itz, 1,
+  ];
+}
+
+/** Rigid rotation of the drum carrying station 1 → `stationNumber`. */
+function drumRotation(stationNumber: number): Mat4 {
+  const axis = cadAssembly.drumAxis as V3;
+  const center = cadAssembly.drumCenter as V3;
+  const step = ((cadAssembly.stationStepDeg as number) * Math.PI) / 180;
+  return axisRotationPlacement(axis, center, step, stationNumber);
+}
+
+/**
+ * General seater (Path B): place a block whose station-1 seat is `seatBase` onto
+ * `stationNumber` by the drum rotation. With `seatBase = identity` this is
+ * exactly `cadBlockPlacement`, so the proven block is unchanged.
+ */
+export function attachPointPlacement(stationNumber: number, seatBase: Mat4): Mat4 {
+  return mul4(drumRotation(stationNumber), seatBase);
+}
+
+/**
+ * A block's mount datum (MCS) for an independently-authored assembly — i.e. a
+ * block GLB in its OWN local frame that has not been through the split pipeline.
+ *
+ * It names the block-local axes that mate to the station and the local point
+ * that lands on the plug: `intoFaceAxis` presses INTO the coupling facet (turns
+ * to radially-inward at the seat), `toolForwardAxis` is the direction the tools
+ * point (turns to drum-axis forward), and `mcsOrigin` is the block-local point
+ * that sits on the station-1 plug origin. `scale` converts the block's units to
+ * the CAD metre frame. This mirrors the axis convention `jointBlockPlacement`
+ * uses for the clean block, so an MCS authored there transfers directly.
+ */
+export interface MountDatum {
+  intoFaceAxis: V3;
+  toolForwardAxis: V3;
+  mcsOrigin: V3;
+  /** Block units → CAD metres (default 1). */
+  scale?: number;
+}
+
+/** The turret's station-1 plug/mount frame, expressed in the CAD world frame. */
+interface PlugFrame {
+  origin: V3;
+  /** Radially-inward at the facet (block `intoFaceAxis` maps onto this). */
+  intoFace: V3;
+  /** Drum-axis forward (block `toolForwardAxis` maps onto this). */
+  toolForward: V3;
+}
+
+/**
+ * Station-1 plug frame in the CAD world frame, derived from `cadAssembly.json`.
+ *
+ * `toolForward` is the drum axis (tools cantilever forward); `intoFace` is the
+ * inward radial at the seated block's facet (the block presses onto the flat);
+ * `origin` is the plug point on the plug ring at the block's facet — the drum
+ * centre carried out to the plug-ring radius along the block's radial, at the
+ * block's axial station. This is the datum an MCS block mates to and is only
+ * consulted for datum-based assemblies (the CAD block never touches it), so it
+ * cannot affect existing seating. Validate/refine it against the first real MCS
+ * assembly; the split pipeline (`baseStation`) path needs no plug frame at all.
+ */
+function stationOnePlugFrame(): PlugFrame {
+  const center = cadAssembly.drumCenter as V3;
+  const axis = normalize(cadAssembly.drumAxis as V3);
+  const radialOut = normalize(cadAssembly.blockRadialDir as V3);
+  const blockCenter = cadAssembly.blockCenter as V3;
+  const radius = cadAssembly.plugRingRadiusMean as number;
+  // Plug origin: drum centre pushed to the block's axial position, then out to
+  // the plug-ring radius along the block's radial direction.
+  const axialOffset = dot(sub(blockCenter, center), axis);
+  const onAxis = add(center, scaleV(axis, axialOffset));
+  const origin = add(onAxis, scaleV(radialOut, radius));
+  return { origin, intoFace: scaleV(radialOut, -1), toolForward: axis };
+}
+
+/**
+ * Build the station-1 `seatBase` that carries a block's MCS onto the plug frame.
+ *
+ * Maps the block-local mount axes onto the plug-frame axes (tool-forward and
+ * into-face) and translates the (scaled) MCS origin onto the plug origin. The
+ * result is a rigid block-local → CAD-world transform seating the block on
+ * station 1; `attachPointPlacement` then rotates it to any station.
+ */
+export function seatBaseFromDatum(datum: MountDatum, plug: PlugFrame = stationOnePlugFrame()): Mat4 {
+  const scale = datum.scale ?? 1;
+  // Orthonormal local basis [forward, up, into] from the datum's two axes.
+  const lF = normalize(datum.toolForwardAxis);
+  const lIraw = normalize(datum.intoFaceAxis);
+  const lU = normalize(cross(lIraw, lF));
+  const lI = normalize(cross(lF, lU)); // re-orthogonalise into-face
+  // Matching target basis in the plug frame.
+  const tF = normalize(plug.toolForward);
+  const tIraw = normalize(plug.intoFace);
+  const tU = normalize(cross(tIraw, tF));
+  const tI = normalize(cross(tF, tU));
+  // Rotation R mapping local→world: R·lF = tF, R·lU = tU, R·lI = tI, so
+  // R = [tF tU tI]·[lF lU lI]ᵀ. Column k of R is Σ_j t_j · (local_j)_k.
+  const ls = [lF, lU, lI];
+  const ts = [tF, tU, tI];
+  const rotCol = (k: number): V3 => {
+    let acc: V3 = [0, 0, 0];
+    for (let j = 0; j < 3; j += 1) acc = add(acc, scaleV(ts[j], ls[j][k]));
+    return acc;
+  };
+  const col0 = rotCol(0);
+  const col1 = rotCol(1);
+  const col2 = rotCol(2);
+  // Translation so the scaled MCS origin lands on the plug origin.
+  const so = scaleV(datum.mcsOrigin, scale);
+  const rso: V3 = [
+    col0[0] * so[0] + col1[0] * so[1] + col2[0] * so[2],
+    col0[1] * so[0] + col1[1] * so[1] + col2[1] * so[2],
+    col0[2] * so[0] + col1[2] * so[1] + col2[2] * so[2],
+  ];
+  const t = sub(plug.origin, rso);
+  return [
+    col0[0] * scale, col0[1] * scale, col0[2] * scale, 0,
+    col1[0] * scale, col1[1] * scale, col1[2] * scale, 0,
+    col2[0] * scale, col2[1] * scale, col2[2] * scale, 0,
+    t[0], t[1], t[2], 1,
+  ];
+}
+
+/**
+ * The attach-point contract: how each seatable assembly mounts on a station.
+ *
+ * Keyed by a stable fragment of the block GLB URL (surviving Vite hashing, like
+ * CALIBRATIONS). Provide exactly one of:
+ *   • `baseStation` — the station the block GLB is modelled/seated on after the
+ *     split pipeline (`scripts/split-assembly-cad.py`). seatBase is then a pure
+ *     drum rotation, needing NO calibration. The CAD block uses baseStation 1
+ *     (identity), so it is byte-for-byte the previous `cadBlockPlacement`.
+ *   • `datum` — an authored MCS for a block in its own local frame; seatBase is
+ *     `seatBaseFromDatum`.
+ *
+ * To add a new assembly: ship its block GLB, map its geometryId to that URL in
+ * `solidUrlForRecord`, and add one entry here. Existing entries are untouched.
+ */
+interface AttachPoint {
+  match: RegExp;
+  baseStation?: number;
+  datum?: MountDatum;
+}
+
+const ATTACH_POINTS: AttachPoint[] = [
+  // Ground-truth CAD block: split from the seated assembly on station 1, so its
+  // station-1 seat is the identity. This is the exact previous behaviour.
+  { match: /block-cad/, baseStation: 1 },
+
+  // ── How to add ANOTHER assembly on a DIFFERENT station ──────────────────
+  // 1. Ship its block GLB under src/assets/models and import it (like
+  //    `blockCadUrl`), then map its geometryId → that URL in `solidUrlForRecord`.
+  // 2. Add ONE entry here describing how it seats, choosing a source:
+  //
+  //  (a) PIPELINE (recommended, no calibration): export the assembly seated on
+  //      any plug in Fusion in the SAME frame as turret-cad.glb, run it through
+  //      `scripts/split-assembly-cad.py`, and note which station it sits on.
+  //        { match: /my-block/, baseStation: 4 },
+  //      Its seat is then a pure drum rotation and it lands flush on all 12.
+  //
+  //  (b) MCS DATUM (block authored in its own local frame): give the block-local
+  //      axes that mate to the plug and the local point that sits on it. Units
+  //      are converted to metres via `scale`.
+  //        {
+  //          match: /my-block/,
+  //          datum: {
+  //            toolForwardAxis: [1, 0, 0], // local axis the tools point along
+  //            intoFaceAxis: [0, 0, 1],    // local axis pressed INTO the facet
+  //            mcsOrigin: [0, 0, 0],       // local point seated on the plug
+  //            scale: 1,                   // block units → metres
+  //          },
+  //        },
+  //      The datum mates to `stationOnePlugFrame()`; validate the first MCS block
+  //      visually and refine that frame if needed. Neither form touches the CAD
+  //      block or any other existing path.
+];
+
+/** The station-1 `seatBase` for a solid URL, or null if it has no attach point. */
+function seatBaseFor(solidUrl: string): Mat4 | null {
+  const entry = ATTACH_POINTS.find((a) => a.match.test(solidUrl));
+  if (entry === undefined) return null;
+  if (entry.datum !== undefined) return seatBaseFromDatum(entry.datum);
+  const base = entry.baseStation ?? 1;
+  // seatBase = drumRotation(base)⁻¹, so placement(base) reproduces the modelled
+  // seat and every other station follows by the drum rotation. base 1 → identity.
+  return base === 1 ? IDENTITY4 : invRigid(drumRotation(base));
+}
+
 export function stationPlacementMatrix(stationNumber: number, solidUrl: string): Mat4 {
   // The real block shares the turret's coordinate frame, so it seats by rotation
   // about the drum axis alone (flush by construction). Other solids still use
   // the per-solid calibration below.
   if (/toolblock-3x-real/.test(solidUrl)) return realBlockPlacement(stationNumber);
 
-  // The CAD block (split from the seated assembly) rotates onto its station
-  // about the CAD drum axis — station 1 is the identity, matching the ?cad=1
-  // reference exactly. This is the correct, ground-truth path.
-  if (/block-cad/.test(solidUrl)) return cadBlockPlacement(stationNumber);
+  // Attach-point contract (Path B): any assembly registered in ATTACH_POINTS
+  // seats via placement(N) = drumRotation(N) · seatBase. The CAD block is
+  // registered with baseStation 1 (seatBase = identity), so this reproduces the
+  // previous cadBlockPlacement exactly; new assemblies plug in here without
+  // touching any other path.
+  const seatBase = seatBaseFor(solidUrl);
+  if (seatBase !== null) return attachPointPlacement(stationNumber, seatBase);
 
   // The clean block seats by a single rigid MCS→UCS snap from the extracted
   // per-station joint frames (turretJoints.json) — flush and correctly oriented
