@@ -1,8 +1,9 @@
 /**
  * Turret Setup — assign tool assemblies to the stations of a machine's turret.
  *
- * A Fusion command dialog, docked at the right of the canvas in the prototype's
- * dark theme. The station table is exactly `machine.turret.stationCount` rows;
+ * A Fusion command dialog floating over the canvas in the prototype's dark
+ * theme: it can be dragged by its title bar and resized from either bottom
+ * corner. The station table is exactly `machine.turret.stationCount` rows;
  * each row's dropdown offers the real saved assemblies plus the seeded demos.
  * The machine's turret facts (type, mount, position) are shown read-only, since
  * they belong to the machine chosen in the Setup dialog rather than to the
@@ -196,14 +197,126 @@ export function TurretSetupDialog({
     setAssembly(selectedStation, null);
   }, [selectedStation, setAssembly]);
 
+  // Floating position + size. Null until the user drags/resizes, so the CSS
+  // default placement and size are used first; each open resets to default.
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const [pos, setPos] = useState<{ x: number; y: number } | null>(null);
+  const [size, setSize] = useState<{ w: number; h: number } | null>(null);
+  const sessionRef = useRef<
+    | { mode: "move"; sx: number; sy: number; ox: number; oy: number }
+    | {
+        mode: "resize";
+        corner: "bl" | "br";
+        sx: number;
+        sy: number;
+        ox: number;
+        oy: number;
+        ow: number;
+        oh: number;
+      }
+    | null
+  >(null);
+
+  useEffect(() => {
+    if (open) {
+      setPos(null);
+      setSize(null);
+    }
+  }, [open]);
+
+  useEffect(() => {
+    const MIN_W = 300;
+    const MIN_H = 360;
+    function onMove(ev: PointerEvent): void {
+      const s = sessionRef.current;
+      if (s === null) return;
+      if (s.mode === "move") {
+        const w = dialogRef.current?.offsetWidth ?? 332;
+        const x = Math.min(
+          Math.max(s.ox + (ev.clientX - s.sx), 8 - w + 48),
+          window.innerWidth - 48,
+        );
+        const y = Math.min(Math.max(s.oy + (ev.clientY - s.sy), 0), window.innerHeight - 30);
+        setPos({ x, y });
+        return;
+      }
+      // Resize from a bottom corner. The top edge is fixed; the bottom edge
+      // follows the pointer. The bottom-left corner also moves the left edge
+      // while keeping the right edge pinned.
+      const dx = ev.clientX - s.sx;
+      const dy = ev.clientY - s.sy;
+      let newW = Math.max(MIN_W, s.corner === "br" ? s.ow + dx : s.ow - dx);
+      let newX = s.corner === "bl" ? s.ox + (s.ow - newW) : s.ox;
+      let newH = Math.max(MIN_H, s.oh + dy);
+      // Keep the dialog within the viewport.
+      newW = Math.min(newW, window.innerWidth - newX - 8);
+      newH = Math.min(newH, window.innerHeight - s.oy - 8);
+      setPos({ x: newX, y: s.oy });
+      setSize({ w: newW, h: newH });
+    }
+    function onUp(): void {
+      sessionRef.current = null;
+    }
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+    return () => {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+    };
+  }, []);
+
+  const beginMove = useCallback((ev: React.PointerEvent): void => {
+    // Ignore drags starting on a button (e.g. the expand icon).
+    if ((ev.target as HTMLElement).closest("button") !== null) return;
+    const rect = dialogRef.current?.getBoundingClientRect();
+    if (rect === undefined) return;
+    sessionRef.current = {
+      mode: "move",
+      sx: ev.clientX,
+      sy: ev.clientY,
+      ox: rect.left,
+      oy: rect.top,
+    };
+  }, []);
+
+  const beginResize = useCallback(
+    (corner: "bl" | "br") => (ev: React.PointerEvent): void => {
+      ev.preventDefault();
+      ev.stopPropagation();
+      const rect = dialogRef.current?.getBoundingClientRect();
+      if (rect === undefined) return;
+      sessionRef.current = {
+        mode: "resize",
+        corner,
+        sx: ev.clientX,
+        sy: ev.clientY,
+        ox: rect.left,
+        oy: rect.top,
+        ow: rect.width,
+        oh: rect.height,
+      };
+    },
+    [],
+  );
+
   if (open !== true) return null;
 
   const turret = machine?.turret ?? null;
   const setupOptionValue = existingSetups.some((s) => s.id === setup.id) ? setup.id : "new";
 
   return (
-    <aside className="tsd" role="dialog" aria-modal="false" aria-labelledby={titleId}>
-      <header className="tsd__title-bar">
+    <aside
+      ref={dialogRef}
+      className="tsd"
+      role="dialog"
+      aria-modal="false"
+      aria-labelledby={titleId}
+      style={{
+        ...(pos !== null ? { top: pos.y, left: pos.x, right: "auto" } : null),
+        ...(size !== null ? { width: size.w, height: size.h } : null),
+      }}
+    >
+      <header className="tsd__title-bar" onPointerDown={beginMove}>
         <h2 id={titleId} className="tsd__title">
           Turret setup
         </h2>
@@ -442,6 +555,18 @@ export function TurretSetupDialog({
           Cancel
         </button>
       </footer>
+
+      {/* Resize grips on both bottom corners. */}
+      <div
+        className="tsd__resize tsd__resize--bl"
+        onPointerDown={beginResize("bl")}
+        aria-hidden
+      />
+      <div
+        className="tsd__resize tsd__resize--br"
+        onPointerDown={beginResize("br")}
+        aria-hidden
+      />
     </aside>
   );
 }

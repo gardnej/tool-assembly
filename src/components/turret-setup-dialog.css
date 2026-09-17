@@ -1,8 +1,8 @@
 /**
- * Turret Setup — Fusion command dialog, docked at the right of the canvas.
- * Dark theme, matching the tool-library / tool-assembly dialogues in this
- * prototype (Fusion Dark Blue, Artifakt Element), rather than the light-grey
- * command palette the design was mocked in.
+ * Turret Setup — Fusion command dialog floating over the canvas. Dark theme,
+ * matching the tool-library / tool-assembly dialogues in this prototype (Fusion
+ * Dark Blue, Artifakt Element). Draggable by its title bar and resizable from
+ * either bottom corner.
  */
 
 .tsd {
@@ -22,21 +22,25 @@
   --tsd-field: #20252d;
 
   position: fixed;
-  top: 0;
-  right: 0;
+  top: 64px;
+  left: 360px;
   z-index: 10040;
   display: flex;
   flex-direction: column;
   width: 332px;
+  height: 600px;
+  min-width: 300px;
+  min-height: 360px;
   max-width: calc(100vw - 16px);
-  height: 100vh;
+  max-height: calc(100vh - 16px);
   overflow: hidden;
-  border-left: 1px solid #1d222a;
+  border: 1px solid #1d222a;
+  border-radius: 6px;
   background: var(--tsd-bg);
   color: var(--tsd-text);
   font-family: "Artifakt Element", ArtifaktElement, system-ui, sans-serif;
   font-size: 11px;
-  box-shadow: -18px 0 48px rgb(0 0 0 / 0.45);
+  box-shadow: 0 24px 64px rgb(0 0 0 / 0.55), 0 2px 8px rgb(0 0 0 / 0.4);
 }
 
 /* Title bar --------------------------------------------------------------- */
@@ -49,6 +53,8 @@
   padding: 0 8px 0 12px;
   background: linear-gradient(180deg, #343b46 0%, var(--tsd-bg) 100%);
   border-bottom: 1px solid var(--tsd-border);
+  cursor: move;
+  user-select: none;
 }
 
 .tsd__title {
@@ -360,4 +366,56 @@
 
 .tsd__footer-btn--primary:hover {
   background: #4aa8e6;
+}
+
+/* Resize grips ------------------------------------------------------------ */
+
+.tsd__resize {
+  position: absolute;
+  bottom: 0;
+  width: 16px;
+  height: 16px;
+  z-index: 3;
+}
+
+.tsd__resize--br {
+  right: 0;
+  cursor: nwse-resize;
+}
+
+.tsd__resize--bl {
+  left: 0;
+  cursor: nesw-resize;
+}
+
+/* Faint diagonal grip lines so the corners read as draggable. */
+.tsd__resize::after {
+  content: "";
+  position: absolute;
+  bottom: 3px;
+  width: 8px;
+  height: 8px;
+  opacity: 0.5;
+}
+
+.tsd__resize--br::after {
+  right: 3px;
+  background: repeating-linear-gradient(
+    -45deg,
+    var(--tsd-faint) 0 1px,
+    transparent 1px 3px
+  );
+}
+
+.tsd__resize--bl::after {
+  left: 3px;
+  background: repeating-linear-gradient(
+    45deg,
+    var(--tsd-faint) 0 1px,
+    transparent 1px 3px
+  );
+}
+
+.tsd__resize:hover::after {
+  opacity: 0.9;
 }
