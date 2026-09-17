@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 
 export interface ContextMenuItem {
   id: string;
@@ -17,6 +17,10 @@ interface ContextMenuProps {
 
 export function ContextMenu({ x, y, items, onClose }: ContextMenuProps) {
   const menuRef = useRef<HTMLDivElement>(null);
+  // Drive position through state so the menu is placed correctly on the very
+  // first render. Start at the requested point; the layout effect below clamps
+  // it to the viewport once the menu's real size is known.
+  const [pos, setPos] = useState({ left: x, top: y });
 
   useEffect(() => {
     const handlePointerDown = (event: PointerEvent) => {
@@ -35,24 +39,25 @@ export function ContextMenu({ x, y, items, onClose }: ContextMenuProps) {
   }, [onClose]);
 
   // Keep the menu inside the viewport when opened near the right/bottom edge.
-  useEffect(() => {
+  // useLayoutEffect measures and clamps before the browser paints, so the menu
+  // appears in the correct place on the first click (no one-frame flash at the
+  // bottom edge). The clamp is derived from the requested x/y props — never from
+  // the previously mutated DOM — so it is idempotent across opens.
+  useLayoutEffect(() => {
     const menu = menuRef.current;
     if (menu === null) return;
-    const rect = menu.getBoundingClientRect();
-    if (rect.right > window.innerWidth) {
-      menu.style.left = `${Math.max(0, window.innerWidth - rect.width - 4)}px`;
-    }
-    if (rect.bottom > window.innerHeight) {
-      menu.style.top = `${Math.max(0, window.innerHeight - rect.height - 4)}px`;
-    }
+    const { width, height } = menu.getBoundingClientRect();
+    const left = x + width > window.innerWidth ? Math.max(0, window.innerWidth - width - 4) : x;
+    const top = y + height > window.innerHeight ? Math.max(0, window.innerHeight - height - 4) : y;
+    setPos({ left, top });
   }, [x, y]);
 
   return (
     <div
       ref={menuRef}
       role="menu"
-      style={{ left: x, top: y }}
-      className="fixed z-50 min-w-[190px] rounded-[2px] border border-weave-divider-heavy bg-weave-header py-1 shadow-lg shadow-black/40"
+      style={{ left: pos.left, top: pos.top }}
+      className="fixed z-50 w-max min-w-[190px] rounded-[2px] border border-weave-divider-heavy bg-weave-header py-1 shadow-lg shadow-black/40"
     >
       {items.map((item) => (
         <div key={item.id}>

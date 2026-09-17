@@ -284,7 +284,6 @@ export function ToolHolderDialog({
           <span className="text-[11px] text-weave-text-placeholder">v2.13.4 Online</span>
           <div className="flex gap-2">
             <PrimaryButton
-              split
               onClick={() => {
                 if (state.currentStep === "configure") {
                   goToStep("validate");

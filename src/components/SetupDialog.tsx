@@ -1,11 +1,11 @@
 /**
  * Setup — Fusion's New Setup command dialog.
  *
- * Rendered as the light-grey command palette docked at the right of the canvas,
- * the way Fusion draws Setup (distinct from the dark tool dialogues). In this
- * prototype the Machine row is the interactive part — choosing a machine is what
- * gives the document its turret — while the Setup / WCS / Model rows are shown
- * for fidelity to the real dialog.
+ * Rendered as a dark, floating command dialog that can be dragged around the
+ * canvas by its title bar (matching how Fusion floats the Setup dialog), rather
+ * than a docked side panel. In this prototype the Machine row is the interactive
+ * part — choosing a machine is what gives the document its turret — while the
+ * Setup / WCS / Model rows are shown for fidelity to the real dialog.
  */
 
 import { useEffect, useRef, useState } from "react";
@@ -97,10 +97,54 @@ export function SetupDialog({ open, machine, onClose, onConfirm }: SetupDialogPr
   const [picked, setPicked] = useState<Machine | null>(machine);
   const [menuOpen, setMenuOpen] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
+
+  // Floating position (px, from viewport top-left). Null until first drag, so
+  // the CSS default placement is used; dragging by the title bar sets it.
+  const [pos, setPos] = useState<{ x: number; y: number } | null>(null);
+  const dragOffset = useRef<{ dx: number; dy: number } | null>(null);
 
   useEffect(() => {
     setPicked(machine);
   }, [machine, open]);
+
+  // Reset the floating position each time the dialog opens, so it always
+  // reappears at its default spot rather than wherever it was last dragged.
+  useEffect(() => {
+    if (open) setPos(null);
+  }, [open]);
+
+  useEffect(() => {
+    function onMove(ev: PointerEvent): void {
+      if (dragOffset.current === null) return;
+      const w = dialogRef.current?.offsetWidth ?? 340;
+      const h = dialogRef.current?.offsetHeight ?? 200;
+      // Clamp so the title bar can't be dragged fully off-screen.
+      const x = Math.min(
+        Math.max(ev.clientX - dragOffset.current.dx, 8 - w + 48),
+        window.innerWidth - 48,
+      );
+      const y = Math.min(Math.max(ev.clientY - dragOffset.current.dy, 0), window.innerHeight - 30);
+      setPos({ x, y });
+    }
+    function onUp(): void {
+      dragOffset.current = null;
+    }
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+    return () => {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+    };
+  }, []);
+
+  function onTitlePointerDown(ev: React.PointerEvent): void {
+    // Ignore drags that start on a button (e.g. the expand icon).
+    if ((ev.target as HTMLElement).closest("button") !== null) return;
+    const rect = dialogRef.current?.getBoundingClientRect();
+    if (rect === undefined) return;
+    dragOffset.current = { dx: ev.clientX - rect.left, dy: ev.clientY - rect.top };
+  }
 
   useEffect(() => {
     if (!menuOpen) return undefined;
@@ -117,8 +161,15 @@ export function SetupDialog({ open, machine, onClose, onConfirm }: SetupDialogPr
   if (open !== true) return null;
 
   return (
-    <aside className="setupd" role="dialog" aria-modal="false" aria-label="Setup">
-      <header className="setupd__title-bar">
+    <aside
+      ref={dialogRef}
+      className="setupd"
+      role="dialog"
+      aria-modal="false"
+      aria-label="Setup"
+      style={pos !== null ? { top: pos.y, left: pos.x, right: "auto" } : undefined}
+    >
+      <header className="setupd__title-bar" onPointerDown={onTitlePointerDown}>
         <h2 className="setupd__title">
           SETUP <span className="setupd__title-id">: Setup1</span>
         </h2>
@@ -146,13 +197,14 @@ export function SetupDialog({ open, machine, onClose, onConfirm }: SetupDialogPr
               {picked !== null ? (
                 <button
                   type="button"
-                  className="setupd__select-btn"
+                  className="setupd__select-btn setupd__select-btn--machine"
+                  title={machineLabel(picked)}
                   onClick={() => {
                     setMenuOpen((v) => !v);
                   }}
                 >
                   <IconCursor />
-                  {machineLabel(picked)}
+                  <span className="setupd__machine-name">{machineLabel(picked)}</span>
                 </button>
               ) : (
                 <button
