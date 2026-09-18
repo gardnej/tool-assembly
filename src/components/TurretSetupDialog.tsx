@@ -31,6 +31,11 @@ export type TurretSetupDialogProps = {
   existingSetups: TurretSetup[];
   onClose: () => void;
   onConfirm: (setup: TurretSetup) => void;
+  /**
+   * Fired whenever the in-progress station assignments change, so the canvas
+   * can preview mounts live before the setup is committed on Ok.
+   */
+  onStationsChange?: (stations: TurretStationAssignment[]) => void;
   /** Open the Setup dialog to choose or change the machine. */
   onEditMachine: () => void;
   /** Load a different existing setup into the dialog. */
@@ -129,6 +134,7 @@ export function TurretSetupDialog({
   existingSetups,
   onClose,
   onConfirm,
+  onStationsChange,
   onEditMachine,
   onSelectSetup,
   onPickFromLibrary,
@@ -149,6 +155,13 @@ export function TurretSetupDialog({
     setStations(setup.stations);
     setSelectedStation(setup.stations[0]?.stationNumber ?? null);
   }, [setup]);
+
+  // Push the in-progress assignments up so the canvas previews mounts live,
+  // before Ok commits them. Only runs while the dialog is open.
+  useEffect(() => {
+    if (!open) return;
+    onStationsChange?.(stations);
+  }, [open, stations, onStationsChange]);
 
   const selectedIndex = useMemo(
     () => stations.findIndex((s) => s.stationNumber === selectedStation),

@@ -42,7 +42,7 @@ import {
 import { sessionAssemblies, upsertSessionAssembly } from "./data/libraryEdits";
 import { assemblyMount } from "./data/turretSolids";
 import { useTurretRevision } from "./hooks/useTurretRevision";
-import type { Machine, TurretSetup } from "./types";
+import type { Machine, TurretSetup, TurretStationAssignment } from "./types";
 import { defaultTabForWorkspace, type RibbonTabId, type RibbonWorkspaceId } from "./ribbonConfig";
 import "./App.css";
 
@@ -92,6 +92,14 @@ export default function App() {
   const turretRev = useTurretRevision();
   const [machine, setMachine] = useState<Machine | null>(null);
   const [turretSetup, setTurretSetup] = useState<TurretSetup | null>(null);
+  /**
+   * In-progress station assignments from the open dialog, mirrored here so the
+   * canvas previews mounts live before Ok commits them. Null when the dialog is
+   * closed or has not emitted yet, in which case the committed setup is shown.
+   */
+  const [draftStations, setDraftStations] = useState<
+    TurretStationAssignment[] | null
+  >(null);
   const [setupDialogOpen, setSetupDialogOpen] = useState(() => queryFlag("setup"));
   const [turretDialogOpen, setTurretDialogOpen] = useState(false);
   const [turretVisible, setTurretVisible] = useState(true);
@@ -153,6 +161,7 @@ export default function App() {
   const confirmTurret = useCallback((next: TurretSetup) => {
     upsertTurretSetup(next);
     setTurretSetup(next);
+    setDraftStations(null);
     setTurretDialogOpen(false);
   }, []);
 
@@ -266,13 +275,26 @@ export default function App() {
     return browserRootWithTurret(machine.name, turretSetup?.name ?? "Turret1");
   }, [machine, turretSetup]);
 
+  /**
+   * Stations the canvas should reflect: the dialog's live draft while it is
+   * open and has emitted, otherwise the committed setup. This is what makes a
+   * station's tool appear on the turret the moment it is picked, before Ok.
+   */
+  const previewStations = useMemo(
+    () =>
+      turretDialogOpen && draftStations !== null
+        ? draftStations
+        : (turretSetup?.stations ?? []),
+    [turretDialogOpen, draftStations, turretSetup],
+  );
+
   /** Station numbers that currently have a tool assembly mounted. */
   const assignedStations = useMemo(
     () =>
-      (turretSetup?.stations ?? [])
+      previewStations
         .filter((station) => station.toolAssemblyId !== null)
         .map((station) => station.stationNumber),
-    [turretSetup],
+    [previewStations],
   );
 
   /**
@@ -282,7 +304,7 @@ export default function App() {
    */
   const turretMounts = useMemo(
     () =>
-      (turretSetup?.stations ?? [])
+      previewStations
         .filter((station) => station.toolAssemblyId !== null)
         .map((station) => {
           const mount = assemblyMount(station.toolAssemblyId);
@@ -292,7 +314,7 @@ export default function App() {
             keepMaterials: mount?.keepMaterials,
           };
         }),
-    [turretSetup, turretRev],
+    [previewStations, turretRev],
   );
 
   const contextMenuItems = useMemo<ContextMenuItem[]>(() => {
@@ -517,9 +539,13 @@ export default function App() {
           options={assemblyOptions}
           existingSetups={existingSetups}
           onClose={() => {
+            // Cancel: drop the live draft so the canvas reverts to the last
+            // committed setup.
+            setDraftStations(null);
             setTurretDialogOpen(false);
           }}
           onConfirm={confirmTurret}
+          onStationsChange={setDraftStations}
           onEditMachine={editMachineFromTurret}
           onPickFromLibrary={(stationNumber) => {
             setLibraryPickStation(stationNumber);
