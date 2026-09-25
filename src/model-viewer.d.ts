@@ -24,6 +24,8 @@ type ModelViewerAttributes = HTMLAttributes<HTMLElement> & {
 export interface ModelViewerMaterial {
   name: string;
   setAlphaMode(mode: "OPAQUE" | "MASK" | "BLEND"): void;
+  /** Alpha threshold for MASK mode; fragments below the cutoff are discarded. */
+  setAlphaCutoff(cutoff: number): void;
   pbrMetallicRoughness: {
     setBaseColorFactor(rgba: [number, number, number, number]): void;
     setMetallicFactor(value: number): void;

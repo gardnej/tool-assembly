@@ -49,6 +49,12 @@ export type DemoBlockBrowserNode = {
   defaultExpanded?: boolean;
   /** Units carries no show/hide control in Fusion; everything else does. */
   noVisibility?: boolean;
+  /**
+   * Node starts hidden in the canvas (eye shows "hidden"), toggleable on. Used
+   * for the machine/turret so the turret geometry is off by default until the
+   * user turns it on from the browser. Default: false (visible).
+   */
+  defaultHidden?: boolean;
   /** When set, selecting this row syncs Feature Manager to this feature id */
   linkedFeatureRowId?: string;
   children?: DemoBlockBrowserNode[];
@@ -323,50 +329,147 @@ export const DEMO_BLOCK_BROWSER_ROOT: DemoBlockBrowserNode = {
   ],
 };
 
-/** Browser id of the turret node, so the context menu can key off it. */
+/**
+ * Browser id PREFIX for turret-setup nodes. Each saved turret setup renders its
+ * own node under the machine, id = `cam-turret:<setupId>`, so multiple setups
+ * can coexist in the tree (see `turretNodeId`). The bare value is kept for
+ * backwards-compatible checks.
+ */
 export const TURRET_BROWSER_NODE_ID = "cam-turret";
-/** Browser id of the machine node. */
+/** Browser id PREFIX for machine nodes (one per turret setup). */
 export const MACHINE_BROWSER_NODE_ID = "cam-machine";
+/** Browser id PREFIX for turret-authored OP Setup nodes. */
+export const OP_SETUP_BROWSER_NODE_ID = "cam-op";
 
-/** Setup node the machine is nested under (Fusion pins the machine to a setup). */
-const SETUP_BROWSER_NODE_ID = "cam-op10";
+/** Browser node id for a specific turret setup (one node per saved setup). */
+export function turretNodeId(setupId: string): string {
+  return `${TURRET_BROWSER_NODE_ID}:${setupId}`;
+}
+
+/** True for the turret node prefix or any per-setup turret node. */
+export function isTurretNode(nodeId: string): boolean {
+  return nodeId === TURRET_BROWSER_NODE_ID || nodeId.startsWith(`${TURRET_BROWSER_NODE_ID}:`);
+}
+
+/** The setup id carried by a per-setup turret node, or null for the bare id. */
+export function setupIdFromTurretNode(nodeId: string): string | null {
+  const prefix = `${TURRET_BROWSER_NODE_ID}:`;
+  return nodeId.startsWith(prefix) ? nodeId.slice(prefix.length) : null;
+}
+
+/** Browser node id for the machine nested under a given turret setup. */
+export function machineNodeId(setupId: string): string {
+  return `${MACHINE_BROWSER_NODE_ID}:${setupId}`;
+}
+
+/** True for the machine node prefix or any per-setup machine node. */
+export function isMachineNode(nodeId: string): boolean {
+  return (
+    nodeId === MACHINE_BROWSER_NODE_ID || nodeId.startsWith(`${MACHINE_BROWSER_NODE_ID}:`)
+  );
+}
+
+/** The setup id carried by a per-setup machine node, or null for the bare id. */
+export function setupIdFromMachineNode(nodeId: string): string | null {
+  const prefix = `${MACHINE_BROWSER_NODE_ID}:`;
+  return nodeId.startsWith(prefix) ? nodeId.slice(prefix.length) : null;
+}
+
+/** Browser node id for a turret-authored OP Setup (top-level, per setup). */
+export function opSetupNodeId(setupId: string): string {
+  return `${OP_SETUP_BROWSER_NODE_ID}:${setupId}`;
+}
+
+/** The existing OP-10 Setup node the seeded turret is pinned under. */
+const OP10_BROWSER_NODE_ID = "cam-op10";
+/** The Setups folder new OP Setup nodes are appended to. */
+const SETUPS_FOLDER_NODE_ID = "cam-setups";
+
+/** One turret setup as the browser needs it: id, display name and OP number. */
+export type BrowserTurretSetup = { id: string; name: string; opNumber: number };
 
 /**
- * The document tree with the selected machine and its turret spliced in.
- *
- * Fusion pins a machine to the setup that runs on it, so the Machine node lives
- * *inside* the setup as its first child, carrying the turret beneath it.
- * Right-clicking the turret is how the design enters Turret Setup, so the node
- * id is stable.
+ * The machine → turret subtree Fusion pins inside a manufacturing Setup. The
+ * machine and its single turret start hidden in the canvas; the user toggles
+ * them on from the eye control. Ids are keyed by setup so multiple Setups can
+ * coexist, each owning exactly one turret.
  */
-export function browserRootWithTurret(
+function machineSubtree(
   machineName: string,
-  turretLabel: string,
-  root: DemoBlockBrowserNode = DEMO_BLOCK_BROWSER_ROOT,
+  turret: BrowserTurretSetup,
 ): DemoBlockBrowserNode {
-  const machineNode: DemoBlockBrowserNode = {
-    id: MACHINE_BROWSER_NODE_ID,
+  return {
+    id: machineNodeId(turret.id),
     label: machineName,
     kind: "component",
     selectable: true,
     defaultExpanded: true,
+    // Machine (and its turret) start hidden; the user toggles visibility on.
+    defaultHidden: true,
     children: [
       {
-        id: TURRET_BROWSER_NODE_ID,
-        label: turretLabel,
+        id: turretNodeId(turret.id),
+        label: turret.name,
         kind: "body",
         selectable: true,
+        // Turret geometry is off in the canvas until toggled on here.
+        defaultHidden: true,
       },
     ],
   };
+}
 
-  // Nest the machine as the first child of the setup node, wherever it sits.
+/**
+ * The document tree with each turret setup rendered as a manufacturing Setup.
+ *
+ * The seeded turret (OP 10) is pinned inside the existing OP 10 node, matching
+ * how Fusion nests a machine under the Setup that runs on it. Every other
+ * turret setup becomes its OWN top-level Setup node (OP 30, OP 40, …), a
+ * sibling of OP 10 / OP 20 under the Setups folder, carrying its own machine →
+ * turret subtree (one turret per Setup) plus Stock / Setup Model to mirror the
+ * demo Setups. Node ids are stable so right-clicking a turret enters Turret
+ * Setup for that Setup.
+ */
+export function browserRootWithTurret(
+  machineName: string,
+  turrets: BrowserTurretSetup[],
+  root: DemoBlockBrowserNode = DEMO_BLOCK_BROWSER_ROOT,
+): DemoBlockBrowserNode {
+  // OP 10 hosts the seeded turret; everything else is a fresh top-level Setup.
+  const op10Turret = turrets.find((t) => t.opNumber <= 10);
+  const newSetups = turrets.filter((t) => t !== op10Turret);
+
+  const newOpNodes: DemoBlockBrowserNode[] = newSetups.map((turret) => {
+    const opId = opSetupNodeId(turret.id);
+    return {
+      id: opId,
+      label: `OP ${turret.opNumber}`,
+      kind: "setup",
+      selectable: false,
+      defaultExpanded: true,
+      children: [
+        { id: `${opId}-stock`, label: "Stock", kind: "stock", selectable: false },
+        { id: `${opId}-model`, label: "Setup Model", kind: "setupModel", selectable: false },
+        machineSubtree(machineName, turret),
+      ],
+    };
+  });
+
   const nest = (node: DemoBlockBrowserNode): DemoBlockBrowserNode => {
-    if (node.id === SETUP_BROWSER_NODE_ID) {
+    // Pin the seeded machine + turret as the first child of OP 10.
+    if (node.id === OP10_BROWSER_NODE_ID && op10Turret !== undefined) {
       return {
         ...node,
         defaultExpanded: true,
-        children: [machineNode, ...(node.children ?? [])],
+        children: [machineSubtree(machineName, op10Turret), ...(node.children ?? [])],
+      };
+    }
+    // Append the turret-authored Setups as siblings of OP 10 / OP 20.
+    if (node.id === SETUPS_FOLDER_NODE_ID) {
+      return {
+        ...node,
+        defaultExpanded: true,
+        children: [...(node.children ?? []).map(nest), ...newOpNodes],
       };
     }
     if (node.children === undefined) return node;

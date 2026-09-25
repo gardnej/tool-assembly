@@ -1,0 +1,666 @@
+{
+  "source": "User-provided OD_ID Examples library",
+  "library": {
+    "id": "od-id-examples",
+    "name": "OD_ID Examples",
+    "folder": null,
+    "breadcrumb": "Local > OD_ID Examples",
+    "version": 37,
+    "toolCount": 8,
+    "blockCount": 3,
+    "assemblyCount": 5
+  },
+  "tools": [
+    {
+      "id": "od-id-examples-block-37258231-c7dc-4c4b-9216-687798291b38",
+      "libraryId": "od-id-examples",
+      "type": "tool block",
+      "description": "20MM ID_DUAL",
+      "vendor": "",
+      "productId": "",
+      "productLink": "",
+      "unit": "millimeters",
+      "geometry": {
+        "adaptiveItemSize": 0,
+        "numberOfAttachmentPoints": 2,
+        "numberOfTools": 2,
+        "orientationType": "axial",
+        "machineSideConnectionType": "Unspecified"
+      },
+      "holder": null,
+      "geometryId": "3ac2ff71-0a7a-4fa9-80b4-ee79740f884f",
+      "stepFileName": "20MM ID_DUAL",
+      "segments": null,
+      "gaugeLength": null,
+      "postProcess": {
+        "number": null,
+        "turret": null,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "od-id-examples-block-3866c96f-ff72-4e64-a5e6-2f66b48114f6",
+      "libraryId": "od-id-examples",
+      "type": "tool block",
+      "description": "20MM OD_SINGLE",
+      "vendor": "",
+      "productId": "",
+      "productLink": "",
+      "unit": "millimeters",
+      "geometry": {
+        "adaptiveItemSize": 0,
+        "numberOfAttachmentPoints": 2,
+        "numberOfTools": 1,
+        "orientationType": "axial",
+        "machineSideConnectionType": "Unspecified"
+      },
+      "holder": null,
+      "geometryId": "4e53309a-b688-42c1-aed1-73668de8fcde",
+      "stepFileName": "EWS_191423_DIN4003.stp",
+      "segments": null,
+      "gaugeLength": null,
+      "postProcess": {
+        "number": null,
+        "turret": null,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "od-id-examples-block-c4d877e0-66eb-4790-8614-61a2284e496c",
+      "libraryId": "od-id-examples",
+      "type": "tool block",
+      "description": "25MM OD_DUAL",
+      "vendor": "",
+      "productId": "",
+      "productLink": "",
+      "unit": "millimeters",
+      "geometry": {
+        "adaptiveItemSize": 0,
+        "numberOfAttachmentPoints": 2,
+        "numberOfTools": 2,
+        "orientationType": "axial",
+        "machineSideConnectionType": "Unspecified"
+      },
+      "holder": null,
+      "geometryId": "60a88fbe-b190-408d-9fb4-81510f603e94",
+      "stepFileName": "25MM OD_DUAL",
+      "segments": null,
+      "gaugeLength": null,
+      "postProcess": {
+        "number": null,
+        "turret": null,
+        "compensationOffset": null,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": null
+    },
+    {
+      "id": "68108122-95da-45cb-b302-8f9e9ef4177d",
+      "libraryId": "od-id-examples",
+      "type": "turning boring",
+      "description": "CNMG 16mm ID",
+      "vendor": "",
+      "productId": "",
+      "productLink": "",
+      "unit": "millimeters",
+      "geometry": {
+        "OAL": 30,
+        "RE": 0.4,
+        "SC": "C",
+        "SCTY": "T",
+        "TC": "M",
+        "INSD": 9.671938000000036,
+        "S": 4.7625,
+        "EPSR": 0,
+        "RA": 0,
+        "LH": 0
+      },
+      "holder": {
+        "OAL": 125,
+        "CW": 25,
+        "H": 20,
+        "W": 20,
+        "LH": 32,
+        "HAND": "R",
+        "MTP": "D",
+        "THSC": "boring bar f"
+      },
+      "geometryId": "3fb56ce5-2b50-4cb6-94b9-e26965deeaa7",
+      "stepFileName": "3420193-A16M SCLCR-09 - Basic-mm.stp",
+      "segments": null,
+      "gaugeLength": null,
+      "postProcess": {
+        "number": 2,
+        "turret": 0,
+        "compensationOffset": 2,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": {
+        "guid": "37258231-c7dc-4c4b-9216-687798291b38",
+        "description": "20MM ID_DUAL",
+        "vendor": "",
+        "productId": "",
+        "geometry": {
+          "adaptiveItemSize": 0,
+          "numberOfAttachmentPoints": 2,
+          "numberOfTools": 2,
+          "orientationType": "axial",
+          "machineSideConnectionType": "Unspecified"
+        },
+        "geometryId": "3ac2ff71-0a7a-4fa9-80b4-ee79740f884f",
+        "stepFileName": "20MM ID_DUAL",
+        "transformOverride": null,
+        "postProcess": {
+          "stationNumber": null,
+          "halfIndex": false,
+          "live": false,
+          "maximumRotationalSpeed": 1000
+        }
+      }
+    },
+    {
+      "id": "68108122-95da-45cb-b302-8f9e9ef4177d-derived-2",
+      "libraryId": "od-id-examples",
+      "type": "turning boring",
+      "description": "CNMG 12mm ID (derived)",
+      "vendor": "",
+      "productId": "",
+      "productLink": "",
+      "unit": "millimeters",
+      "geometry": {
+        "OAL": 30,
+        "RE": 0.4,
+        "SC": "C",
+        "SCTY": "T",
+        "TC": "M",
+        "INSD": 9.671938000000036,
+        "S": 4.7625,
+        "EPSR": 0,
+        "RA": 0,
+        "LH": 0
+      },
+      "holder": {
+        "OAL": 125,
+        "CW": 25,
+        "H": 20,
+        "W": 20,
+        "LH": 32,
+        "HAND": "R",
+        "MTP": "D",
+        "THSC": "boring bar f"
+      },
+      "geometryId": "3fb56ce5-2b50-4cb6-94b9-e26965deeaa7",
+      "stepFileName": "3420193-A16M SCLCR-09 - Basic-mm.stp",
+      "segments": null,
+      "gaugeLength": null,
+      "postProcess": {
+        "number": null,
+        "turret": 0,
+        "compensationOffset": 2,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": {
+        "guid": "37258231-c7dc-4c4b-9216-687798291b38",
+        "description": "20MM ID_DUAL",
+        "vendor": "",
+        "productId": "",
+        "geometry": {
+          "adaptiveItemSize": 0,
+          "numberOfAttachmentPoints": 2,
+          "numberOfTools": 2,
+          "orientationType": "axial",
+          "machineSideConnectionType": "Unspecified"
+        },
+        "geometryId": "3ac2ff71-0a7a-4fa9-80b4-ee79740f884f",
+        "stepFileName": "20MM ID_DUAL",
+        "transformOverride": null,
+        "postProcess": {
+          "stationNumber": null,
+          "halfIndex": false,
+          "live": false,
+          "maximumRotationalSpeed": 1000
+        }
+      }
+    },
+    {
+      "id": "9da3a626-32fd-4865-a161-baa0ae7a1eb1",
+      "libraryId": "od-id-examples",
+      "type": "turning general",
+      "description": "CNMG 20mm OD",
+      "vendor": "",
+      "productId": "",
+      "productLink": "",
+      "unit": "inches",
+      "geometry": {
+        "OAL": 1.1811023622047,
+        "RE": 0.03125,
+        "SC": "C",
+        "SCTY": "T",
+        "TC": "M",
+        "INSD": 0.5,
+        "S": 0.15625,
+        "EPSR": 0,
+        "RA": 0,
+        "LH": 0
+      },
+      "holder": {
+        "OAL": 4.92126,
+        "CW": 0.984252,
+        "H": 0.7874016,
+        "W": 0.7874016,
+        "LH": 1.259843,
+        "HAND": "R",
+        "MTP": "D",
+        "THSC": "L"
+      },
+      "geometryId": "6452b5fe-fdac-45e6-907e-4f500a9b2bd8",
+      "stepFileName": "3602069-DCLNR 2020K-12 - Basic-mm.stp",
+      "segments": null,
+      "gaugeLength": null,
+      "postProcess": {
+        "number": 4,
+        "turret": 0,
+        "compensationOffset": 4,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": {
+        "guid": "3866c96f-ff72-4e64-a5e6-2f66b48114f6",
+        "description": "20MM OD_SINGLE",
+        "vendor": "",
+        "productId": "",
+        "geometry": {
+          "adaptiveItemSize": 0,
+          "numberOfAttachmentPoints": 2,
+          "numberOfTools": 1,
+          "orientationType": "axial",
+          "machineSideConnectionType": "Unspecified"
+        },
+        "geometryId": "4e53309a-b688-42c1-aed1-73668de8fcde",
+        "stepFileName": "EWS_191423_DIN4003.stp",
+        "transformOverride": null,
+        "postProcess": {
+          "stationNumber": null,
+          "halfIndex": false,
+          "live": false,
+          "maximumRotationalSpeed": 1000
+        }
+      }
+    },
+    {
+      "id": "b940bb04-2301-48b0-9048-3e0c6fe5c987",
+      "libraryId": "od-id-examples",
+      "type": "turning general",
+      "description": "DNMG 25MM LH",
+      "vendor": "",
+      "productId": "",
+      "productLink": "",
+      "unit": "inches",
+      "geometry": {
+        "OAL": 1.1811023622047,
+        "RE": 0.03125,
+        "SC": "D",
+        "SCTY": "T",
+        "TC": "M",
+        "INSD": 0.5,
+        "S": 0.15625,
+        "EPSR": 0,
+        "RA": 0,
+        "LH": 0
+      },
+      "holder": {
+        "OAL": 4.92126,
+        "CW": 0.984252,
+        "H": 0.7874016,
+        "W": 0.7874016,
+        "LH": 1.259843,
+        "HAND": "L",
+        "MTP": "D",
+        "THSC": "L"
+      },
+      "geometryId": "f7270d1b-5162-48b9-96d4-141754e0d381",
+      "stepFileName": "3602034-DDJNL 2525M-15 - Basic-mm.stp",
+      "segments": null,
+      "gaugeLength": null,
+      "postProcess": {
+        "number": 5,
+        "turret": 0,
+        "compensationOffset": 5,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": {
+        "guid": "c4d877e0-66eb-4790-8614-61a2284e496c",
+        "description": "25MM OD_DUAL",
+        "vendor": "",
+        "productId": "",
+        "geometry": {
+          "adaptiveItemSize": 0,
+          "numberOfAttachmentPoints": 2,
+          "numberOfTools": 2,
+          "orientationType": "axial",
+          "machineSideConnectionType": "Unspecified"
+        },
+        "geometryId": "60a88fbe-b190-408d-9fb4-81510f603e94",
+        "stepFileName": "25MM OD_DUAL",
+        "transformOverride": null,
+        "postProcess": {
+          "stationNumber": null,
+          "halfIndex": false,
+          "live": false,
+          "maximumRotationalSpeed": 1000
+        }
+      }
+    },
+    {
+      "id": "b940bb04-2301-48b0-9048-3e0c6fe5c987-derived-2",
+      "libraryId": "od-id-examples",
+      "type": "turning general",
+      "description": "SER 2525 Threading (derived)",
+      "vendor": "",
+      "productId": "",
+      "productLink": "",
+      "unit": "inches",
+      "geometry": {
+        "OAL": 1.1811023622047,
+        "RE": 0.03125,
+        "SC": "D",
+        "SCTY": "T",
+        "TC": "M",
+        "INSD": 0.5,
+        "S": 0.15625,
+        "EPSR": 0,
+        "RA": 0,
+        "LH": 0
+      },
+      "holder": {
+        "OAL": 4.92126,
+        "CW": 0.984252,
+        "H": 0.7874016,
+        "W": 0.7874016,
+        "LH": 1.259843,
+        "HAND": "L",
+        "MTP": "D",
+        "THSC": "L"
+      },
+      "geometryId": "f7270d1b-5162-48b9-96d4-141754e0d381",
+      "stepFileName": "3602034-DDJNL 2525M-15 - Basic-mm.stp",
+      "segments": null,
+      "gaugeLength": null,
+      "postProcess": {
+        "number": null,
+        "turret": 0,
+        "compensationOffset": 5,
+        "stationNumber": null,
+        "halfIndex": null
+      },
+      "block": {
+        "guid": "c4d877e0-66eb-4790-8614-61a2284e496c",
+        "description": "25MM OD_DUAL",
+        "vendor": "",
+        "productId": "",
+        "geometry": {
+          "adaptiveItemSize": 0,
+          "numberOfAttachmentPoints": 2,
+          "numberOfTools": 2,
+          "orientationType": "axial",
+          "machineSideConnectionType": "Unspecified"
+        },
+        "geometryId": "60a88fbe-b190-408d-9fb4-81510f603e94",
+        "stepFileName": "25MM OD_DUAL",
+        "transformOverride": null,
+        "postProcess": {
+          "stationNumber": null,
+          "halfIndex": false,
+          "live": false,
+          "maximumRotationalSpeed": 1000
+        }
+      }
+    }
+  ],
+  "jointFrames": {
+    "3ac2ff71-0a7a-4fa9-80b4-ee79740f884f": {
+      "stepFileName": "20MM ID_DUAL",
+      "mcs": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "csw": [
+        -8.88178419700126e-16,
+        -6.661338147750941e-16,
+        -1.0,
+        60.0,
+        1.2246467991473591e-16,
+        -1.0,
+        6.66133814775094e-16,
+        -3.99680288865056e-14,
+        -1.0,
+        -1.2246467991473532e-16,
+        8.88178419700126e-16,
+        -105.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ]
+    },
+    "3fb56ce5-2b50-4cb6-94b9-e26965deeaa7": {
+      "stepFileName": "3420193-A16M SCLCR-09 - Basic-mm.stp",
+      "mcs": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        -110.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "csw": [
+        0.08714602045449764,
+        0.9887130191602457,
+        -0.12186934340504114,
+        -5.87665603052,
+        0.010700185855931518,
+        0.12139869391646835,
+        0.992546151641335,
+        0.604887303833,
+        0.9961380813630171,
+        -0.08780047185754299,
+        3.9898639947466563e-17,
+        -144.843822988,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ]
+    },
+    "4e53309a-b688-42c1-aed1-73668de8fcde": {
+      "stepFileName": "EWS_191423_DIN4003.stp",
+      "mcs": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "csw": [
+        -1.0,
+        0.0,
+        0.0,
+        46.0,
+        0.0,
+        -1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        -62.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ]
+    },
+    "60a88fbe-b190-408d-9fb4-81510f603e94": {
+      "stepFileName": "25MM OD_DUAL",
+      "mcs": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "csw": [
+        1.0,
+        2.4492935982947064e-16,
+        0.0,
+        17.500000000000004,
+        -2.4492935982947064e-16,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        -70.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ]
+    },
+    "6452b5fe-fdac-45e6-907e-4f500a9b2bd8": {
+      "stepFileName": "3602069-DCLNR 2020K-12 - Basic-mm.stp",
+      "mcs": [
+        1.0,
+        0.0,
+        0.0,
+        -10.000000001,
+        0.0,
+        1.0,
+        0.0,
+        20.0,
+        0.0,
+        0.0,
+        1.0,
+        -80.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "csw": [
+        0.08112151821704067,
+        0.9912674670318696,
+        -0.10396205118399576,
+        -18.16624397,
+        0.11261324590453245,
+        0.09452234137817793,
+        0.9891328443779596,
+        21.3871663444,
+        0.9903219456969575,
+        -0.0919474620890028,
+        -0.10396205118399575,
+        -118.164423865,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ]
+    },
+    "f7270d1b-5162-48b9-96d4-141754e0d381": {
+      "stepFileName": "3602034-DDJNL 2525M-15 - Basic-mm.stp",
+      "mcs": [
+        1.0,
+        0.0,
+        0.0,
+        12.5,
+        0.0,
+        1.0,
+        0.0,
+        25.0,
+        0.0,
+        0.0,
+        1.0,
+        -100.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "csw": [
+        -0.8434353399366529,
+        0.5270756295443373,
+        0.10396205118399575,
+        25.1373538549,
+        0.1430746079314417,
+        0.03385074206028201,
+        0.9891328443779597,
+        26.830481608,
+        0.5178286240748067,
+        0.8491439265533312,
+        -0.10396205118399578,
+        -138.971300444,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ]
+    }
+  }
+}

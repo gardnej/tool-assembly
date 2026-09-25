@@ -233,6 +233,12 @@ export interface TurretStationAssignment {
   stationNumber: number;
   /** Base id of a `SavedAssembly` assigned here, or null when empty. */
   toolAssemblyId: string | null;
+  /**
+   * Flip the mounted assembly 180° on its seat (about the station's mounting
+   * axis), so the tool block and its tools face the opposite direction. The
+   * seat itself is unchanged. Defaults to false/absent.
+   */
+  flipped?: boolean;
 }
 
 /**
@@ -249,6 +255,13 @@ export interface TurretSetup {
   /** One entry per station, ordered 1..stationCount. */
   stations: TurretStationAssignment[];
   createdAt: number;
+  /**
+   * Manufacturing OP this turret setup belongs to (10, 30, 40, …). The seeded
+   * setup is OP 10 (nested under the existing OP 10 node); each "New Setup"
+   * mints the next OP in the sequence as its own top-level Setup node. Absent
+   * is treated as OP 10 for backwards compatibility.
+   */
+  opNumber?: number;
 }
 
 /** A choosable tool assembly for a station, as offered by the dropdown. */

@@ -16,6 +16,8 @@ import {
 } from "../data/assembly";
 import {
   adaptiveItems,
+  AXIAL_TOOL_IDS,
+  compatibleToolIdsForBlock,
   cuttingTools,
   derivedBlocks,
   displayName,
@@ -36,6 +38,10 @@ import {
   type LibraryToolRecord,
   type NestedBlock,
 } from "../data/realLibrary";
+import {
+  OD_ID_BLOCKS_LIBRARY_ID,
+  OD_ID_TOOLS_LIBRARY_ID,
+} from "../data/odIdExamples";
 import { getStepIndex, WORKFLOW_STEPS } from "../data/workflowSteps";
 import {
   removeSessionAssembly,
@@ -57,20 +63,16 @@ import type {
   WorkflowStepId,
 } from "../types";
 
-/**
- * Libraries whose components are trusted implicitly.
- *
- * The 3X Axial exports don't carry MCS/CSW joint frames yet, but Fusion is
- * fine with them — treat any assembly built entirely from these libraries as
- * valid without running the joint-frame checks.
- */
-const THREE_X_AXIAL_LIBRARY_IDS = new Set(["3x-axial", "3x-axial-1"]);
-
 /** Id of the prototype Team Hub library, seeded in ``libraryEdits.ts``. */
 const HUB_LIBRARY_ID = "hub-team";
 
-/** Library holding the real tool blocks, preferred as the starting point. */
+/**
+ * Library the workflow starts in: the `Tool Blocks` library, since a block is
+ * the first thing chosen and it is where the pickable blocks live.
+ */
 function defaultLibraryId(): string {
+  const blocks = LIBRARIES.find((library) => library.id === OD_ID_BLOCKS_LIBRARY_ID);
+  if (blocks !== undefined) return blocks.id;
   const withBlocks = LIBRARIES.find((library) => library.blockCount > 0);
   return withBlocks?.id ?? LIBRARIES[0]?.id ?? "";
 }
@@ -383,20 +385,53 @@ export function useToolAssemblyWorkflow() {
     return owner?.libraryId ?? state.libraryId;
   }, [blockTool, blocks, occupants, state.libraryId]);
 
-  const availableTools = useMemo(
-    () => cuttingTools(scopeLibraryId),
-    [scopeLibraryId, editRevision],
+  /** GeometryId of the block currently at the root (chosen or derived). */
+  const activeBlockGeometryId = useMemo(
+    () => blockTool?.geometryId ?? blocks[0]?.block.geometryId ?? null,
+    [blockTool, blocks],
   );
 
-  /** Candidates for each level of a position, since the levels take different parts. */
-  const availableByLevel = useMemo<Record<SlotLevel, LibraryToolRecord[]>>(
-    () => ({
-      extension: adaptiveItems("extension", scopeLibraryId),
-      collet: adaptiveItems("collet", scopeLibraryId),
-      tool: availableTools,
-    }),
-    [scopeLibraryId, availableTools, editRevision],
+  /**
+   * The components (cutting tools + adaptive items) that seat on the chosen
+   * block.
+   *
+   * `compatibleToolIdsForBlock` covers both models: OD/ID example blocks pair
+   * each tool with the one block it was imported with, while the folded-in 3X
+   * Axial block resolves to its own tools/adaptives. Either way the block draws
+   * from the shared `Tools` library filtered to that set. Any other block (a
+   * real Fusion library, say) has no compatibility set, so it keeps the old
+   * behaviour — the components in its own library.
+   */
+  const compatibleComponentIds = useMemo(
+    () => compatibleToolIdsForBlock(activeBlockGeometryId),
+    [activeBlockGeometryId],
   );
+
+  /** Library the position components come from (and the picker should open on). */
+  const toolLibraryId = useMemo(
+    () =>
+      compatibleComponentIds.size > 0 ? OD_ID_TOOLS_LIBRARY_ID : scopeLibraryId,
+    [compatibleComponentIds, scopeLibraryId],
+  );
+
+  const availableTools = useMemo(() => {
+    const pool = cuttingTools(toolLibraryId);
+    if (compatibleComponentIds.size === 0) return pool;
+    return pool.filter((tool) => compatibleComponentIds.has(tool.id));
+  }, [toolLibraryId, compatibleComponentIds, editRevision]);
+
+  /** Candidates for each level of a position, since the levels take different parts. */
+  const availableByLevel = useMemo<Record<SlotLevel, LibraryToolRecord[]>>(() => {
+    const restrict = (list: LibraryToolRecord[]): LibraryToolRecord[] =>
+      compatibleComponentIds.size === 0
+        ? list
+        : list.filter((record) => compatibleComponentIds.has(record.id));
+    return {
+      extension: restrict(adaptiveItems("extension", toolLibraryId)),
+      collet: restrict(adaptiveItems("collet", toolLibraryId)),
+      tool: availableTools,
+    };
+  }, [toolLibraryId, availableTools, compatibleComponentIds, editRevision]);
 
   const rows = useMemo<AssemblyRow[]>(() => {
     const derived = blocks[0]?.block ?? null;
@@ -722,11 +757,7 @@ export function useToolAssemblyWorkflow() {
       const blockRow = rows.find((row) => row.role === "block");
       const allIds = blockRow?.toolId ? [blockRow.toolId, ...occupantIds] : occupantIds;
       const usesAxialOnly =
-        allIds.length > 0 &&
-        allIds.every((id) => {
-          const record = toolById(id);
-          return record !== undefined && THREE_X_AXIAL_LIBRARY_IDS.has(record.libraryId);
-        });
+        allIds.length > 0 && allIds.every((id) => AXIAL_TOOL_IDS.has(id));
 
       const { status, issues } = usesAxialOnly
         ? { status: "pass" as const, issues: [] }
@@ -902,6 +933,8 @@ export function useToolAssemblyWorkflow() {
     slotFills,
     measuredStackUpMm: measuredStackUpMmValue,
     scopeLibraryId,
+    toolLibraryId,
+    compatibleComponentIds,
     availableBlocks,
     availableTools,
     availableByLevel,

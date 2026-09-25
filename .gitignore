@@ -10,3 +10,4 @@ __pycache__/
 .venv-step/
 .venv/
 .test-build
+.tmp-ingest/

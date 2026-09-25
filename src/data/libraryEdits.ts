@@ -122,9 +122,9 @@ loadPersistedAssemblies();
  */
 SESSION_LIBRARIES.set("hub-team", {
   id: "hub-team",
-  name: "Team Hub",
+  name: "Assemblies",
   folder: null,
-  breadcrumb: "User Libraries > Hub > Team Hub",
+  breadcrumb: "User Libraries > Hub > Assemblies",
   version: null,
   toolCount: 0,
   blockCount: 0,

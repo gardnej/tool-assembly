@@ -249,7 +249,7 @@
 
 .tsd__station {
   display: grid;
-  grid-template-columns: 44px minmax(0, 1fr);
+  grid-template-columns: 44px minmax(0, 1fr) auto;
   align-items: center;
   gap: 8px;
   padding: 2px 4px;
@@ -294,6 +294,38 @@
 /* An empty station reads as placeholder text until something is chosen. */
 .tsd__station-select[data-empty="true"] {
   color: var(--tsd-faint);
+}
+
+/* Flip-on-seat button, at the end of each station's dropdown. */
+.tsd__flip-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 1px solid var(--tsd-border);
+  border-radius: 2px;
+  background: var(--tsd-field);
+  color: var(--tsd-muted);
+  cursor: pointer;
+}
+
+.tsd__flip-btn:hover:not(:disabled) {
+  color: var(--tsd-text);
+  border-color: var(--tsd-accent);
+}
+
+.tsd__flip-btn--active {
+  color: #fff;
+  background: var(--tsd-accent);
+  border-color: var(--tsd-accent);
+}
+
+.tsd__flip-btn:disabled {
+  color: #4c5560;
+  cursor: default;
+  opacity: 0.6;
 }
 
 /* Table toolbar ----------------------------------------------------------- */

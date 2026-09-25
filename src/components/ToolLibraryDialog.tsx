@@ -10,7 +10,6 @@ import {
 } from "react";
 import {
   BLOCK_TYPE,
-  LIBRARIES,
   displayName,
   framesFor,
   isBlockType,
@@ -56,6 +55,12 @@ interface ToolLibraryDialogProps {
   openEditor?: boolean;
   /** Restricts picking to tool blocks or to cutting tools. */
   pickKind?: "block" | "tool";
+  /**
+   * When set (picker mode), only these tool ids may be picked — used to offer
+   * just the tools compatible with the chosen block. Blocks are never filtered
+   * by this; it applies to cutting-tool picks only.
+   */
+  allowedToolIds?: Set<string>;
   /**
    * Picks a whole saved tool assembly (rather than a single tool record). The
    * table keeps its assembly rows visible in picker mode and the footer's
@@ -860,6 +865,7 @@ export function ToolLibraryDialog({
   initialToolId,
   openEditor = false,
   pickKind,
+  allowedToolIds,
   pickLabel,
   onPick,
   pickAssembly = false,
@@ -869,13 +875,17 @@ export function ToolLibraryDialog({
 }: ToolLibraryDialogProps) {
   const initialTool = initialToolId === undefined ? undefined : toolById(initialToolId);
   const [search, setSearch] = useState("");
+  // Default to the first library that is actually shown in the tree, not the
+  // first exported one — some exported libraries are hidden, and landing on a
+  // hidden library would show orphaned records the tree can't reach.
+  const firstVisibleLibraryId = libraries()[0]?.id ?? "";
   const [selectedLibraryId, setSelectedLibraryId] = useState(
-    () => initialTool?.libraryId ?? initialLibraryId ?? LIBRARIES[0]?.id ?? "",
+    () => initialTool?.libraryId ?? initialLibraryId ?? firstVisibleLibraryId,
   );
   const [selectedToolId, setSelectedToolId] = useState(
     () =>
       initialTool?.id ??
-      toolsForLibrary(initialLibraryId ?? LIBRARIES[0]?.id ?? "")[0]?.id ??
+      toolsForLibrary(initialLibraryId ?? firstVisibleLibraryId)[0]?.id ??
       "",
   );
   const [infoTab, setInfoTab] = useState<"filters" | "info">("info");
@@ -967,10 +977,15 @@ export function ToolLibraryDialog({
       if (filters.vendors.size > 0 && !filters.vendors.has(tool.vendor)) return false;
       // In picker mode only offer items that can fill the chosen role.
       if (pickKind === "block") return isBlockType(tool.type);
-      if (pickKind === "tool") return !isBlockType(tool.type);
+      if (pickKind === "tool") {
+        if (isBlockType(tool.type)) return false;
+        // Restrict to the tools compatible with the chosen block, when given.
+        if (allowedToolIds !== undefined && !allowedToolIds.has(tool.id)) return false;
+        return true;
+      }
       return true;
     });
-  }, [tools, search, pickKind, filters]);
+  }, [tools, search, pickKind, filters, allowedToolIds]);
 
   const selectedTool = useMemo(
     () =>

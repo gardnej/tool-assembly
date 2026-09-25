@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { CSSProperties, MouseEvent, ReactNode } from "react";
 import { displayName, type LibraryRef, type LibraryToolRecord } from "../data/realLibrary";
+import { positionColourCss } from "../data/positionColours";
 import type { AssemblyRow, RowId, SlotLevel } from "../types";
 import { ContextMenu } from "./ContextMenu";
 import type { ContextMenuItem } from "./ContextMenu";
@@ -20,6 +21,13 @@ interface AssemblyGridProps {
   availableTools: LibraryToolRecord[];
   /** Candidates per kind, so a row can offer everything that fits it. */
   availableByLevel: Record<SlotLevel, LibraryToolRecord[]>;
+  /**
+   * Whether to show a per-position identity colour chip on each Position row.
+   * Set only for blocks whose 3D preview draws colour-coded ghosts (the OD/ID
+   * dual blocks), so the chip always matches a colour the user can see on the
+   * block; other blocks keep a plain pill.
+   */
+  showPositionColours: boolean;
   onSelectRow: (id: RowId) => void;
   onSelectLibrary: (libraryId: string) => void;
   onSelectToolBlock: (toolId: string | null) => void;
@@ -86,6 +94,7 @@ export function AssemblyGrid({
   rows,
   selectedId,
   availableByLevel,
+  showPositionColours,
   onSelectRow,
   onSelectToolBlock,
   onSelectSlotTool,
@@ -203,6 +212,7 @@ export function AssemblyGrid({
                   row={row}
                   availableByLevel={availableByLevel}
                   selected={selectedId === row.id}
+                  showPositionColours={showPositionColours}
                   onSelectRow={onSelectRow}
                   onChoose={onSelectSlotTool}
                   onBrowse={() => onBrowseLibrary(row.id)}
@@ -329,6 +339,7 @@ function SlotRow({
   row,
   availableByLevel,
   selected,
+  showPositionColours,
   onSelectRow,
   onChoose,
   onBrowse,
@@ -337,6 +348,7 @@ function SlotRow({
   row: AssemblyRow;
   availableByLevel: Record<SlotLevel, LibraryToolRecord[]>;
   selected: boolean;
+  showPositionColours: boolean;
   onSelectRow: (id: RowId) => void;
   onChoose: (index: number, depth: number, toolId: string | null) => void;
   onBrowse: () => void;
@@ -364,7 +376,16 @@ function SlotRow({
         {/* Every position keeps a persistent label, whatever it holds, so the
             row always names the physical position it maps to on the block. */}
         {depth === 0 ? (
-          <span className="inline-flex h-5 shrink-0 items-center rounded-[2px] bg-weave-surface-300 px-1.5 text-[10px] font-semibold text-weave-text">
+          <span className="inline-flex h-5 shrink-0 items-center gap-1 rounded-[2px] bg-weave-surface-300 px-1.5 text-[10px] font-semibold text-weave-text">
+            {/* The chip is the same colour the 3D preview ghosts this position,
+                so the row and the block read as the same position. */}
+            {showPositionColours && (
+              <span
+                aria-hidden="true"
+                className="h-2 w-2 shrink-0 rounded-full"
+                style={{ backgroundColor: positionColourCss(index) }}
+              />
+            )}
             Position {index + 1}
           </span>
         ) : (

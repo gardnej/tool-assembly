@@ -36,9 +36,9 @@ export function BrowserPanel({
   }, []);
 
   const toggleVisibility = useCallback(
-    (nodeId: string) => {
+    (nodeId: string, fallback: boolean) => {
       setHiddenById((prev) => {
-        const hidden = prev[nodeId] !== true;
+        const hidden = !(prev[nodeId] ?? fallback);
         onVisibilityChange?.(nodeId, hidden);
         return { ...prev, [nodeId]: hidden };
       });
@@ -77,7 +77,7 @@ type BranchProps = {
   expandedById: Record<string, boolean>;
   hiddenById: Record<string, boolean>;
   onToggleExpanded: (nodeId: string, fallback: boolean) => void;
-  onToggleVisibility: (nodeId: string) => void;
+  onToggleVisibility: (nodeId: string, fallback: boolean) => void;
   onContextMenuNode?: (nodeId: string, x: number, y: number) => void;
   onActivateNode?: (nodeId: string) => void;
 };
@@ -99,6 +99,8 @@ function BrowserBranch({
   const hasChildren = children.length > 0;
   const defaultExpanded = node.defaultExpanded === true;
   const expanded = hasChildren && (expandedById[node.id] ?? defaultExpanded);
+  const defaultHidden = node.defaultHidden === true;
+  const hidden = hiddenById[node.id] ?? defaultHidden;
 
   const handleActivate = (): void => {
     if (selectable) {
@@ -122,13 +124,13 @@ function BrowserBranch({
         expandable={hasChildren}
         expanded={expanded}
         selected={selectable && selectedId === node.id}
-        hidden={hiddenById[node.id] === true}
+        hidden={hidden}
         onActivate={handleActivate}
         onToggleExpanded={() => {
           onToggleExpanded(node.id, defaultExpanded);
         }}
         onToggleVisibility={() => {
-          onToggleVisibility(node.id);
+          onToggleVisibility(node.id, defaultHidden);
         }}
         onContextMenu={
           onContextMenuNode !== undefined
@@ -213,6 +215,10 @@ function TreeRow({
         "browser-tree__row",
         selected ? "browser-tree__row--selected" : "",
         hidden ? "browser-tree__row--hidden" : "",
+        // Nodes whose visibility the user is meant to drive (machine/turret,
+        // marked defaultHidden) keep their eye control shown at all times, so it
+        // does not vanish after being toggled on (it is otherwise hover-only).
+        node.defaultHidden === true ? "browser-tree__row--vis-persistent" : "",
       ]
         .filter(Boolean)
         .join(" ")}
@@ -262,7 +268,9 @@ function TreeRow({
             type="button"
             className="browser-tree__eye"
             aria-label={hidden ? `Show ${node.label}` : `Hide ${node.label}`}
-            aria-pressed={hidden}
+            // Pressed = the "visible" state is engaged, so a hidden node reads as
+            // not-pressed (consistent with its "Show …" label and hidden icon).
+            aria-pressed={!hidden}
             onClick={(e) => {
               e.stopPropagation();
               onToggleVisibility();

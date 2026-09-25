@@ -129,6 +129,7 @@ export function emptyStations(machine: Machine): TurretStationAssignment[] {
 export function createDefaultTurretSetup(
   machine: Machine = HAAS_ST_20Y,
   name = "Turret1",
+  opNumber = 10,
 ): TurretSetup {
   return {
     id: `turret-${Date.now()}`,
@@ -136,7 +137,22 @@ export function createDefaultTurretSetup(
     machineId: machine.id,
     stations: emptyStations(machine),
     createdAt: Date.now(),
+    opNumber,
   };
+}
+
+/**
+ * Lowest unused OP number for a new manufacturing Setup, continuing the demo
+ * sequence in increments of 10. The seeded demo tree occupies OP 10 and OP 20,
+ * so the first turret-authored setup lands on OP 30, then OP 40, and so on.
+ */
+export function nextOpNumber(): number {
+  const DEMO_MAX = 20; // seeded OP 10 + OP 20 nodes
+  const highest = turretSetups().reduce(
+    (max, setup) => Math.max(max, setup.opNumber ?? 0),
+    DEMO_MAX,
+  );
+  return highest + 10;
 }
 
 /* Session store ---------------------------------------------------------- */

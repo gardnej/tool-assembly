@@ -12,6 +12,8 @@ export type TurretMount = {
   solidUrl: string | null;
   /** Named materials to reveal on the solid (block + filled seats); optional. */
   keepMaterials?: string[];
+  /** Flip the mounted assembly 180° on its seat. */
+  flipped?: boolean;
 };
 
 type ViewportProps = {
@@ -96,7 +98,10 @@ export function Viewport({
   const mounts = turret?.mounts ?? [];
   const mountsKey = mounts
     .filter((m) => m.solidUrl !== null)
-    .map((m) => `${m.stationNumber}:${m.solidUrl}:${(m.keepMaterials ?? []).join(",")}`)
+    .map(
+      (m) =>
+        `${m.stationNumber}:${m.solidUrl}:${(m.keepMaterials ?? []).join(",")}:${m.flipped === true ? "flip" : ""}`,
+    )
     .sort()
     .join("|");
 
@@ -123,7 +128,7 @@ export function Viewport({
       .filter((m): m is TurretMount & { solidUrl: string } => m.solidUrl !== null)
       .map((m) => ({
         url: m.solidUrl,
-        matrix: stationPlacementMatrix(m.stationNumber, m.solidUrl),
+        matrix: stationPlacementMatrix(m.stationNumber, m.solidUrl, m.flipped === true),
         keepMaterials: m.keepMaterials,
       }));
     // CALIBRATION_REVISION forces a recompute when turretSolids hot-reloads, so

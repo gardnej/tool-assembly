@@ -3,7 +3,7 @@ import type { MouseEvent } from "react";
 import { libraries } from "../data/realLibrary";
 import type { RowId } from "../types";
 import { AssemblyGrid } from "./AssemblyGrid";
-import { AssemblyViewer } from "./AssemblyViewer";
+import { AssemblyViewer, usesPositionColours } from "./AssemblyViewer";
 import { ConfigurationPanel } from "./ConfigurationPanel";
 import { DialogTabs } from "./DialogTabs";
 import { GeneralTab } from "./GeneralTab";
@@ -47,6 +47,8 @@ export function ToolHolderDialog({
     blockTool,
     slotFills,
     scopeLibraryId,
+    toolLibraryId,
+    compatibleComponentIds,
     availableBlocks,
     availableTools,
     availableByLevel,
@@ -110,6 +112,9 @@ export function ToolHolderDialog({
    * anything is mounted in it.
    */
   const selectedSlotIndex = selectedRow?.slotIndex ?? null;
+
+  /** The block on show, shared by the grid and the 3D viewer. */
+  const blockGeometryId = blocks[0]?.block.geometryId ?? blockTool?.geometryId ?? null;
 
   /**
    * Which row a picked seat of the mesh belongs to, by mount depth.
@@ -198,6 +203,7 @@ export function ToolHolderDialog({
                   availableBlocks={availableBlocks}
                   availableTools={availableTools}
                   availableByLevel={availableByLevel}
+                  showPositionColours={usesPositionColours(blockGeometryId)}
                   onSelectRow={selectRow}
                   onSelectLibrary={selectLibrary}
                   onSelectToolBlock={selectToolBlock}
@@ -269,7 +275,7 @@ export function ToolHolderDialog({
           />
 
           <AssemblyViewer
-            blockGeometryId={blocks[0]?.block.geometryId ?? blockTool?.geometryId ?? null}
+            blockGeometryId={blockGeometryId}
             slots={slotFills}
             selected={selectedViewerPart}
             selectedSlotIndex={selectedSlotIndex}
@@ -316,9 +322,16 @@ export function ToolHolderDialog({
         <ToolLibraryDialog
           open
           picker
-          initialLibraryId={scopeLibraryId}
+          // Blocks are picked from the block library; tools open on the Tools
+          // library, restricted to the ones that seat on the chosen block.
+          initialLibraryId={pickerSlot === null ? scopeLibraryId : toolLibraryId}
           // A block seats against the turret; anything else is a cutting tool.
           pickKind={pickerSlot === null ? "block" : "tool"}
+          allowedToolIds={
+            pickerSlot !== null && compatibleComponentIds.size > 0
+              ? compatibleComponentIds
+              : undefined
+          }
           pickLabel={
             pickerSlot === null
               ? "tool block"

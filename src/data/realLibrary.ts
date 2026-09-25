@@ -19,6 +19,14 @@ import {
 } from "./libraryEdits";
 import { PREVIEW_LIBRARY, PREVIEW_TOOLS } from "./previewGeometry";
 import {
+  OD_ID_LIBRARIES,
+  OD_ID_TOOLS,
+  OD_ID_JOINT_FRAMES,
+  OD_ID_BLOCKS_LIBRARY_ID,
+  OD_ID_TOOLS_LIBRARY_ID,
+  compatibleToolIdsForBlock as odCompatibleToolIds,
+} from "./odIdExamples";
+import {
   assemblyLength,
   chainPlacements,
   multiply,
@@ -132,13 +140,78 @@ const DATA = snapshot as unknown as Snapshot;
 
 export const SNAPSHOT_GENERATED_AT = DATA.generatedAt;
 
+/**
+ * Fold the previous `3X Axial 1` assembly library into the `Tool Assembly`
+ * libraries so its block and tools sit alongside the OD/ID examples: the block
+ * joins `Tool Blocks`, its cutting tools and adaptive items join `Tools`. The
+ * standalone `3X Axial` library (a lone duplicate of the same block) is left
+ * hidden — see `PERMANENTLY_HIDDEN_LIBRARY_IDS`.
+ */
+const AXIAL_FOLD_LIBRARY_ID = "3x-axial-1";
+
+/** GeometryId shared by both `3X Axial` block records. */
+const AXIAL_BLOCK_GEOMETRY_ID = "3482e088-0690-4e9f-a4d8-4f1514f4ea90";
+
+/**
+ * Record ids from the 3X Axial libraries. Those exports carry no MCS/CSW joint
+ * frames, so assemblies built from them skip the joint-frame validation (the
+ * check used to key off `libraryId`, but the records are folded into shared
+ * libraries now, so it keys off these ids instead).
+ */
+export const AXIAL_TOOL_IDS: ReadonlySet<string> = new Set(
+  DATA.tools
+    .filter((tool) => tool.libraryId === "3x-axial" || tool.libraryId === "3x-axial-1")
+    .map((tool) => tool.id),
+);
+
+function foldIntoToolAssembly(record: LibraryToolRecord): LibraryToolRecord {
+  if (record.libraryId !== AXIAL_FOLD_LIBRARY_ID) return record;
+  // Literal, not BLOCK_TYPE — this runs at module-eval before that const inits.
+  const libraryId =
+    record.type === "tool block" ? OD_ID_BLOCKS_LIBRARY_ID : OD_ID_TOOLS_LIBRARY_ID;
+  return { ...record, libraryId };
+}
+
 // Prototype-only records come last so anything scanning for real data still
 // meets the snapshot's own items first. See `previewGeometry.ts`.
 /** The libraries as exported. Read them through `libraries()` to see renames. */
-export const LIBRARIES: LibraryRef[] = [...DATA.libraries, PREVIEW_LIBRARY];
+export const LIBRARIES: LibraryRef[] = [...DATA.libraries, ...OD_ID_LIBRARIES, PREVIEW_LIBRARY];
 /** The records as exported. Read them through `libraryTools()` to see edits. */
-export const TOOLS: LibraryToolRecord[] = [...DATA.tools, ...PREVIEW_TOOLS];
-export const JOINT_FRAMES: Record<string, StoredJointFrames> = DATA.jointFrames;
+export const TOOLS: LibraryToolRecord[] = [
+  ...DATA.tools.map(foldIntoToolAssembly),
+  ...OD_ID_TOOLS,
+  ...PREVIEW_TOOLS,
+];
+
+/**
+ * The tools/adaptive items that seat on a given block, by the block's
+ * `geometryId`.
+ *
+ * Two compatibility models coexist: the OD/ID example tools each carry the one
+ * block they were imported with (`odCompatibleToolIds`), while the folded-in
+ * 3X Axial tools carry no such pairing — their association is the library they
+ * came from, so the 3X Axial block resolves to every 3X Axial component now in
+ * the `Tools` library. Any other block returns an empty set and falls back to
+ * its own library's tools.
+ */
+export function compatibleToolIdsForBlock(blockGeometryId: string | null): Set<string> {
+  if (blockGeometryId === null) return new Set();
+  if (blockGeometryId === AXIAL_BLOCK_GEOMETRY_ID) {
+    return new Set(
+      TOOLS.filter(
+        (tool) =>
+          tool.libraryId === OD_ID_TOOLS_LIBRARY_ID &&
+          tool.type !== "tool block" &&
+          AXIAL_TOOL_IDS.has(tool.id),
+      ).map((tool) => tool.id),
+    );
+  }
+  return odCompatibleToolIds(blockGeometryId);
+}
+export const JOINT_FRAMES: Record<string, StoredJointFrames> = {
+  ...DATA.jointFrames,
+  ...OD_ID_JOINT_FRAMES,
+};
 
 /** Every record, with whatever the tool editor changed this session applied. */
 export function libraryTools(): LibraryToolRecord[] {
@@ -155,27 +228,29 @@ export function libraryTools(): LibraryToolRecord[] {
  * demo has content the moment it is opened. The overrides sit here rather
  * than in the snapshot so a regenerated export doesn't clobber them.
  */
-const LIBRARY_LAYOUT_OVERRIDES: Record<string, Pick<LibraryRef, "parent" | "folder" | "breadcrumb">> = {
-  "3x-axial": {
-    parent: "hub",
-    folder: "3X Axial",
-    breadcrumb: "User Libraries > Hub > 3X Axial > 3X Axial",
-  },
-  "3x-axial-1": {
-    parent: "hub",
-    folder: "3X Axial",
-    breadcrumb: "User Libraries > Hub > 3X Axial > 3X Axial 1",
-  },
-};
+const LIBRARY_LAYOUT_OVERRIDES: Record<string, Pick<LibraryRef, "parent" | "folder" | "breadcrumb">> = {};
 
 function applyLibraryLayoutOverride(library: LibraryRef): LibraryRef {
   const override = LIBRARY_LAYOUT_OVERRIDES[library.id];
   return override === undefined ? library : { ...library, ...override };
 }
 
+/**
+ * Libraries hidden from the tree for good (not just this session).
+ *
+ * The prototype's Hub now presents the OD/ID example content as a `Tool
+ * Assembly` folder (`Tool Blocks` + `Tools`) plus `Assemblies` (the saved-
+ * assembly library), matching the agreed hierarchy. The older `3X Axial` demo
+ * libraries are dropped from the tree so it reads cleanly; their records still
+ * resolve via `toolById` for any saved assembly that referenced them, so
+ * nothing already built breaks — they just can't be browsed or picked.
+ */
+const PERMANENTLY_HIDDEN_LIBRARY_IDS = new Set(["3x-axial", "3x-axial-1"]);
+
 /** Every library, under whatever it was renamed to this session. */
 export function libraries(): LibraryRef[] {
   return [...LIBRARIES, ...sessionLibraries()]
+    .filter((library) => !PERMANENTLY_HIDDEN_LIBRARY_IDS.has(library.id))
     .filter((library) => !isLibraryHidden(library.id))
     .map(applyLibraryLayoutOverride)
     .map(applyLibraryRename);

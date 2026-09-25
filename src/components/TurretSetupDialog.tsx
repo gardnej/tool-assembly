@@ -18,6 +18,7 @@ import type {
   TurretStationAssignment,
 } from "../types";
 import { machineLabel } from "../data/turret";
+import { assemblyIsFlippable } from "../data/turretSolids";
 import "./turret-setup-dialog.css";
 
 export type TurretSetupDialogProps = {
@@ -109,11 +110,11 @@ function IconDown() {
   );
 }
 
-function IconGear() {
+/** A lightning bolt, for the automatic (auto-arrange) reorder action. */
+function IconAuto() {
   return (
-    <svg width="15" height="15" viewBox="0 0 24 24" aria-hidden fill="none" stroke="currentColor" strokeWidth="1.4">
-      <circle cx="12" cy="12" r="3" />
-      <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" />
+    <svg width="15" height="15" viewBox="0 0 24 24" aria-hidden fill="currentColor">
+      <path d="M13 2L4 14h6l-1 8 9-12h-6z" />
     </svg>
   );
 }
@@ -122,6 +123,17 @@ function IconTrash() {
   return (
     <svg width="15" height="15" viewBox="0 0 24 24" aria-hidden fill="none" stroke="currentColor" strokeWidth="1.4">
       <path d="M5 7h14M9 7V5h6v2M8 7l1 12h6l1-12" />
+    </svg>
+  );
+}
+
+/** A U-turn / 180° arrow, for flipping an assembly on its seat. */
+function IconFlip() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M7 17V9a4 4 0 0 1 8 0v8" />
+      <path d="M4 14l3 3 3-3" />
+      <path d="M18 7l-3-3-3 3" />
     </svg>
   );
 }
@@ -168,9 +180,24 @@ export function TurretSetupDialog({
     [stations, selectedStation],
   );
 
+  const assignedCount = useMemo(
+    () => stations.filter((s) => (s.toolAssemblyId ?? "") !== "").length,
+    [stations],
+  );
+
   const setAssembly = useCallback((stationNumber: number, toolAssemblyId: string | null) => {
     setStations((prev) =>
-      prev.map((s) => (s.stationNumber === stationNumber ? { ...s, toolAssemblyId } : s)),
+      prev.map((s) =>
+        s.stationNumber === stationNumber
+          ? {
+              ...s,
+              toolAssemblyId,
+              // Clear any stale flip if the new assembly can't be flipped
+              // (e.g. switching to the fixed-orientation 3X block).
+              flipped: assemblyIsFlippable(toolAssemblyId) ? s.flipped : false,
+            }
+          : s,
+      ),
     );
   }, []);
 
@@ -209,6 +236,42 @@ export function TurretSetupDialog({
     if (selectedStation === null) return;
     setAssembly(selectedStation, null);
   }, [selectedStation, setAssembly]);
+
+  /**
+   * Auto-arrange: shuffle the assigned assemblies across the fixed stations.
+   *
+   * A real turret would place tools by machining order / clearance, but for the
+   * prototype this just randomises the layout to demo the automation. The
+   * station numbers stay put (they're the machine's); only the assembly payload
+   * (id + flip state) moves, via a Fisher–Yates permutation over every station
+   * so empty slots participate too.
+   */
+  const shuffleAssemblies = useCallback(() => {
+    setStations((prev) => {
+      const payloads = prev.map((s) => ({
+        toolAssemblyId: s.toolAssemblyId,
+        flipped: s.flipped,
+      }));
+      for (let i = payloads.length - 1; i > 0; i -= 1) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [payloads[i], payloads[j]] = [payloads[j], payloads[i]];
+      }
+      return prev.map((s, idx) => ({
+        ...s,
+        toolAssemblyId: payloads[idx].toolAssemblyId,
+        flipped: payloads[idx].flipped,
+      }));
+    });
+  }, []);
+
+  /** Flip the assembly on a station 180° on its seat. */
+  const toggleFlip = useCallback((stationNumber: number) => {
+    setStations((prev) =>
+      prev.map((s) =>
+        s.stationNumber === stationNumber ? { ...s, flipped: !(s.flipped ?? false) } : s,
+      ),
+    );
+  }, []);
 
   // Floating position + size. Null until the user drags/resizes, so the CSS
   // default placement and size are used first; each open resets to default.
@@ -421,7 +484,7 @@ export function TurretSetupDialog({
                   <option value="new">Create new turret setup</option>
                   {existingSetups.map((s) => (
                     <option key={s.id} value={s.id}>
-                      {s.name}
+                      {s.opNumber !== undefined ? `${s.name} (OP ${s.opNumber})` : s.name}
                     </option>
                   ))}
                 </select>
@@ -463,6 +526,7 @@ export function TurretSetupDialog({
             {stations.map((row) => {
               const selected = row.stationNumber === selectedStation;
               const value = row.toolAssemblyId ?? "";
+              const flippable = value !== "" && assemblyIsFlippable(row.toolAssemblyId);
               return (
                 <li
                   key={row.stationNumber}
@@ -501,6 +565,30 @@ export function TurretSetupDialog({
                       <option value={PICK_FROM_LIBRARY}>Select from library…</option>
                     ) : null}
                   </select>
+                  <button
+                    type="button"
+                    className={
+                      row.flipped === true
+                        ? "tsd__flip-btn tsd__flip-btn--active"
+                        : "tsd__flip-btn"
+                    }
+                    title={
+                      value !== "" && !flippable
+                        ? "This assembly can't be flipped"
+                        : row.flipped === true
+                          ? "Unflip assembly (180°)"
+                          : "Flip assembly 180° on seat"
+                    }
+                    aria-label={`Flip assembly on station ${row.stationNumber} by 180 degrees`}
+                    aria-pressed={row.flipped === true}
+                    disabled={!flippable}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleFlip(row.stationNumber);
+                    }}
+                  >
+                    <IconFlip />
+                  </button>
                 </li>
               );
             })}
@@ -534,11 +622,12 @@ export function TurretSetupDialog({
             <button
               type="button"
               className="tsd__tool-btn"
-              title="Station settings"
-              aria-label="Station settings"
-              disabled={selectedIndex < 0}
+              title="Auto-arrange assemblies"
+              aria-label="Auto-arrange tool assemblies across stations"
+              disabled={assignedCount < 2}
+              onClick={shuffleAssemblies}
             >
-              <IconGear />
+              <IconAuto />
             </button>
             <button
               type="button"

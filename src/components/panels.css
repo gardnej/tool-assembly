@@ -156,7 +156,10 @@
 
 .browser-tree__row:hover .browser-tree__eye,
 .browser-tree__row--selected .browser-tree__eye,
-.browser-tree__row--hidden .browser-tree__eye {
+.browser-tree__row--hidden .browser-tree__eye,
+/* Machine/turret rows keep the control shown whether hidden or visible, so it
+   persists after the user toggles the turret on (not just on hover). */
+.browser-tree__row--vis-persistent .browser-tree__eye {
   visibility: visible;
 }
 

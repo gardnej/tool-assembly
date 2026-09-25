@@ -20,6 +20,12 @@ import er16ExtensionUrl from "../assets/models/er16-extension.glb?url";
 // replaces the reconstructed-turret + bridged-seat path that mis-placed the
 // block — see `scripts/split-assembly-cad.py` and `cadAssembly.json`.
 import blockCadUrl from "../assets/models/block-cad.glb?url";
+// User-provided OD/ID dual assemblies. Each GLB is the whole mounted assembly
+// (block + tools) baked in the CAD world frame by `scripts/split-turret-all.py`
+// from the ground-truth turret STEP, so it seats by a pure drum rotation from
+// its modelled station (baseStation) — see ATTACH_POINTS below.
+import od20mmDualIdUrl from "../assets/models/od-20mm-dual-id.glb?url";
+import od25mmDualOdUrl from "../assets/models/od-25mm-dual-od.glb?url";
 import cadAssembly from "./cadAssembly.json";
 import ring from "./turretStations.json";
 import turretJoints from "./turretJoints.json";
@@ -33,6 +39,12 @@ type V3 = [number, number, number];
 
 /** Imported 3X Axial block geometry ids (mirrors ToolLibrarySolidPreview). */
 const AXIAL_BLOCK_GEOMETRY_IDS = new Set(["3482e088-0690-4e9f-a4d8-4f1514f4ea90"]);
+
+/** OD/ID dual block geometry ids → their assembly GLB (whole mounted tooling). */
+const OD_ID_BLOCK_SOLIDS: Record<string, string> = {
+  "3ac2ff71-0a7a-4fa9-80b4-ee79740f884f": od20mmDualIdUrl, // 20MM ID_DUAL
+  "60a88fbe-b190-408d-9fb4-81510f603e94": od25mmDualOdUrl, // 25MM OD_DUAL
+};
 
 /**
  * The solid GLB standing in for a block/holder record, if we ship one.
@@ -49,6 +61,9 @@ function solidUrlForRecord(record: LibraryToolRecord): string | null {
   if (record.geometryId === PREVIEW_BLOCK_GEOMETRY_ID) return blockCadUrl;
   if (record.geometryId !== null && AXIAL_BLOCK_GEOMETRY_IDS.has(record.geometryId)) {
     return blockCadUrl;
+  }
+  if (record.geometryId !== null && record.geometryId in OD_ID_BLOCK_SOLIDS) {
+    return OD_ID_BLOCK_SOLIDS[record.geometryId];
   }
   if (record.type === "holder" && /er16.*collet/i.test(record.description)) return er16ColletUrl;
   if (record.type === "holder" && /er16.*extension/i.test(record.description)) {
@@ -68,6 +83,22 @@ export function assemblySolidUrl(assemblyBase: string | null): string | null {
   const block = toolById(record.blockToolId);
   if (block === undefined) return null;
   return solidUrlForRecord(block);
+}
+
+/**
+ * Whether a mounted assembly may be flipped 180° on its seat.
+ *
+ * The original 3X tool block (`block-cad`) carries drills/taps that point along
+ * the spindle axis, so a half-turn on the seat sends them to the REAR of the
+ * disc rather than swapping the tool direction meaningfully — it is a
+ * fixed-orientation block. So the flip control is disabled for it. Assemblies
+ * with no standalone solid (the demos) keep the control as before, since the
+ * flip is simply a no-op for them.
+ */
+export function assemblyIsFlippable(assemblyBase: string | null): boolean {
+  const url = assemblySolidUrl(assemblyBase);
+  if (url === null) return true;
+  return !/block-cad/.test(url);
 }
 
 /** What a station mounts: a solid GLB and, optionally, which parts of it to show. */
@@ -556,19 +587,21 @@ function mul4(a: Mat4, b: Mat4): Mat4 {
  * these are rigid drum rotations).
  */
 function invRigid(m: Mat4): Mat4 {
-  // Rᵀ (transpose the rotation block).
+  // Read the rotation block. m is column-major, so rIJ = row I, column J of R:
+  //   r00,r01,r02 = m[0],m[4],m[8]  (row 0), etc.
   const r00 = m[0], r01 = m[4], r02 = m[8];
   const r10 = m[1], r11 = m[5], r12 = m[9];
   const r20 = m[2], r21 = m[6], r22 = m[10];
   const tx = m[12], ty = m[13], tz = m[14];
-  // −Rᵀ·t
-  const itx = -(r00 * tx + r01 * ty + r02 * tz);
-  const ity = -(r10 * tx + r11 * ty + r12 * tz);
-  const itz = -(r20 * tx + r21 * ty + r22 * tz);
+  // −Rᵀ·t: component i = −Σ_j R[j][i]·t[j], i.e. dot t with COLUMN i of R.
+  const itx = -(r00 * tx + r10 * ty + r20 * tz);
+  const ity = -(r01 * tx + r11 * ty + r21 * tz);
+  const itz = -(r02 * tx + r12 * ty + r22 * tz);
+  // Rᵀ as column-major: its column i is row i of R, so column 0 = (r00,r01,r02).
   return [
-    r00, r10, r20, 0,
-    r01, r11, r21, 0,
-    r02, r12, r22, 0,
+    r00, r01, r02, 0,
+    r10, r11, r12, 0,
+    r20, r21, r22, 0,
     itx, ity, itz, 1,
   ];
 }
@@ -719,6 +752,16 @@ const ATTACH_POINTS: AttachPoint[] = [
   // station-1 seat is the identity. This is the exact previous behaviour.
   { match: /block-cad/, baseStation: 1 },
 
+  // OD/ID dual assemblies — PIPELINE path, no calibration. Both GLBs were baked
+  // in the CAD world frame (same frame as turret-cad.glb / cadAssembly.json) by
+  // `scripts/split-turret-all.py`, straight from the ground-truth turret STEP
+  // that carries every block seated. Each therefore sits flush on the exact
+  // station it was modelled on, so seatBase is a pure drum rotation and it lands
+  // flush on all 12 stations. Station numbers are computed with the app's own
+  // drumRotation convention (see the script's `station_of`).
+  { match: /od-20mm-dual-id/, baseStation: 10 }, // −Y facet: Tool Block + CNMG bars
+  { match: /od-25mm-dual-od/, baseStation: 4 }, //  +Y facet: SOLID block + DDJNL/SER
+
   // ── How to add ANOTHER assembly on a DIFFERENT station ──────────────────
   // 1. Ship its block GLB under src/assets/models and import it (like
   //    `blockCadUrl`), then map its geometryId → that URL in `solidUrlForRecord`.
@@ -758,7 +801,106 @@ function seatBaseFor(solidUrl: string): Mat4 | null {
   return base === 1 ? IDENTITY4 : invRigid(drumRotation(base));
 }
 
-export function stationPlacementMatrix(stationNumber: number, solidUrl: string): Mat4 {
+/**
+ * The baked AABB centre of each seatable assembly GLB, in its own (CAD world)
+ * frame — measured with `node scripts/measure-block.mjs <glb>`.
+ *
+ * This point lies on the block's mounting-bore axis: the assemblies are
+ * tangentially centred on their station's radial (X ≈ drumCentre X) and axially
+ * symmetric about it (constant Z across the block body and tools), so the AABB
+ * centre sits on the radial line through the facet. Carrying it through the
+ * block's ACTUAL base placement gives the true pivot for the on-seat flip,
+ * independent of any plug-ring assumption (the previous plug-frame guess did not
+ * match these split-pipeline assemblies and flung them off their seats).
+ */
+const FLIP_ANCHOR_BASE: { match: RegExp; centre: V3 }[] = [
+  // Use the BLOCK-BODY centre (the disc/facet plane), not the whole-assembly
+  // centre: block-cad's tools cantilever along the drum axis, so the whole-body
+  // AABB centre is pulled ~4 cm off the disc (Z 0.734 vs body Z 0.776) and the
+  // flip would spin about a point off the seat. The body centre lies on the
+  // mounting-bore axis at the disc, so the spin pivots on the circular disc.
+  { match: /block-cad/, centre: [0.165, -0.045, 0.776] },
+  { match: /od-25mm-dual-od/, centre: [0.405, 0.228, 0.793] },
+  { match: /od-20mm-dual-id/, centre: [0.405, -0.267, 0.775] },
+];
+
+/**
+ * Column-major transform that turns a mounted assembly 180° on its seat.
+ *
+ * The flip is a half turn about the block's mounting axis (the facet normal /
+ * bolt-bore axis) through a point on that axis — i.e. exactly "unbolt, rotate
+ * 180°, rebolt on the same holes". The block stays seated; its tools swing to
+ * face the opposite way.
+ *
+ * The pivot is the assembly's own baked centre carried through its ACTUAL base
+ * placement `base`, so it lands on the real seat regardless of which seating
+ * path produced `base`. The axis is the outward radial at that pivot, taken
+ * from the shared drum axis/centre (the block is centred on its station radial,
+ * so this radial passes through the bore).
+ *
+ * Solids WITHOUT a measured anchor (e.g. the ER16 holders) are seated by the
+ * per-station calibration path, which lives in the turret `ring` frame — NOT the
+ * cadAssembly drum frame. Recomputing the radial from cadAssembly for those
+ * would mix frames and fling them off their seat, so we instead pivot on that
+ * station's own facet frame (`stationFrame`): the outward radial there is the
+ * holder's mounting-bore axis and its facet origin lies on that bore, so the
+ * flip is a clean half-turn about the seat regardless of seating path.
+ */
+function seatFlipMatrix(solidUrl: string, base: Mat4, stationNumber: number): Mat4 {
+  const anchor = FLIP_ANCHOR_BASE.find((a) => a.match.test(solidUrl))?.centre;
+  let P: V3;
+  let n: V3;
+  if (anchor !== undefined) {
+    // Attach-point path: pivot on the baked centre carried onto this station by
+    // the real base placement; axis = outward radial about the cadAssembly drum.
+    P = applyMat(base, anchor);
+    const axis = normalize(cadAssembly.drumAxis as V3);
+    const center = cadAssembly.drumCenter as V3;
+    const v = sub(P, center);
+    n = normalize(sub(v, scaleV(axis, dot(v, axis))));
+  } else {
+    // Calibration path (ring frame): flip about the station's own facet bore —
+    // origin on the rim facet, outward radial as the mounting axis.
+    const frame = stationFrame(stationNumber);
+    P = frame.origin;
+    n = frame.radial;
+  }
+  // 180° rotation about unit axis n is the symmetric matrix 2·n·nᵀ − I.
+  const r00 = 2 * n[0] * n[0] - 1;
+  const r11 = 2 * n[1] * n[1] - 1;
+  const r22 = 2 * n[2] * n[2] - 1;
+  const r01 = 2 * n[0] * n[1];
+  const r02 = 2 * n[0] * n[2];
+  const r12 = 2 * n[1] * n[2];
+  // Rotate about the line through P: t = P − R·P (R is symmetric here).
+  const rp: V3 = [
+    r00 * P[0] + r01 * P[1] + r02 * P[2],
+    r01 * P[0] + r11 * P[1] + r12 * P[2],
+    r02 * P[0] + r12 * P[1] + r22 * P[2],
+  ];
+  const t = sub(P, rp);
+  return [
+    r00, r01, r02, 0,
+    r01, r11, r12, 0,
+    r02, r12, r22, 0,
+    t[0], t[1], t[2], 1,
+  ];
+}
+
+/**
+ * Column-major transform seating `solidUrl` on `stationNumber`, optionally
+ * flipped 180° on its seat (see `seatFlipMatrix`).
+ */
+export function stationPlacementMatrix(
+  stationNumber: number,
+  solidUrl: string,
+  flipped = false,
+): Mat4 {
+  const base = basePlacementMatrix(stationNumber, solidUrl);
+  return flipped ? mul4(seatFlipMatrix(solidUrl, base, stationNumber), base) : base;
+}
+
+function basePlacementMatrix(stationNumber: number, solidUrl: string): Mat4 {
   // The real block shares the turret's coordinate frame, so it seats by rotation
   // about the drum axis alone (flush by construction). Other solids still use
   // the per-solid calibration below.

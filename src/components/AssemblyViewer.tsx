@@ -1,6 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 import previewBlockUrl from "../assets/models/3x-spot-drill-tap-caps.glb?url";
+// Design-frame preview meshes for the user's OD/ID dual blocks. Each part owns a
+// uniquely named material (see scripts/make-block-previews.py) so the viewer can
+// light up a single position and pick individual parts, the same way the 3X
+// block's per-seat materials work.
+import od20mmDualIdPreviewUrl from "../assets/models/od-20mm-dual-id-preview.glb?url";
+import od25mmDualOdPreviewUrl from "../assets/models/od-25mm-dual-od-preview.glb?url";
 import {
   PREVIEW_BLOCK_GEOMETRY_ID,
   PREVIEW_BLOCK_MATERIAL,
@@ -42,8 +48,81 @@ function blockMeshFor(geometryId: string | null): BlockMesh | null {
   }
   return null;
 }
+
+/**
+ * A user OD/ID dual block whose parts are individually addressable.
+ *
+ * Unlike the STEP-fused blocks above, these preview meshes carry one material
+ * per part, so the viewer can paint the body, highlight a single position and
+ * pick parts. ``positions`` is ordered by position ordinal (Position 1 first),
+ * mapping each position to the holder/tool part material names that stand for it
+ * on the block. Because the block carries no per-seat frames, a position's
+ * highlight lights its physical holder region rather than a placed component.
+ */
+interface OdBlockPreview {
+  src: string;
+  /** Camera orientation that stands the block up like the machine sees it. */
+  orientation: string;
+  /** Material names of the block body — coloured as the block, not a position. */
+  body: string[];
+  /**
+   * Real baked tool meshes per position ordinal (index 0 = Position 1), shown
+   * solid when the position is filled.
+   */
+  positions: string[][];
+  /**
+   * Baked box-mesh material per position ordinal, sized to that position's tool
+   * volume (see scripts/add-position-ghosts.py). It is the plain rectangular
+   * ghost shown while the position is in focus but empty.
+   */
+  ghosts: string[];
+}
+
+const OD_BLOCK_PREVIEWS: Record<string, OdBlockPreview> = {
+  // 20MM ID_DUAL — two boring-bar bores through the block body. Each position
+  // is a bar (insert + tip) in its sleeve; the end caps belong to the body.
+  "3ac2ff71-0a7a-4fa9-80b4-ee79740f884f": {
+    src: od20mmDualIdPreviewUrl,
+    orientation: "0deg 0deg 0deg",
+    body: ["Tool Block", "End Cap_1", "End Cap_2"],
+    positions: [
+      ["12mm CNMG", "12mm CNMG_1", "20 x 12"],
+      ["16mm CNMG", "16mm CNMG_1", "20 x 16"],
+    ],
+    ghosts: ["PositionGhost_1", "PositionGhost_2"],
+  },
+  // 25MM OD_DUAL — two OD holders bolted to the block body (SOLID). This block's
+  // source STEP was modelled with its cutting side facing −Z, so a 180° yaw turns
+  // the tool-exit face toward the default camera (FRONT) with the bolt/seat face
+  // staying up (TOP); the ViewCube reads from this same orientation and follows.
+  "60a88fbe-b190-408d-9fb4-81510f603e94": {
+    src: od25mmDualOdPreviewUrl,
+    orientation: "0deg 0deg 180deg",
+    body: ["SOLID"],
+    positions: [
+      ["3602034-DDJNL 2525M-15 - Basic-mm", "3602034-DDJNL 2525M-15 - Basic-mm_1"],
+      ["3800006-SER 2525 M16 - Basic-mm", "3800006-SER 2525 M16 - Basic-mm_1"],
+    ],
+    ghosts: ["PositionGhost_1", "PositionGhost_2"],
+  },
+};
+
+function odBlockPreviewFor(geometryId: string | null): OdBlockPreview | null {
+  if (geometryId === null) return null;
+  return OD_BLOCK_PREVIEWS[geometryId] ?? null;
+}
+
+/**
+ * Whether a block uses per-position identity colours (teal/amber/…), so the
+ * assembly grid can put a matching colour chip on each Position row. Only the
+ * OD/ID dual blocks carry colour-coded ghosts; the STEP-fused blocks do not.
+ */
+export function usesPositionColours(geometryId: string | null): boolean {
+  return odBlockPreviewFor(geometryId) !== null;
+}
 import type { ModelViewerElement, ModelViewerMaterial } from "../model-viewer";
 import type { RowId, SlotLevel } from "../types";
+import { positionColour } from "../data/positionColours";
 import type { LibraryToolRecord } from "../data/realLibrary";
 import { displayName } from "../data/realLibrary";
 import { meshPreviewFor, ToolLibrarySolidPreview } from "./ToolLibrarySolidPreview";
@@ -180,7 +259,11 @@ export function AssemblyViewer({
   });
 
   const mesh = blockMeshFor(blockGeometryId);
-  const hasModel = mesh !== null;
+  const odBlock = odBlockPreviewFor(blockGeometryId);
+  // The mesh to draw: the seatable 3X preview, or a user OD/ID dual block.
+  const modelSrc = mesh?.src ?? odBlock?.src ?? null;
+  const orientation = odBlock?.orientation ?? PREVIEW_PINS_UP;
+  const hasModel = modelSrc !== null;
   const canPickSeats = mesh?.seatable === true;
   const slotCount = slots.length;
   // Identity of the array changes every render, so compare its contents.
@@ -358,6 +441,120 @@ export function AssemblyViewer({
     loaded,
   ]);
 
+  /**
+   * Paint a user OD/ID dual block: the block body is always solid, and each
+   * position is colour-coded to the matching Position row's chip in the grid so
+   * the preview relates to the UI. The dual blocks carry no per-seat frames, so
+   * a plain box baked to each position's tool volume (scripts/add-position-
+   * ghosts.py) stands in for the seat. A position shows, in its own colour:
+   *   • in focus + empty → the box as a translucent ghost, so the user sees
+   *     exactly where the focused position sits without a tool-shaped hint;
+   *   • mounted          → the real tool drawn solid;
+   *   • otherwise        → nothing (both the box and the tool hidden), keeping
+   *     the block clean until a position is being worked on.
+   */
+  useEffect(() => {
+    if (odBlock === null) return;
+    const materials = viewerRef.current?.model?.materials;
+    if (materials === undefined) return;
+
+    const paint = (name: string, colour: Rgb, alpha: number) => {
+      const material = materials.find((m) => m.name === name);
+      if (material === undefined) return;
+      const [r, g, b] = toLinear(colour);
+      // model-viewer reaches materials but not nodes, so state is expressed by
+      // how a part is painted. Fully hidden uses MASK with a high cutoff and
+      // zero alpha, which discards every fragment cleanly from all angles (BLEND
+      // at alpha 0 can still ghost/occlude at grazing angles); a partial ghost
+      // uses BLEND; a mounted part is OPAQUE.
+      if (alpha >= 1) {
+        material.setAlphaMode("OPAQUE");
+        material.pbrMetallicRoughness.setBaseColorFactor([r, g, b, 1]);
+        material.pbrMetallicRoughness.setMetallicFactor(0.35);
+      } else if (alpha <= 0) {
+        material.setAlphaMode("MASK");
+        material.setAlphaCutoff(1);
+        material.pbrMetallicRoughness.setBaseColorFactor([r, g, b, 0]);
+        material.pbrMetallicRoughness.setMetallicFactor(0);
+      } else {
+        material.setAlphaMode("BLEND");
+        material.pbrMetallicRoughness.setBaseColorFactor([r, g, b, alpha]);
+        material.pbrMetallicRoughness.setMetallicFactor(0);
+      }
+      material.pbrMetallicRoughness.setRoughnessFactor(0.45);
+    };
+
+    for (const name of odBlock.body) {
+      paint(name, blockSelected ? SELECTED_COLOUR : BLOCK_COLOUR, 1);
+    }
+    odBlock.positions.forEach((toolNames, index) => {
+      const colour = positionColour(index);
+      const ghost = odBlock.ghosts[index];
+      const mounted = (slots[index] ?? []).some((kind) => kind !== undefined);
+      const focused = selectedSlotIndex === index;
+
+      if (mounted) {
+        for (const name of toolNames) paint(name, colour, 1);
+        if (ghost !== undefined) paint(ghost, colour, 0);
+      } else if (focused) {
+        if (ghost !== undefined) paint(ghost, colour, GHOST_SELECTED_ALPHA);
+        for (const name of toolNames) paint(name, colour, 0);
+      } else {
+        if (ghost !== undefined) paint(ghost, colour, 0);
+        for (const name of toolNames) paint(name, colour, 0);
+      }
+    });
+  }, [odBlock, filledKey, slots, selectedSlotIndex, blockSelected, loaded]);
+
+  /**
+   * Picking a part of an OD/ID dual block selects its position (or the block).
+   *
+   * The block has no per-seat frames, so a click maps to the position ordinal
+   * the part belongs to rather than to a mount depth.
+   */
+  useEffect(() => {
+    const viewer = viewerRef.current;
+    if (viewer === null || odBlock === null) return;
+
+    let pressedAt: { x: number; y: number } | null = null;
+    const onDown = (event: MouseEvent) => {
+      pressedAt = { x: event.clientX, y: event.clientY };
+    };
+    const onClick = (event: MouseEvent) => {
+      const start = pressedAt;
+      pressedAt = null;
+      if (
+        start !== null &&
+        (Math.abs(event.clientX - start.x) > CLICK_SLOP_PX ||
+          Math.abs(event.clientY - start.y) > CLICK_SLOP_PX)
+      ) {
+        return;
+      }
+
+      const hit = viewer.materialFromPoint?.(event.clientX, event.clientY);
+      if (hit == null) return;
+
+      if (odBlock.body.includes(hit.name)) {
+        onSelectRow("block");
+        return;
+      }
+      const posIndex = odBlock.positions.findIndex(
+        (names, i) => names.includes(hit.name) || odBlock.ghosts[i] === hit.name,
+      );
+      if (posIndex === -1 || posIndex >= slotCount) return;
+      // Prefer the row mounted at this position; fall back to the position row.
+      const id = rowIdAt(posIndex, 0) ?? (`slot-${posIndex}` as RowId);
+      onSelectRow(id);
+    };
+
+    viewer.addEventListener("mousedown", onDown, true);
+    viewer.addEventListener("click", onClick, true);
+    return () => {
+      viewer.removeEventListener("mousedown", onDown, true);
+      viewer.removeEventListener("click", onClick, true);
+    };
+  }, [odBlock, slotCount, rowIdAt, onSelectRow]);
+
   return (
     <section className="relative flex h-full min-h-0 flex-1 flex-col overflow-hidden bg-weave-viewport">
       <div
@@ -370,17 +567,17 @@ export function AssemblyViewer({
           backgroundSize: "20px 20px",
         }}
       >
-        <ViewCube theta={orbit.theta} phi={orbit.phi} />
+        <ViewCube theta={orbit.theta} phi={orbit.phi} orientation={orientation} />
 
-        {mesh !== null ? (
+        {modelSrc !== null ? (
           <model-viewer
             ref={viewerRef}
-            key={mesh.src}
+            key={modelSrc}
             className="absolute inset-0 h-full w-full cursor-pointer"
-            src={mesh.src}
+            src={modelSrc}
             alt="Tool block assembly"
             camera-controls
-            orientation={PREVIEW_PINS_UP}
+            orientation={orientation}
             camera-orbit="25deg 70deg auto"
             interaction-prompt="none"
             shadow-intensity="0.6"
@@ -403,7 +600,7 @@ export function AssemblyViewer({
           solid the prototype cannot read — a picked component still has to
           read as picked. The inset draws it beside the empty state.
         */}
-        {mesh === null && !blockSelected && selectedTool !== undefined && (
+        {modelSrc === null && !blockSelected && selectedTool !== undefined && (
           <SelectedPartInset record={selectedTool} />
         )}
       </div>
@@ -459,17 +656,97 @@ function EmptyState({ title, body }: { title: string; body: string }) {
   );
 }
 
+type Vec3 = [number, number, number];
+type Mat3 = [Vec3, Vec3, Vec3];
+
+/** Parse a model-viewer ``orientation`` ("roll pitch yaw", degrees). */
+function parseOrientation(orientation: string): { roll: number; pitch: number; yaw: number } {
+  const [roll = 0, pitch = 0, yaw = 0] = orientation
+    .trim()
+    .split(/\s+/)
+    .map((token) => Number.parseFloat(token) || 0);
+  return { roll, pitch, yaw };
+}
+
+function rot(axis: "x" | "y" | "z", deg: number): Mat3 {
+  const a = (deg * Math.PI) / 180;
+  const c = Math.cos(a);
+  const s = Math.sin(a);
+  if (axis === "x") return [[1, 0, 0], [0, c, -s], [0, s, c]];
+  if (axis === "y") return [[c, 0, s], [0, 1, 0], [-s, 0, c]];
+  return [[c, -s, 0], [s, c, 0], [0, 0, 1]];
+}
+
+function matMul(a: Mat3, b: Mat3): Mat3 {
+  const out: Mat3 = [[0, 0, 0], [0, 0, 0], [0, 0, 0]];
+  for (let i = 0; i < 3; i += 1)
+    for (let j = 0; j < 3; j += 1)
+      out[i][j] = a[i][0] * b[0][j] + a[i][1] * b[1][j] + a[i][2] * b[2][j];
+  return out;
+}
+
+/** Model→cube rotation for a given orientation, matching the CSS mount below. */
+function orientationMatrix(orientation: string): Mat3 {
+  const { roll, pitch, yaw } = parseOrientation(orientation);
+  // Same composition as the CSS mount: rotateY(yaw) rotateX(pitch) rotateZ(roll).
+  return matMul(rot("y", yaw), matMul(rot("x", pitch), rot("z", roll)));
+}
+
+/** The CSS transform that mounts the cube the way the model is oriented. */
+function orientationMount(orientation: string): string {
+  const { roll, pitch, yaw } = parseOrientation(orientation);
+  return `rotateY(${yaw}deg) rotateX(${pitch}deg) rotateZ(${roll}deg)`;
+}
+
+/** Rᵀ · v — map a world direction back into the cube's local frame. */
+function applyTranspose(m: Mat3, v: Vec3): Vec3 {
+  return [
+    m[0][0] * v[0] + m[1][0] * v[1] + m[2][0] * v[2],
+    m[0][1] * v[0] + m[1][1] * v[1] + m[2][1] * v[2],
+    m[0][2] * v[0] + m[1][2] * v[1] + m[2][2] * v[2],
+  ];
+}
+
+/** The CSS transform placing a cube face whose outward normal is ``v``. */
+function faceTransform(v: Vec3, half: number): string {
+  // Snap to the dominant axis; our mounts are all axis-aligned quarter turns.
+  const abs = v.map(Math.abs);
+  const axis = abs[0] >= abs[1] && abs[0] >= abs[2] ? 0 : abs[1] >= abs[2] ? 1 : 2;
+  const sign = v[axis] >= 0 ? 1 : -1;
+  const key = `${sign > 0 ? "+" : "-"}${"xyz"[axis]}`;
+  const rots: Record<string, string> = {
+    "+z": "",
+    "-z": "rotateY(180deg)",
+    "+x": "rotateY(90deg)",
+    "-x": "rotateY(-90deg)",
+    "+y": "rotateX(90deg)",
+    "-y": "rotateX(-90deg)",
+  };
+  const r = rots[key];
+  return `${r ? `${r} ` : ""}translateZ(${half}px)`;
+}
+
 /**
  * A live cube reflecting the camera's orbit around the model.
  *
- * The block sits in the viewer with its ``+Z`` axis pointing up, and the cube
- * shares that convention: front, back, left and right are the model's four
- * side faces, top and bottom carry its ``±Z`` ends. The face the camera looks
- * along is the face the user sees on the cube, so orbiting the block spins
- * the cube in step. Nothing here is interactive yet — clicking to snap the
- * camera to a named view would be a next step.
+ * The cube is mounted with the *same* ``orientation`` the model-viewer applies
+ * to the block, so it turns in lockstep with whichever block is shown — the
+ * 3X block stands ``+Z`` up, the OD/ID blocks sit in their native CAD frame.
+ * Face labels are pinned to world directions (TOP is up, FRONT faces the camera
+ * at the default orbit) by mapping each through the inverse mount, so they stay
+ * meaningful whatever the block's frame. The face the camera looks along is the
+ * face the user sees on the cube. Clicking to snap to a named view would be a
+ * next step.
  */
-function ViewCube({ theta, phi }: { theta: number; phi: number }) {
+function ViewCube({
+  theta,
+  phi,
+  orientation,
+}: {
+  theta: number;
+  phi: number;
+  orientation: string;
+}) {
   // model-viewer's ``theta`` grows counter-clockwise around world +Y, so the
   // cube counter-rotates to keep the camera-facing side toward the user; the
   // vertical tilt is ``phi - 90°``, since 90° looks along the horizon.
@@ -497,6 +774,18 @@ function ViewCube({ theta, phi }: { theta: number; phi: number }) {
     ...extra,
   });
 
+  // Pin labels to world directions, then push each into the cube's local frame
+  // via the inverse mount so the naming follows the block, not the raw geometry.
+  const mount = orientationMatrix(orientation);
+  const labels: { name: string; world: Vec3 }[] = [
+    { name: "TOP", world: [0, 1, 0] },
+    { name: "BOTTOM", world: [0, -1, 0] },
+    { name: "FRONT", world: [0, 0, 1] },
+    { name: "BACK", world: [0, 0, -1] },
+    { name: "RIGHT", world: [1, 0, 0] },
+    { name: "LEFT", world: [-1, 0, 0] },
+  ];
+
   return (
     <div
       className="pointer-events-none absolute right-4 top-4 z-10 select-none"
@@ -508,27 +797,18 @@ function ViewCube({ theta, phi }: { theta: number; phi: number }) {
           width: size,
           height: size,
           transformStyle: "preserve-3d",
-          // Compose right-to-left: first mount the cube with the model's ``+Z``
-          // up (matching ``orientation="0deg -90deg 0deg"``), then apply the
-          // camera's yaw and pitch so the face nearest the camera reads front.
-          transform: `rotateX(${pitch}deg) rotateY(${yaw}deg) rotateX(-90deg)`,
+          // Compose right-to-left: first mount the cube the way the block is
+          // oriented, then apply the camera's yaw and pitch.
+          transform: `rotateX(${pitch}deg) rotateY(${yaw}deg) ${orientationMount(orientation)}`,
         }}
       >
-        {/*
-          Face labels are placed so the model's ``+Z`` axis reads as up: the
-          face pointing along the cube's local ``+Z`` ends up on top after the
-          preceding ``rotateX(-90deg)``, so that face wears the "TOP" label.
-          The opposite conventions follow — the face nearest the camera at the
-          default 25°/70° orbit is "FRONT", and so on.
-        */}
-        <div style={face(`translateZ(${half}px)`)}>TOP</div>
-        <div style={face(`rotateY(180deg) translateZ(${half}px)`)}>BOTTOM</div>
-        <div style={face(`rotateY(90deg) translateZ(${half}px)`)}>RIGHT</div>
-        <div style={face(`rotateY(-90deg) translateZ(${half}px)`)}>LEFT</div>
-        <div style={face(`rotateX(90deg) translateZ(${half}px)`)}>BACK</div>
-        <div style={face(`rotateX(-90deg) translateZ(${half}px)`)}>FRONT</div>
+        {labels.map(({ name, world }) => (
+          <div key={name} style={face(faceTransform(applyTranspose(mount, world), half))}>
+            {name}
+          </div>
+        ))}
       </div>
-      <AxisGnomon theta={theta} phi={phi} />
+      <AxisGnomon theta={theta} phi={phi} orientation={orientation} />
     </div>
   );
 }
@@ -539,7 +819,15 @@ function ViewCube({ theta, phi }: { theta: number; phi: number }) {
  * It shares the cube's rotation but sits under it as a set of coloured stubs,
  * so the axes read at a glance even when a face label is edge-on to the camera.
  */
-function AxisGnomon({ theta, phi }: { theta: number; phi: number }) {
+function AxisGnomon({
+  theta,
+  phi,
+  orientation,
+}: {
+  theta: number;
+  phi: number;
+  orientation: string;
+}) {
   const yaw = (-theta * 180) / Math.PI;
   const pitch = ((phi - Math.PI / 2) * 180) / Math.PI;
   const length = 18;
@@ -576,7 +864,7 @@ function AxisGnomon({ theta, phi }: { theta: number; phi: number }) {
           width: "100%",
           height: "100%",
           transformStyle: "preserve-3d",
-          transform: `rotateX(${pitch}deg) rotateY(${yaw}deg) rotateX(-90deg)`,
+          transform: `rotateX(${pitch}deg) rotateY(${yaw}deg) ${orientationMount(orientation)}`,
         }}
       >
         {/* +X, +Y and +Z in model space. */}

@@ -14,7 +14,11 @@ import {
   browserRootWithTurret,
   DEMO_BLOCK_DOCUMENT_TITLE,
   getViewportEmphasis,
-  TURRET_BROWSER_NODE_ID,
+  isMachineNode,
+  isTurretNode,
+  setupIdFromMachineNode,
+  setupIdFromTurretNode,
+  turretNodeId,
 } from "./data/demoBlockDesign";
 // User's clean Haas ST-20Y turret, freshly authored and exported from Fusion 360
 // (turret geometry only). Ring/station positions are fitted from its 12 patterned
@@ -34,8 +38,10 @@ import {
   assemblyBaseId,
   createDefaultTurretSetup,
   HAAS_ST_20Y,
+  nextOpNumber,
   toolAssemblyOptions,
   turretSetups,
+  turretSetupById,
   setSelectedMachine,
   upsertTurretSetup,
 } from "./data/turret";
@@ -90,7 +96,10 @@ export default function App() {
   /* Turret setup -------------------------------------------------------- */
 
   const turretRev = useTurretRevision();
-  const [machine, setMachine] = useState<Machine | null>(null);
+  // The machine is already present in the Setup by default (the user need not
+  // pick one), matching the Turret Setup workflow. Its 3D visibility still
+  // defaults to OFF (see `turretVisible`), toggleable on from the browser.
+  const [machine, setMachine] = useState<Machine | null>(HAAS_ST_20Y);
   const [turretSetup, setTurretSetup] = useState<TurretSetup | null>(null);
   /**
    * In-progress station assignments from the open dialog, mirrored here so the
@@ -102,7 +111,10 @@ export default function App() {
   >(null);
   const [setupDialogOpen, setSetupDialogOpen] = useState(() => queryFlag("setup"));
   const [turretDialogOpen, setTurretDialogOpen] = useState(false);
-  const [turretVisible, setTurretVisible] = useState(true);
+  // Turret geometry is hidden in the canvas by default; the browser node's eye
+  // toggles it on. (While the Turret Setup dialog is open it is force-shown so
+  // the user can see what they are editing — see `turretShown`.)
+  const [turretVisible, setTurretVisible] = useState(false);
   const [contextMenu, setContextMenu] = useState<
     { x: number; y: number; nodeId: string } | null
   >(null);
@@ -148,16 +160,6 @@ export default function App() {
     [ensureTurretSetup],
   );
 
-  const openTurretDialog = useCallback(() => {
-    if (machine === null) {
-      // No machine yet — the turret comes from the Setup dialog first.
-      setSetupDialogOpen(true);
-      return;
-    }
-    ensureTurretSetup(machine);
-    setTurretDialogOpen(true);
-  }, [machine, ensureTurretSetup]);
-
   const confirmTurret = useCallback((next: TurretSetup) => {
     upsertTurretSetup(next);
     setTurretSetup(next);
@@ -168,6 +170,18 @@ export default function App() {
   const editMachineFromTurret = useCallback(() => {
     setTurretDialogOpen(false);
     setSetupDialogOpen(true);
+  }, []);
+
+  // The machine is pre-selected in the Setup and a default turret setup exists
+  // so its node shows in the browser (turret hidden until toggled on). Skipped
+  // for the deep-link flows below, which seed their own current setup.
+  useEffect(() => {
+    setSelectedMachine(HAAS_ST_20Y.id);
+    if (queryFlag("turretSetup") || queryFlag("demo") || queryFlag("cad")) return;
+    const existing = turretSetups();
+    const setup = existing[0] ?? createDefaultTurretSetup(HAAS_ST_20Y);
+    if (existing.length === 0) upsertTurretSetup(setup);
+    setTurretSetup((prev) => prev ?? setup);
   }, []);
 
   // Deep link: ?turretSetup=1 selects the client machine and opens the dialog.
@@ -250,9 +264,47 @@ export default function App() {
     setTurretVisible(true);
   }, [cadMode]);
 
+  /** Make the setup carried by a turret node the current one, if it resolves. */
+  const selectSetupFromNode = useCallback((nodeId: string) => {
+    const setupId = setupIdFromTurretNode(nodeId);
+    if (setupId === null) return;
+    const found = turretSetupById(setupId);
+    if (found !== undefined) setTurretSetup(found);
+  }, []);
+
+  /** Open the Turret Setup dialog on the setup a turret node points at. */
+  const openTurretNode = useCallback(
+    (nodeId: string) => {
+      selectSetupFromNode(nodeId);
+      setTurretDialogOpen(true);
+    },
+    [selectSetupFromNode],
+  );
+
+  /**
+   * Create a NEW manufacturing Setup (OP 30, OP 40, … continuing the demo OP
+   * sequence), each a top-level Setup node under the Setups folder carrying its
+   * own machine → Turret1 subtree with an empty/default turret. Registers it so
+   * its OP node appears in the browser, selects the new turret and opens the
+   * dialog. Wired to the ribbon's New Setup button.
+   */
+  const createTurretSetup = useCallback(() => {
+    const forMachine = machine ?? HAAS_ST_20Y;
+    if (machine === null) {
+      setMachine(forMachine);
+      setSelectedMachine(forMachine.id);
+    }
+    const setup = createDefaultTurretSetup(forMachine, "Turret1", nextOpNumber());
+    upsertTurretSetup(setup);
+    setTurretSetup(setup);
+    setDraftStations(null);
+    setSelectedBrowserId(turretNodeId(setup.id));
+    setTurretDialogOpen(true);
+  }, [machine]);
+
   const handleBrowserContextMenu = useCallback(
     (nodeId: string, x: number, y: number) => {
-      if (nodeId === TURRET_BROWSER_NODE_ID) {
+      if (isTurretNode(nodeId)) {
         setContextMenu({ x, y, nodeId });
       }
     },
@@ -261,19 +313,47 @@ export default function App() {
 
   const handleBrowserActivate = useCallback(
     (nodeId: string) => {
-      if (nodeId === TURRET_BROWSER_NODE_ID) openTurretDialog();
+      if (isTurretNode(nodeId)) openTurretNode(nodeId);
     },
-    [openTurretDialog],
+    [openTurretNode],
   );
 
-  const handleBrowserVisibility = useCallback((nodeId: string, hidden: boolean) => {
-    if (nodeId === TURRET_BROWSER_NODE_ID) setTurretVisible(!hidden);
-  }, []);
+  const handleBrowserVisibility = useCallback(
+    (nodeId: string, hidden: boolean) => {
+      // Both a Setup's machine node and its turret node drive that Setup's
+      // turret in the canvas: make it current, then toggle visibility.
+      if (isTurretNode(nodeId)) {
+        selectSetupFromNode(nodeId);
+        setTurretVisible(!hidden);
+      } else if (isMachineNode(nodeId)) {
+        const setupId = setupIdFromMachineNode(nodeId);
+        if (setupId !== null) {
+          const found = turretSetupById(setupId);
+          if (found !== undefined) setTurretSetup(found);
+        }
+        setTurretVisible(!hidden);
+      }
+    },
+    [selectSetupFromNode],
+  );
+
+  // Turret setups to render as nodes: the committed store plus the current
+  // working setup if it has not been committed yet (e.g. a demo deep link).
+  const browserSetups = useMemo(() => {
+    const list = turretSetups();
+    if (turretSetup !== null && !list.some((s) => s.id === turretSetup.id)) {
+      return [turretSetup, ...list];
+    }
+    return list;
+  }, [turretRev, turretSetup]);
 
   const browserRoot = useMemo(() => {
     if (machine === null) return undefined;
-    return browserRootWithTurret(machine.name, turretSetup?.name ?? "Turret1");
-  }, [machine, turretSetup]);
+    return browserRootWithTurret(
+      machine.name,
+      browserSetups.map((s) => ({ id: s.id, name: s.name, opNumber: s.opNumber ?? 10 })),
+    );
+  }, [machine, browserSetups]);
 
   /**
    * Stations the canvas should reflect: the dialog's live draft while it is
@@ -312,6 +392,7 @@ export default function App() {
             stationNumber: station.stationNumber,
             solidUrl: mount?.url ?? null,
             keepMaterials: mount?.keepMaterials,
+            flipped: station.flipped === true,
           };
         }),
     [previewStations, turretRev],
@@ -319,14 +400,17 @@ export default function App() {
 
   const contextMenuItems = useMemo<ContextMenuItem[]>(() => {
     if (contextMenu === null) return [];
+    const { nodeId } = contextMenu;
     return [
       {
         id: "edit-turret-setup",
         label: "Edit Turret Setup",
-        onSelect: openTurretDialog,
+        onSelect: () => {
+          openTurretNode(nodeId);
+        },
       },
     ];
-  }, [contextMenu, openTurretDialog]);
+  }, [contextMenu, openTurretNode]);
 
   const handleRibbonWorkspaceChange = useCallback((w: RibbonWorkspaceId) => {
     setRibbonWorkspace(w);
@@ -350,13 +434,16 @@ export default function App() {
           setToolHolderOpen(true);
           break;
         case "CreateSetupCmd":
-          setSetupDialogOpen(true);
+          // In this turret prototype the machine is already in the Setup, so
+          // "New Setup" creates a new TURRET setup node rather than reopening
+          // the machine chooser (still reachable via the dialog's Edit machine).
+          createTurretSetup();
           break;
         default:
           break;
       }
     },
-    [],
+    [createTurretSetup],
   );
 
   const closeToolLibrary = useCallback(() => {
@@ -409,6 +496,10 @@ export default function App() {
     [selectedBrowserId],
   );
 
+  // Turret is shown when its browser visibility is on OR the Turret Setup dialog
+  // is open (so the user can see what they are editing regardless of the toggle).
+  const turretShown = turretVisible || turretDialogOpen;
+
   return (
     <>
       <div className="app-shell" data-fusion-prototype data-workspace={ribbonWorkspace}>
@@ -430,6 +521,9 @@ export default function App() {
               selectedId={selectedBrowserId}
               onSelect={(nodeId) => {
                 setSelectedBrowserId(nodeId);
+                // Selecting a turret node makes its setup the current one, so
+                // the canvas and dialog reflect the setup the user clicked.
+                if (isTurretNode(nodeId)) selectSetupFromNode(nodeId);
               }}
               onContextMenuNode={handleBrowserContextMenu}
               onActivateNode={handleBrowserActivate}
@@ -451,7 +545,7 @@ export default function App() {
                         // are placed in the reconstructed turret's frame, not
                         // this mesh's), so the seat you see is the CAD joint's.
                         url: haasAssemblyGlbUrl,
-                        visible: turretVisible,
+                        visible: turretShown,
                         assignedStations: [],
                         mounts: [],
                         hotspots: false,
@@ -463,7 +557,7 @@ export default function App() {
                         // because their positions live in the old reconstructed
                         // turret's centimetre frame, not this mesh's.
                         url: turretCadUrl,
-                        visible: turretVisible,
+                        visible: turretShown,
                         assignedStations,
                         mounts: turretMounts,
                         hotspots: false,
@@ -546,6 +640,10 @@ export default function App() {
           }}
           onConfirm={confirmTurret}
           onStationsChange={setDraftStations}
+          onSelectSetup={(setupId) => {
+            const found = turretSetupById(setupId);
+            if (found !== undefined) setTurretSetup(found);
+          }}
           onEditMachine={editMachineFromTurret}
           onPickFromLibrary={(stationNumber) => {
             setLibraryPickStation(stationNumber);
