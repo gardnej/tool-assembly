@@ -118,7 +118,6 @@ export function SetupDialog({ open, machine, onClose, onConfirm }: SetupDialogPr
     function onMove(ev: PointerEvent): void {
       if (dragOffset.current === null) return;
       const w = dialogRef.current?.offsetWidth ?? 340;
-      const h = dialogRef.current?.offsetHeight ?? 200;
       // Clamp so the title bar can't be dragged fully off-screen.
       const x = Math.min(
         Math.max(ev.clientX - dragOffset.current.dx, 8 - w + 48),
