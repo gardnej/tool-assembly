@@ -1,39 +1,39 @@
 /* Docked side panels + browser tree (Weave Panel + Tree view) */
 
-.panel {
+/* The browser palette is transparent (`Transparent="True"` in the shell
+   layout): nothing is painted behind the tree, and the canvas shows through
+   the gaps between rows. Only the rows themselves paint a background. */
+.browser-hud {
   display: flex;
   flex-direction: column;
-  height: 100%;
   min-height: 0;
-  background: var(--chrome-panel-bg);
+  width: 100%;
+  overflow: hidden;
+  background: transparent;
   color: var(--weave-text-medium);
   font-family: var(--weave-font-family);
 }
 
-.panel__header {
+/* The palette reserves 25px above the tree for its title. */
+.browser-hud__title {
   flex-shrink: 0;
   display: flex;
   align-items: center;
-  min-height: 28px;
-  padding: 0 var(--weave-spacing-m);
-  font-family: inherit;
-  font-size: var(--weave-subtitle2-size);
+  height: 25px;
+  padding-left: 11px;
+  font-size: var(--weave-caption-size, 11px);
   font-weight: var(--weave-subtitle2-weight);
-  line-height: var(--weave-subtitle2-leading);
-  letter-spacing: var(--weave-subtitle2-tracking);
-  color: var(--weave-text-high);
-  text-transform: none;
-  background: var(--chrome-panel-header);
-  border-bottom: 1px solid var(--chrome-border-subtle);
-  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.04);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--weave-text-medium);
 }
 
-.panel__body {
+.browser-hud__body {
   flex: 1;
   min-height: 0;
   overflow: auto;
-  padding: var(--weave-spacing-xs) 0;
-  background: var(--chrome-panel-bg);
+  scrollbar-width: thin;
+  scrollbar-color: rgb(255 255 255 / 0.22) transparent;
 }
 
 .browser-tree {
@@ -51,58 +51,132 @@
   padding: 0;
 }
 
-.browser-tree > li > ul,
-.browser-tree ul ul {
-  padding-left: var(--weave-spacing-m);
-  margin-left: var(--weave-spacing-xs);
-  border-left: 1px solid var(--chrome-border-subtle);
-}
-
+/* Indentation is applied per row rather than by nesting: the tree indents from
+   11px inside the palette, 18px per level, and a childless row skips the
+   expander column with a further 25px. */
 .browser-tree__row {
   display: flex;
   align-items: center;
-  gap: var(--weave-spacing-xs);
-  min-height: var(--weave-tree-row-height);
-  padding: 0 var(--weave-spacing-s);
-  margin: 0 var(--weave-spacing-xs);
-  border-radius: 2px;
+  /* Fusion's browser style: a 20px cell in a 24px row, 16px artwork. */
+  min-height: 24px;
+  padding-right: var(--weave-spacing-s);
   cursor: pointer;
   color: var(--weave-text-medium);
   user-select: none;
 }
 
-.browser-tree__row:hover {
-  background: rgb(255 255 255 / 0.06);
+/* Only this group paints. It is as wide as its contents, so the canvas shows
+   through to the right of a short label and in the gaps between rows — which
+   is what makes the browser read as a HUD rather than a panel. */
+.browser-tree__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 100%;
+  height: 20px;
+  padding-right: 6px;
+  background: var(--browser-chip-bg);
+}
+
+.browser-tree__row:hover .browser-tree__chip {
+  background: var(--browser-chip-hover);
   color: var(--weave-text-high);
 }
 
 .browser-tree__row:focus-visible {
-  outline: 2px solid var(--weave-indicator);
-  outline-offset: -2px;
+  outline: 1px solid var(--weave-indicator);
+  outline-offset: -1px;
 }
 
-.browser-tree__row--selected {
-  background: var(--weave-selection-bg);
+/* Selection is composited over the row colour rather than replacing it — the
+   product combines the two, so a translucent accent stays opaque over canvas. */
+.browser-tree__row--selected .browser-tree__chip {
+  background-color: var(--browser-chip-bg);
+  background-image: linear-gradient(var(--weave-selection-bg), var(--weave-selection-bg));
   color: var(--weave-text-high);
-  box-shadow: inset 2px 0 0 var(--weave-indicator);
 }
 
+/* A hidden node stays legible but recedes, and keeps its crossed-out eye. */
+.browser-tree__row--hidden .browser-tree__label,
+.browser-tree__row--hidden .browser-tree__icon {
+  opacity: 0.45;
+}
+
+/* The expander sits outside the chip and paints nothing of its own. */
 .browser-tree__chevron {
   flex-shrink: 0;
-  width: 16px;
-  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  width: 25px;
+  height: 16px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--weave-text-low);
   font-size: 9px;
   line-height: 1;
-  color: var(--weave-text-low);
+  cursor: pointer;
 }
 
-.browser-tree__row:hover .browser-tree__chevron,
-.browser-tree__row--selected .browser-tree__chevron {
-  color: var(--weave-text-medium);
+.browser-tree__chevron--empty {
+  cursor: default;
+}
+
+.browser-tree__chevron img {
+  display: block;
+  opacity: 0.75;
+}
+
+.browser-tree__row:hover .browser-tree__chevron img {
+  opacity: 1;
+}
+
+/* Fusion reveals the show/hide control on hover; a hidden node keeps it. */
+.browser-tree__eye {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  visibility: hidden;
+}
+
+.browser-tree__eye img {
+  display: block;
+  opacity: 0.8;
+}
+
+.browser-tree__row:hover .browser-tree__eye,
+.browser-tree__row--selected .browser-tree__eye,
+.browser-tree__row--hidden .browser-tree__eye,
+/* Machine/turret rows keep the control shown whether hidden or visible, so it
+   persists after the user toggles the turret on (not just on hover). */
+.browser-tree__row--vis-persistent .browser-tree__eye {
+  visibility: visible;
+}
+
+.browser-tree__eye--empty {
+  visibility: hidden;
+  cursor: default;
+}
+
+.browser-tree__icon {
+  flex-shrink: 0;
+  display: block;
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
 }
 
 .browser-tree__label {
-  flex: 1;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -182,6 +256,44 @@
   min-height: 240px;
   background: #000;
   --poster-color: #000;
+}
+
+/**
+ * Turret station numbers, drawn as <model-viewer> hotspots anchored to the
+ * station ring computed by scripts/turret-stations.py. Small numbered chips,
+ * legible over the model and non-interactive to pointer orbit.
+ */
+.turret-hotspot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  border-radius: 50%;
+  background: rgba(17, 22, 28, 0.82);
+  color: #fff;
+  font-family: "Artifakt Element", ArtifaktElement, system-ui, sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1;
+  cursor: default;
+  user-select: none;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+}
+
+/* A station with a tool mounted reads as the accent colour. */
+.turret-hotspot--mounted {
+  border-color: #3a9ad9;
+  background: #3a9ad9;
+  color: #fff;
+}
+
+/* Fade a number out when the turret face it sits on points away from us. */
+.turret-hotspot[data-visibility="hidden"] {
+  opacity: 0;
+  transition: opacity 0.2s ease;
 }
 
 .viewport__block--emph-body {

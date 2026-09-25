@@ -1,0 +1,13 @@
+{
+    "autodeskProduct": "Fusion360",
+    "type": "addin",
+    "id": "tool-assembly-joint-chain",
+    "author": "",
+    "description": {
+        "": "Build a tool assembly from real tool library items by joining a tool block and holder with machine-side and cutting-side joint origins."
+    },
+    "version": "0.1.0",
+    "runOnStartup": true,
+    "supportedOS": "windows|mac",
+    "editEnabled": true
+}

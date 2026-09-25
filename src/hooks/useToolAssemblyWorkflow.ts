@@ -1,180 +1,509 @@
 import { useCallback, useMemo, useState } from "react";
-import { getComponentById, INITIAL_SLOTS } from "../data/toolComponents";
+import {
+  canInsertAbove,
+  canInsertBelow,
+  emptySlot,
+  insertSlotComponent,
+  moveSlot,
+  runValidation,
+  setSlotComponent,
+  slotAccepts,
+  slotIsOccupied,
+  slotKind,
+  slotStation,
+  swapStackItems,
+  syncSlotCount,
+} from "../data/assembly";
+import {
+  adaptiveItems,
+  AXIAL_TOOL_IDS,
+  compatibleToolIdsForBlock,
+  cuttingTools,
+  derivedBlocks,
+  displayName,
+  framesFor,
+  gaugeLengthsMm,
+  isHalfIndex,
+  isTurningType,
+  LIBRARIES,
+  measuredStackUpMm,
+  missingFrameLabel,
+  solidSpanMm,
+  stackChain,
+  stationNumber,
+  storedGaugeLengthMm,
+  toolBlocks,
+  toolById,
+  type ChainComponent,
+  type LibraryToolRecord,
+  type NestedBlock,
+} from "../data/realLibrary";
+import {
+  OD_ID_BLOCKS_LIBRARY_ID,
+  OD_ID_TOOLS_LIBRARY_ID,
+} from "../data/odIdExamples";
 import { getStepIndex, WORKFLOW_STEPS } from "../data/workflowSteps";
+import {
+  removeSessionAssembly,
+  sessionAssemblies,
+  sessionAssemblyById,
+  upsertSessionAssembly,
+} from "../data/libraryEdits";
+import type { SavedAssembly } from "../types";
+import { useLibraryRevision } from "./useLibraryRevision";
+import { slotRowId } from "../types";
 import type {
   AssemblyConfig,
   AssemblyRow,
   AssemblySlot,
-  ToolComponent,
-  ValidationIssue,
-  ValidationStatus,
+  Orientation,
+  RowId,
+  SlotLevel,
   WorkflowState,
   WorkflowStepId,
 } from "../types";
 
+/** Id of the prototype Team Hub library, seeded in ``libraryEdits.ts``. */
+const HUB_LIBRARY_ID = "hub-team";
+
+/**
+ * Library the workflow starts in: the `Tool Blocks` library, since a block is
+ * the first thing chosen and it is where the pickable blocks live.
+ */
+function defaultLibraryId(): string {
+  const blocks = LIBRARIES.find((library) => library.id === OD_ID_BLOCKS_LIBRARY_ID);
+  if (blocks !== undefined) return blocks.id;
+  const withBlocks = LIBRARIES.find((library) => library.blockCount > 0);
+  return withBlocks?.id ?? LIBRARIES[0]?.id ?? "";
+}
+
 const DEFAULT_CONFIG: AssemblyConfig = {
   orientation: "axial",
-  machineConnectionType: "Unspecified",
-  toolConnectionType: "ER16 MF",
-  size: "Unspecified",
-  numberOfTools: 2,
-  stickOut: 42,
-  totalLength: 57,
+  machineSideConnectionType: "Unspecified",
+  numberOfTools: 1,
+  numberOfAttachmentPoints: 0,
+  adaptiveItemSize: 0,
+  stationNumber: null,
+  halfIndex: false,
 };
+
+function readNumber(
+  source: Record<string, number | string | boolean>,
+  key: string,
+  fallback: number,
+): number {
+  const value = source[key];
+  return typeof value === "number" ? value : fallback;
+}
+
+function readString(
+  source: Record<string, number | string | boolean>,
+  key: string,
+  fallback: string,
+): string {
+  const value = source[key];
+  return typeof value === "string" ? value : fallback;
+}
+
+/**
+ * Number of tools a block record declares.
+ *
+ * Fusion's data model treats one ``tool block`` record as a single adaptive-
+ * item mount, so a physical three-position block is normally stored as three
+ * separate records. Some imported libraries carry the whole multi-seat block
+ * under one record instead — the description names the count (``3X Axial``,
+ * ``2X Radial``) even though ``numberOfTools`` still reads ``1``. Until the
+ * source data is updated, this reads the prefix as the count for records that
+ * would otherwise offer one slot for a visibly multi-seat block.
+ */
+function declaredNumberOfTools(block: LibraryToolRecord): number {
+  const declared = readNumber(block.geometry, "numberOfTools", 1);
+  if (declared > 1) return declared;
+
+  const prefix = /^(\d+)\s*X\b/i.exec(block.description);
+  if (prefix !== null) {
+    const count = Number(prefix[1]);
+    if (Number.isFinite(count) && count >= 1) return count;
+  }
+
+  return declared;
+}
+
+/** Pull block-level settings out of a real `tool block` item. */
+function configFromBlock(block: LibraryToolRecord): Partial<AssemblyConfig> {
+  const geometry = block.geometry;
+  const orientation = readString(geometry, "orientationType", "axial");
+
+  return {
+    orientation: orientation === "radial" ? "radial" : ("axial" as Orientation),
+    machineSideConnectionType: readString(
+      geometry,
+      "machineSideConnectionType",
+      "Unspecified",
+    ),
+    numberOfTools: declaredNumberOfTools(block),
+    numberOfAttachmentPoints: readNumber(geometry, "numberOfAttachmentPoints", 0),
+    adaptiveItemSize: readNumber(geometry, "adaptiveItemSize", 0),
+    stationNumber: block.postProcess.stationNumber,
+    halfIndex: block.postProcess.halfIndex === true,
+  };
+}
 
 function createInitialState(): WorkflowState {
   return {
-    currentStep: "select-holder",
+    currentStep: "select-block",
     completedSteps: [],
     activeTab: "assembly",
-    selectedCatalogId: null,
-    selectedAssemblyId: null,
-    assemblyRows: [],
-    slots: INITIAL_SLOTS.map((s) => ({ ...s, componentId: null })),
+    libraryId: defaultLibraryId(),
+    blockToolId: null,
+    slots: [emptySlot()],
+    selectedRowId: null,
     config: { ...DEFAULT_CONFIG },
     validationStatus: "idle",
     validationIssues: [],
     generalInfo: {
-      description: "Turning tool holder assembly — prototype",
+      description: "",
       vendor: "",
       productId: "",
       productLink: "",
     },
+    editingAssemblyId: null,
   };
 }
 
-function isCompatible(holderId: string, componentId: string): boolean {
-  const holder = getComponentById(holderId);
-  const component = getComponentById(componentId);
-  if (holder === undefined || component === undefined) return false;
-  return (
-    holder.compatibleWith.includes(componentId) ||
-    component.compatibleWith.includes(holderId)
-  );
+const EMPTY_BLOCK_ROW: AssemblyRow = {
+  id: "block",
+  role: "block",
+  slotIndex: null,
+  depth: null,
+  level: null,
+  accepts: [],
+  canInsertAbove: false,
+  canInsertBelow: false,
+  toolId: null,
+  name: "",
+  type: "",
+  vendor: "",
+  spanMm: null,
+  gaugeLengthMm: null,
+  missingFrame: null,
+  hasTransformOverride: false,
+  stationNumber: null,
+  halfIndex: false,
+  stationFollowsOrder: false,
+};
+
+/**
+ * The parent row, read back out of whichever block the occupants carry.
+ *
+ * It has no gauge length of its own: the block is the mount that everything else
+ * is measured from, not something mounted on it.
+ */
+function blockRowFrom(
+  derived: NestedBlock | null,
+  fallback: LibraryToolRecord | undefined,
+  toolId: string | null,
+): AssemblyRow {
+  if (derived === null && fallback === undefined) return EMPTY_BLOCK_ROW;
+
+  const geometryId = derived?.geometryId ?? fallback?.geometryId ?? null;
+  const component: ChainComponent = {
+    role: "block",
+    name: "",
+    geometryId,
+    frames: framesFor(geometryId),
+    spanMm: solidSpanMm(geometryId),
+  };
+
+  const name =
+    derived !== null
+      ? derived.description || derived.stepFileName || "Tool block"
+      : displayName(fallback as LibraryToolRecord);
+
+  return {
+    ...EMPTY_BLOCK_ROW,
+    toolId,
+    name,
+    type: "tool block",
+    vendor: derived?.vendor ?? fallback?.vendor ?? "",
+    spanMm: component.spanMm,
+    missingFrame: missingFrameLabel(component),
+    hasTransformOverride: derived?.transformOverride != null,
+  };
 }
 
-function runValidation(
-  rows: AssemblyRow[],
-  slots: AssemblySlot[],
-  config: AssemblyConfig,
-): { status: ValidationStatus; issues: ValidationIssue[] } {
-  const issues: ValidationIssue[] = [];
-  const holder = rows.find((r) => r.isRoot === true);
-  if (holder === undefined) {
-    return {
-      status: "fail",
-      issues: [
-        {
-          id: "no-holder",
-          severity: "error",
-          message: "No tool holder selected in the assembly.",
-        },
-      ],
-    };
-  }
+/**
+ * The rows of one position: what it holds, in mounting order, and — while it can
+ * still take something — one open row offering whatever fits next.
+ *
+ * The order is not fixed. A position that holds a cutting tool directly is one
+ * row and is finished; one that holds an extension offers a collet or a tool
+ * after it. Every step is measured through the one chain, so a gap anywhere
+ * leaves all of them unmeasured together.
+ */
+function slotRowsFrom(
+  slot: AssemblySlot,
+  index: number,
+  stack: (LibraryToolRecord | undefined)[],
+  blockOverride: LibraryToolRecord | null,
+): AssemblyRow[] {
+  // Whatever seats in the position declares the station the position sits in.
+  // Reading it back rather than using the copy taken when it was chosen means
+  // editing the record in the library moves the position.
+  const occupant = stack[0];
+  const declared = occupant === undefined ? null : stationNumber(occupant);
 
-  const filledSlots = slots.filter((s) => s.componentId !== null);
-  if (filledSlots.length === 0) {
-    issues.push({
-      id: "no-slots",
-      severity: "warning",
-      message: "No components assigned to assembly slots.",
-    });
-  }
-
-  for (const slot of filledSlots) {
-    if (slot.componentId !== null && !isCompatible(holder.componentId, slot.componentId)) {
-      const comp = getComponentById(slot.componentId);
-      issues.push({
-        id: `compat-${slot.id}`,
-        severity: "error",
-        message: `${comp?.name ?? "Component"} is not compatible with the selected holder.`,
-        componentId: slot.componentId,
-      });
-    }
-  }
-
-  if (config.stickOut > config.totalLength) {
-    issues.push({
-      id: "stickout-exceeds",
-      severity: "error",
-      message: "Stick out exceeds total tool length.",
-    });
-  }
-
-  if (config.toolConnectionType === "Unspecified") {
-    issues.push({
-      id: "connection-unspecified",
-      severity: "warning",
-      message: "Tool connection type is unspecified — verify machine interface.",
-    });
-  }
-
-  const hasInsert = filledSlots.some((s) => {
-    const c = s.componentId !== null ? getComponentById(s.componentId) : undefined;
-    return c?.category === "insert";
+  const base = (depth: number, accepts: SlotLevel[]): AssemblyRow => ({
+    id: slotRowId(index, depth),
+    role: "holder",
+    slotIndex: index,
+    depth,
+    level: null,
+    accepts,
+    canInsertAbove: false,
+    canInsertBelow: false,
+    toolId: null,
+    name: "",
+    type: "",
+    vendor: "",
+    spanMm: null,
+    gaugeLengthMm: null,
+    missingFrame: null,
+    hasTransformOverride: false,
+    // The position's station belongs to the position, so it shows on its row.
+    stationNumber: depth === 0 ? declared ?? slotStation(slot, index) : null,
+    halfIndex: occupant !== undefined ? isHalfIndex(occupant) : slot.halfIndex,
+    stationFollowsOrder: declared === null && slot.stationNumber === null,
   });
-  if (!hasInsert) {
-    issues.push({
-      id: "no-insert",
-      severity: "warning",
-      message: "No cutting insert assigned — assembly cannot generate toolpaths.",
-    });
-  }
 
-  if (issues.some((i) => i.severity === "error")) {
-    return { status: "fail", issues };
-  }
-  if (issues.some((i) => i.severity === "warning")) {
-    return { status: "warning", issues };
-  }
-  return { status: "pass", issues: [] };
+  const chosen = stack.filter(
+    (record): record is LibraryToolRecord => record !== undefined,
+  );
+  const components = stackChain(chosen, blockOverride);
+  const gauges = gaugeLengthsMm(components);
+  // The chain leads with the block, so the stack starts one along from it.
+  const offset = components.length - chosen.length;
+
+  const allKinds = chosen.map(slotKind);
+  const kinds: SlotLevel[] = [];
+  const rows: AssemblyRow[] = [];
+
+  chosen.forEach((record, depth) => {
+    const at = offset + depth;
+    // A filled row can be swapped for anything that could have gone there.
+    rows.push({
+      ...base(depth, slotAccepts(kinds)),
+      level: slotKind(record),
+      canInsertAbove: canInsertAbove(allKinds, depth),
+      canInsertBelow: canInsertBelow(allKinds, depth),
+      toolId: record.id,
+      name: displayName(record),
+      type: record.type,
+      vendor: record.vendor,
+      spanMm: components[at]?.spanMm ?? null,
+      // Prefer Fusion's own assemblyGaugeLength / holder gauge from the record;
+      // fall back to what the joint-frame chain measured. Modern mill-drill
+      // libraries carry the number directly and rarely ship joint frames.
+      gaugeLengthMm: storedGaugeLengthMm(record) ?? gauges[at] ?? null,
+      // A record that carries its own gauge length does not need joint frames
+      // to be measurable — Fusion has already done that measurement — so the
+      // missing-frame warning is only reported when there is no other way to
+      // reach the component's position along the chain.
+      missingFrame:
+        storedGaugeLengthMm(record) !== null || components[at] === undefined
+          ? null
+          : missingFrameLabel(components[at]),
+    });
+    kinds.push(slotKind(record));
+  });
+
+  const next = slotAccepts(kinds);
+  if (next.length > 0) rows.push(base(chosen.length, next));
+
+  return rows;
 }
 
 export function useToolAssemblyWorkflow() {
   const [state, setState] = useState<WorkflowState>(createInitialState);
+  // Records are read straight out of the library, so an edit made there has to
+  // pull the assembly through again.
+  const editRevision = useLibraryRevision();
 
-  const holderRow = useMemo(
-    () => state.assemblyRows.find((r) => r.isRoot === true),
-    [state.assemblyRows],
+  const availableBlocks = useMemo(
+    () => toolBlocks(state.libraryId),
+    [state.libraryId, editRevision],
   );
 
-  const selectedCatalogComponent = useMemo(
+  const blockTool = useMemo(
+    () => (state.blockToolId !== null ? toolById(state.blockToolId) : undefined),
+    [state.blockToolId, editRevision],
+  );
+
+  /** What each position holds, machine side first. */
+  const stacks = useMemo(
+    () => state.slots.map((slot) => slot.stack.map((id) => toolById(id))),
+    [state.slots, editRevision],
+  );
+
+  /**
+   * What occupies each position: the first component of its stack, and so what
+   * the parent block row is derived from.
+   */
+  const occupants = useMemo(() => stacks.map((stack) => stack[0]), [stacks]);
+
+  /**
+   * The kinds each position holds, machine side first, for the viewer.
+   *
+   * The viewer seats them by mount order rather than by kind, so the first
+   * component always fills the bore seat flush with the block face and the rest
+   * stack outward from it — a collet seated straight in the block reads as
+   * seated, not floating where an extension would have held it.
+   */
+  const slotFills = useMemo<SlotLevel[][]>(
     () =>
-      state.selectedCatalogId !== null
-        ? getComponentById(state.selectedCatalogId)
-        : undefined,
-    [state.selectedCatalogId],
+      stacks.map((stack) =>
+        stack
+          .filter((record): record is LibraryToolRecord => record !== undefined)
+          .map(slotKind),
+      ),
+    [stacks],
   );
 
-  const selectedAssemblyComponent = useMemo(() => {
-    if (state.selectedAssemblyId === null) return undefined;
-    const row = state.assemblyRows.find((r) => r.id === state.selectedAssemblyId);
-    if (row !== undefined) return getComponentById(row.componentId);
-    const slot = state.slots.find((s) => s.id === state.selectedAssemblyId);
-    if (slot?.componentId !== null && slot !== undefined) {
-      return getComponentById(slot.componentId);
-    }
-    return undefined;
-  }, [state.selectedAssemblyId, state.assemblyRows, state.slots]);
+  /** Parent blocks the occupants imply; a second entry is a conflict, not a tier. */
+  const blocks = useMemo(() => derivedBlocks(occupants), [occupants]);
 
-  const assemblyComponents = useMemo(() => {
-    const ids = new Set<string>();
-    for (const row of state.assemblyRows) ids.add(row.componentId);
-    for (const slot of state.slots) {
-      if (slot.componentId !== null) ids.add(slot.componentId);
-    }
-    return [...ids]
-      .map((id) => getComponentById(id))
-      .filter((c): c is ToolComponent => c !== undefined);
-  }, [state.assemblyRows, state.slots]);
+  /**
+   * Library the slots draw their candidates from.
+   *
+   * The tool block is the root of the assembly, so its own library scopes what can
+   * sit on it. Until a block is chosen there is nothing to derive from and the
+   * default library stands in.
+   */
+  const scopeLibraryId = useMemo(() => {
+    if (blockTool !== undefined) return blockTool.libraryId;
+    const owner = blocks[0] !== undefined ? occupants[blocks[0].occupants[0]] : undefined;
+    return owner?.libraryId ?? state.libraryId;
+  }, [blockTool, blocks, occupants, state.libraryId]);
 
-  const selectCatalogComponent = useCallback((id: string) => {
-    setState((prev) => ({ ...prev, selectedCatalogId: id }));
+  /** GeometryId of the block currently at the root (chosen or derived). */
+  const activeBlockGeometryId = useMemo(
+    () => blockTool?.geometryId ?? blocks[0]?.block.geometryId ?? null,
+    [blockTool, blocks],
+  );
+
+  /**
+   * The components (cutting tools + adaptive items) that seat on the chosen
+   * block.
+   *
+   * `compatibleToolIdsForBlock` covers both models: OD/ID example blocks pair
+   * each tool with the one block it was imported with, while the folded-in 3X
+   * Axial block resolves to its own tools/adaptives. Either way the block draws
+   * from the shared `Tools` library filtered to that set. Any other block (a
+   * real Fusion library, say) has no compatibility set, so it keeps the old
+   * behaviour — the components in its own library.
+   */
+  const compatibleComponentIds = useMemo(
+    () => compatibleToolIdsForBlock(activeBlockGeometryId),
+    [activeBlockGeometryId],
+  );
+
+  /** Library the position components come from (and the picker should open on). */
+  const toolLibraryId = useMemo(
+    () =>
+      compatibleComponentIds.size > 0 ? OD_ID_TOOLS_LIBRARY_ID : scopeLibraryId,
+    [compatibleComponentIds, scopeLibraryId],
+  );
+
+  const availableTools = useMemo(() => {
+    const pool = cuttingTools(toolLibraryId);
+    if (compatibleComponentIds.size === 0) return pool;
+    return pool.filter((tool) => compatibleComponentIds.has(tool.id));
+  }, [toolLibraryId, compatibleComponentIds, editRevision]);
+
+  /** Candidates for each level of a position, since the levels take different parts. */
+  const availableByLevel = useMemo<Record<SlotLevel, LibraryToolRecord[]>>(() => {
+    const restrict = (list: LibraryToolRecord[]): LibraryToolRecord[] =>
+      compatibleComponentIds.size === 0
+        ? list
+        : list.filter((record) => compatibleComponentIds.has(record.id));
+    return {
+      extension: restrict(adaptiveItems("extension", toolLibraryId)),
+      collet: restrict(adaptiveItems("collet", toolLibraryId)),
+      tool: availableTools,
+    };
+  }, [toolLibraryId, availableTools, compatibleComponentIds, editRevision]);
+
+  const rows = useMemo<AssemblyRow[]>(() => {
+    const derived = blocks[0]?.block ?? null;
+    // The derived block belongs to its first occupant, so that tool is what the
+    // block row selects and edits.
+    const owner =
+      blocks[0] !== undefined ? occupants[blocks[0].occupants[0]]?.id ?? null : null;
+
+    return [
+      blockRowFrom(derived, blockTool, owner ?? blockTool?.id ?? null),
+      ...state.slots.flatMap((slot, index) =>
+        slotRowsFrom(slot, index, stacks[index], blockTool ?? null),
+      ),
+    ];
+  }, [blocks, occupants, stacks, state.slots, blockTool]);
+
+  /**
+   * Furthest the assembly reaches from the turret face, in millimetres.
+   *
+   * Several tools on one block give several chains rather than one, so the
+   * overall stack-up is the longest of them.
+   */
+  const measuredStackUpMmValue = useMemo(() => {
+    const lengths = stacks
+      .map((stack) =>
+        measuredStackUpMm(
+          stackChain(
+            stack.filter((item): item is LibraryToolRecord => item !== undefined),
+            blockTool ?? null,
+          ),
+        ),
+      )
+      .filter((length): length is number => length !== null);
+    return lengths.length === 0 ? null : Math.max(...lengths);
+  }, [stacks, blockTool]);
+
+  /** Chain of the first filled position, for the schematic. */
+  const chain = useMemo<ChainComponent[]>(() => {
+    const filled = stacks.find((stack) => stack[0] !== undefined);
+    if (filled === undefined) return [];
+    return stackChain(
+      filled.filter((item): item is LibraryToolRecord => item !== undefined),
+      blockTool ?? null,
+    );
+  }, [stacks, blockTool]);
+
+  const selectedTool = useMemo(() => {
+    const row = rows.find((item) => item.id === state.selectedRowId);
+    if (row === undefined) return undefined;
+    if (row.slotIndex !== null && row.depth !== null) {
+      return stacks[row.slotIndex]?.[row.depth];
+    }
+    // A derived block lives inside the record that carries it, so that record is
+    // what the block row reads its library facts from.
+    if (blockTool !== undefined) return blockTool;
+    return row.toolId !== null ? toolById(row.toolId) : undefined;
+  }, [rows, state.selectedRowId, stacks, blockTool, editRevision]);
+
+  const selectLibrary = useCallback((libraryId: string) => {
+    setState((prev) => ({
+      ...prev,
+      libraryId,
+      blockToolId: null,
+      slots: prev.slots.map(() => emptySlot()),
+      selectedRowId: null,
+      validationStatus: "idle",
+      validationIssues: [],
+    }));
   }, []);
 
-  const selectAssemblyItem = useCallback((id: string) => {
-    setState((prev) => ({ ...prev, selectedAssemblyId: id }));
+  const selectRow = useCallback((id: RowId) => {
+    setState((prev) => ({ ...prev, selectedRowId: id }));
   }, []);
 
   const setActiveTab = useCallback((tab: WorkflowState["activeTab"]) => {
@@ -182,11 +511,15 @@ export function useToolAssemblyWorkflow() {
   }, []);
 
   const updateConfig = useCallback((patch: Partial<AssemblyConfig>) => {
-    setState((prev) => ({
-      ...prev,
-      config: { ...prev.config, ...patch },
-      validationStatus: "idle",
-    }));
+    setState((prev) => {
+      const config = { ...prev.config, ...patch };
+      return {
+        ...prev,
+        config,
+        slots: syncSlotCount(prev.slots, config.numberOfTools),
+        validationStatus: "idle",
+      };
+    });
   }, []);
 
   const updateGeneralInfo = useCallback(
@@ -199,122 +532,255 @@ export function useToolAssemblyWorkflow() {
     [],
   );
 
-  const addToAssembly = useCallback(() => {
+  /** Choose the tool block that seats against the turret face. */
+  const selectToolBlock = useCallback((toolId: string | null) => {
     setState((prev) => {
-      if (prev.selectedCatalogId === null) return prev;
-      const component = getComponentById(prev.selectedCatalogId);
-      if (component === undefined) return prev;
-
-      if (component.category === "tool-holder") {
-        const row: AssemblyRow = {
-          id: "root-holder",
-          componentId: component.id,
-          type: component.type,
-          stickOut: component.stickOut,
-          totalLength: component.totalLength,
-          isRoot: true,
-        };
-        const nextCompleted: WorkflowStepId[] = prev.completedSteps.includes("select-holder")
-          ? prev.completedSteps
-          : [...prev.completedSteps, "select-holder"];
+      if (toolId === null) {
         return {
           ...prev,
-          assemblyRows: [row],
-          selectedAssemblyId: row.id,
-          config: {
-            ...prev.config,
-            stickOut: component.stickOut,
-            totalLength: component.totalLength,
-            toolConnectionType: component.connectionType ?? prev.config.toolConnectionType,
-            orientation: component.orientation ?? prev.config.orientation,
-          },
-          currentStep: prev.currentStep === "select-holder" ? "add-insert" : prev.currentStep,
-          completedSteps: nextCompleted,
-          generalInfo: {
-            ...prev.generalInfo,
-            vendor: component.vendor,
-            productId: component.productId,
-          },
+          blockToolId: null,
+          selectedRowId: prev.selectedRowId === "block" ? null : prev.selectedRowId,
+          currentStep: "select-block",
+          completedSteps: prev.completedSteps.filter((step) => step !== "select-block"),
+          validationStatus: "idle",
+          validationIssues: [],
         };
       }
 
-      const emptySlot = prev.slots.find((s) => s.componentId === null);
-      if (emptySlot === undefined) return prev;
+      const block = toolById(toolId);
+      if (block === undefined) return prev;
 
-      const holder = prev.assemblyRows.find((r) => r.isRoot === true);
-      if (holder !== undefined && !isCompatible(holder.componentId, component.id)) {
-        return {
-          ...prev,
-          validationStatus: "warning" as ValidationStatus,
-          validationIssues: [
-            {
-              id: "add-incompatible",
-              severity: "warning",
-              message: `${component.name} may not be compatible with the current holder.`,
-              componentId: component.id,
-            },
-          ],
-        };
-      }
-
-      const slots = prev.slots.map((s) =>
-        s.id === emptySlot.id ? { ...s, componentId: component.id } : s,
-      );
-      const hasInsert = slots.some((s) => {
-        const c = s.componentId !== null ? getComponentById(s.componentId) : undefined;
-        return c?.category === "insert";
-      });
-      const nextCompleted: WorkflowStepId[] = [...prev.completedSteps];
-      if (hasInsert && !nextCompleted.includes("add-insert")) {
-        nextCompleted.push("add-insert");
-      }
+      const config = { ...prev.config, ...configFromBlock(block) };
 
       return {
         ...prev,
-        slots,
-        selectedAssemblyId: emptySlot.id,
-        currentStep:
-          prev.currentStep === "add-insert" && hasInsert ? "configure" : prev.currentStep,
-        completedSteps: nextCompleted,
+        libraryId: block.libraryId,
+        blockToolId: block.id,
+        selectedRowId: "block",
+        config,
+        slots: syncSlotCount(prev.slots, config.numberOfTools),
+        currentStep: prev.slots.some(slotIsOccupied)
+          ? prev.currentStep
+          : "select-tool",
+        completedSteps: prev.completedSteps.includes("select-block")
+          ? prev.completedSteps
+          : [...prev.completedSteps, "select-block"],
+        generalInfo: {
+          ...prev.generalInfo,
+          vendor: block.vendor || prev.generalInfo.vendor,
+          productId: block.productId || prev.generalInfo.productId,
+        },
         validationStatus: "idle",
         validationIssues: [],
       };
     });
   }, []);
 
-  const assignSlotComponent = useCallback((slotId: string, componentId: string | null) => {
-    setState((prev) => ({
-      ...prev,
-      slots: prev.slots.map((s) =>
-        s.id === slotId ? { ...s, componentId } : s,
-      ),
-      validationStatus: "idle",
-    }));
+  /**
+   * Splice a component into a position at ``depth``, pushing the rest down.
+   *
+   * Wraps ``insertSlotComponent`` so callers do not have to resolve the id
+   * themselves. Nothing happens when the id does not resolve or when the rules
+   * reject the insertion — the workflow keeps the previous state.
+   */
+  const insertSlotTool = useCallback(
+    (index: number, depth: number, toolId: string) => {
+      setState((prev) => {
+        const tool = toolById(toolId);
+        if (tool === undefined) return prev;
+
+        const slots = insertSlotComponent(prev.slots, index, depth, tool);
+        if (slots === prev.slots) return prev;
+
+        return {
+          ...prev,
+          libraryId: tool.libraryId,
+          slots,
+          selectedRowId: slotRowId(index, depth),
+          currentStep: "configure",
+          completedSteps: prev.completedSteps.includes("select-tool")
+            ? prev.completedSteps
+            : [...prev.completedSteps, "select-tool"],
+          validationStatus: "idle",
+          validationIssues: [],
+        };
+      });
+    },
+    [],
+  );
+
+  /** Put a component at one step of a position, or clear that step. */
+  const selectSlotTool = useCallback(
+    (index: number, depth: number, toolId: string | null) => {
+    setState((prev) => {
+      const tool = toolId === null ? null : toolById(toolId) ?? null;
+      if (toolId !== null && tool === null) return prev;
+
+      const slots = setSlotComponent(prev.slots, index, depth, tool);
+      if (slots === prev.slots) return prev;
+
+      if (tool === null) {
+        return {
+          ...prev,
+          slots,
+          validationStatus: "idle",
+          validationIssues: [],
+        };
+      }
+
+      return {
+        ...prev,
+        libraryId: tool.libraryId,
+        slots,
+        selectedRowId: slotRowId(index, depth),
+        currentStep: "configure",
+        completedSteps: prev.completedSteps.includes("select-tool")
+          ? prev.completedSteps
+          : [...prev.completedSteps, "select-tool"],
+        generalInfo: {
+          ...prev.generalInfo,
+          description: prev.generalInfo.description || displayName(tool),
+          vendor: tool.vendor || prev.generalInfo.vendor,
+          productId: tool.productId || prev.generalInfo.productId,
+        },
+        validationStatus: "idle",
+        validationIssues: [],
+      };
+    });
+    },
+    [],
+  );
+
+  /** Move a position, taking its station rather than carrying one along. */
+  const moveSlotBy = useCallback((index: number, delta: number) => {
+    setState((prev) => {
+      const slots = moveSlot(prev.slots, index, delta);
+      if (slots === prev.slots) return prev;
+      return {
+        ...prev,
+        slots,
+        selectedRowId: `slot-${index + delta}`,
+        validationStatus: "idle",
+        validationIssues: [],
+      };
+    });
+  }, []);
+
+  /**
+   * Swap two neighbouring components inside one position's stack.
+   *
+   * The reordered stack must still pass the acceptance rules; if it would
+   * strand a collet above an extension the swap is refused and the arrows
+   * appear disabled next time the button state is recomputed.
+   */
+  const swapStackItemBy = useCallback(
+    (index: number, depth: number, delta: number) => {
+      setState((prev) => {
+        const slots = swapStackItems(prev.slots, index, depth, delta);
+        if (slots === prev.slots) return prev;
+        return {
+          ...prev,
+          slots,
+          selectedRowId: slotRowId(index, depth + delta),
+          validationStatus: "idle",
+          validationIssues: [],
+        };
+      });
+    },
+    [],
+  );
+
+  /**
+   * Empty a position's stack, leaving the row itself in place.
+   *
+   * The row stays so the user can pick a new stack for it without having to
+   * add a fresh position back onto the block. Nothing about ``numberOfTools``
+   * changes.
+   */
+  const removeSlotAt = useCallback((index: number) => {
+    setState((prev) => {
+      if (index < 0 || index >= prev.slots.length) return prev;
+      const current = prev.slots[index];
+      if (current.stack.length === 0 && current.stationNumber === null) {
+        return prev;
+      }
+      const slots = [...prev.slots];
+      slots[index] = { ...current, stack: [], stationNumber: null, halfIndex: false };
+      return {
+        ...prev,
+        slots,
+        selectedRowId: `slot-${index}`,
+        validationStatus: "idle",
+        validationIssues: [],
+      };
+    });
+  }, []);
+
+  /** Load an assembly that already exists in the library into the first position. */
+  const loadExistingAssembly = useCallback((toolId: string) => {
+    setState((prev) => {
+      const tool = toolById(toolId);
+      if (tool === undefined || tool.block === null) return prev;
+
+      return {
+        ...prev,
+        libraryId: tool.libraryId,
+        blockToolId: null,
+        slots: setSlotComponent(prev.slots, 0, 0, tool),
+        selectedRowId: "slot-0",
+        config: {
+          ...prev.config,
+          stationNumber: tool.block.postProcess.stationNumber,
+          halfIndex: tool.block.postProcess.halfIndex === true,
+        },
+        currentStep: "configure",
+        completedSteps: ["select-block", "select-tool"],
+        generalInfo: {
+          ...prev.generalInfo,
+          description: displayName(tool),
+          vendor: tool.vendor,
+          productId: tool.productId,
+        },
+        validationStatus: "idle",
+        validationIssues: [],
+      };
+    });
   }, []);
 
   const runValidate = useCallback(() => {
     setState((prev) => {
-      const { status, issues } = runValidation(prev.assemblyRows, prev.slots, prev.config);
-      const nextCompleted: WorkflowStepId[] = [...prev.completedSteps];
-      if (!nextCompleted.includes("configure")) nextCompleted.push("configure");
-      if (status === "pass" || status === "warning") {
-        if (!nextCompleted.includes("validate")) nextCompleted.push("validate");
-      }
-      const finalCompleted: WorkflowStepId[] =
-        status === "pass" || status === "warning"
-          ? nextCompleted.includes("review")
-            ? nextCompleted
-            : [...nextCompleted, "review"]
-          : nextCompleted;
+      // Assemblies drawn entirely from the 3X Axial libraries skip validation:
+      // those exports don't carry MCS/CSW joint frames yet, so the block would
+      // never pass the frame check even though Fusion accepts them fine.
+      const occupied = prev.slots.filter(slotIsOccupied);
+      const occupantIds = occupied.flatMap((slot) => slot.stack);
+      const blockRow = rows.find((row) => row.role === "block");
+      const allIds = blockRow?.toolId ? [blockRow.toolId, ...occupantIds] : occupantIds;
+      const usesAxialOnly =
+        allIds.length > 0 && allIds.every((id) => AXIAL_TOOL_IDS.has(id));
+
+      const { status, issues } = usesAxialOnly
+        ? { status: "pass" as const, issues: [] }
+        : runValidation({
+            rows,
+            slots: prev.slots,
+            blocks,
+            config: prev.config,
+            measuredMm: measuredStackUpMmValue,
+          });
+      const completed: WorkflowStepId[] = [...prev.completedSteps];
+      if (!completed.includes("configure")) completed.push("configure");
+      if (status !== "fail" && !completed.includes("validate")) completed.push("validate");
+
       return {
         ...prev,
         validationStatus: status,
         validationIssues: issues,
         currentStep: status === "fail" ? "validate" : "review",
-        completedSteps: finalCompleted,
+        completedSteps: completed,
       };
     });
-  }, []);
+  }, [rows, blocks, measuredStackUpMmValue]);
 
   const goToStep = useCallback((step: WorkflowStepId) => {
     setState((prev) => ({ ...prev, currentStep: step }));
@@ -322,13 +788,15 @@ export function useToolAssemblyWorkflow() {
 
   const advanceStep = useCallback(() => {
     setState((prev) => {
-      const idx = getStepIndex(prev.currentStep);
-      const next = WORKFLOW_STEPS[idx + 1];
+      const next = WORKFLOW_STEPS[getStepIndex(prev.currentStep) + 1];
       if (next === undefined) return prev;
-      const completed = prev.completedSteps.includes(prev.currentStep)
-        ? prev.completedSteps
-        : [...prev.completedSteps, prev.currentStep];
-      return { ...prev, currentStep: next.id, completedSteps: completed };
+      return {
+        ...prev,
+        currentStep: next.id,
+        completedSteps: prev.completedSteps.includes(prev.currentStep)
+          ? prev.completedSteps
+          : [...prev.completedSteps, prev.currentStep],
+      };
     });
   }, []);
 
@@ -336,22 +804,160 @@ export function useToolAssemblyWorkflow() {
     setState(createInitialState());
   }, []);
 
+  /**
+   * Save the current assembly into the User Libraries.
+   *
+   * The whole chain — block, stacks, config, general info — is written as one
+   * ``SavedAssembly`` record per target library. Editing it later reopens the
+   * workflow in the exact same state, and the library dialog uses the same
+   * record to render the accordion under the assembly.
+   *
+   * When ``editingAssemblyId`` is set the record replaces the one saved under
+   * that id (an in-place edit); otherwise a fresh id is minted.
+   *
+   * Returns the ids and libraries the assembly was written to, or ``null``
+   * if there was nothing to save.
+   */
+  const saveAssembly = useCallback((): {
+    baseId: string;
+    hubAssemblyId: string;
+    hubLibraryId: string;
+  } | null => {
+    const occupied = state.slots.filter(slotIsOccupied);
+    if (occupied.length === 0) return null;
+
+    const blockRow = rows.find((row) => row.role === "block");
+    const blockRecord = blockRow?.toolId ? toolById(blockRow.toolId) : undefined;
+
+    const name = state.generalInfo.description.trim() ||
+      blockRecord?.description ||
+      "Tool Assembly";
+
+    // Saved into the Hub library only; the base id (without the ``-hub`` suffix)
+    // lets a later edit find and replace this copy.
+    const editingBase = state.editingAssemblyId;
+    if (editingBase !== null) {
+      for (const record of sessionAssemblies()) {
+        if (
+          record.id === editingBase ||
+          record.id.startsWith(`${editingBase}-`)
+        ) {
+          removeSessionAssembly(record.id);
+        }
+      }
+    }
+    const baseId = editingBase ?? `assembly-${Date.now()}`;
+
+    const slotSnapshot = state.slots.map((slot) => ({
+      stack: [...slot.stack],
+      stationNumber: slot.stationNumber,
+      halfIndex: slot.halfIndex,
+    }));
+
+    const writeTo = (libraryId: string, suffix: string): void => {
+      const record: SavedAssembly = {
+        id: `${baseId}-${suffix}`,
+        libraryId,
+        name,
+        vendor: state.generalInfo.vendor,
+        productId: state.generalInfo.productId,
+        productLink: state.generalInfo.productLink,
+        blockToolId: state.blockToolId,
+        slots: slotSnapshot,
+        config: { ...state.config },
+        createdAt: Date.now(),
+      };
+      upsertSessionAssembly(record);
+    };
+
+    writeTo(HUB_LIBRARY_ID, "hub");
+    return {
+      baseId,
+      hubAssemblyId: `${baseId}-hub`,
+      hubLibraryId: HUB_LIBRARY_ID,
+    };
+  }, [state, rows]);
+
+  /**
+   * Reopen a saved assembly in the workflow.
+   *
+   * Restores the block, every position's stack, the config and the general
+   * info from the record. The originating assembly id is remembered on the
+   * state so the next save replaces this record rather than creating a
+   * new one.
+   */
+  const loadAssembly = useCallback((assemblyId: string): boolean => {
+    const record = sessionAssemblyById(assemblyId);
+    if (record === undefined) return false;
+
+    // Copies of every assembly are written to each target library, sharing a
+    // base id with per-library suffixes. Editing tracks the base so a resave
+    // replaces all of them.
+    const editingBase = assemblyId.replace(/-(docs|axial1|hub)$/, "");
+
+    setState((prev) => ({
+      ...prev,
+      currentStep: "configure",
+      completedSteps: ["select-block", "select-tool", "configure"],
+      libraryId: record.blockToolId
+        ? toolById(record.blockToolId)?.libraryId ?? prev.libraryId
+        : prev.libraryId,
+      blockToolId: record.blockToolId,
+      slots: record.slots.map((slot) => ({
+        stack: [...slot.stack],
+        stationNumber: slot.stationNumber,
+        halfIndex: slot.halfIndex,
+      })),
+      selectedRowId: null,
+      config: { ...record.config },
+      validationStatus: "idle",
+      validationIssues: [],
+      generalInfo: {
+        description: record.name,
+        vendor: record.vendor,
+        productId: record.productId,
+        productLink: record.productLink,
+      },
+      editingAssemblyId: editingBase,
+    }));
+    return true;
+  }, []);
+
+  const firstOccupant = occupants.find((tool) => tool !== undefined);
+
   return {
     state,
-    holderRow,
-    selectedCatalogComponent,
-    selectedAssemblyComponent,
-    assemblyComponents,
-    selectCatalogComponent,
-    selectAssemblyItem,
+    rows,
+    chain,
+    blocks,
+    slotFills,
+    measuredStackUpMm: measuredStackUpMmValue,
+    scopeLibraryId,
+    toolLibraryId,
+    compatibleComponentIds,
+    availableBlocks,
+    availableTools,
+    availableByLevel,
+    blockTool,
+    selectedTool,
+    isTurningTool: firstOccupant !== undefined && isTurningType(firstOccupant.type),
+    selectLibrary,
+    selectRow,
+    selectToolBlock,
+    selectSlotTool,
+    insertSlotTool,
+    moveSlotBy,
+    swapStackItemBy,
+    removeSlotAt,
+    loadExistingAssembly,
     setActiveTab,
     updateConfig,
     updateGeneralInfo,
-    addToAssembly,
-    assignSlotComponent,
     runValidate,
     goToStep,
     advanceStep,
+    saveAssembly,
+    loadAssembly,
     resetWorkflow,
   };
 }

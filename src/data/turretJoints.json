@@ -1,0 +1,637 @@
+{
+  "source": "Haas ST-20Y-25 (Just Turret).step",
+  "units": "cm (GLB space)",
+  "stepUnits": "mm",
+  "stepToGlbScale": 0.09169634,
+  "stepToGlbMatrix": [
+    0.07940024,
+    -0.04584948,
+    -0.00128314,
+    45.60446192,
+    0.04583988,
+    0.07941039,
+    -0.00095635,
+    0.16333173,
+    0.00158941,
+    0.00018666,
+    0.09168238,
+    67.36256439,
+    0.0,
+    0.0,
+    0.0,
+    1.0
+  ],
+  "fitResidual": {
+    "rmsCm": 0.09641,
+    "note": "RMS of 12 joint origins vs ring positions"
+  },
+  "seatingAxesNote": "The 12 Plug occurrences were inserted with varying roll, so their raw joint Z/X axes are inconsistent and are NOT used as the mounting normal. Only the joint ORIGINS are reliable (they form a clean ring). intoFaceAxis and toolForwardAxis are therefore derived from the ring geometry: intoFaceAxis = radial inward (toward drum axis), toolForwardAxis = drum axis forward. Raw plug frames are kept per-station (stepFrame, rawPlugZInGlb) for traceability.",
+  "station1StepOccurrence": "Plug:12",
+  "ringAxisGlb": [
+    0.014001,
+    0.0104,
+    -0.999848
+  ],
+  "ringCenterGlb": [
+    40.318,
+    -2.14,
+    79.624
+  ],
+  "stations": [
+    {
+      "station": 1,
+      "stepOccurrence": "Plug:12",
+      "origin": [
+        32.3607,
+        12.1163,
+        71.5406
+      ],
+      "intoFaceAxis": [
+        0.494876,
+        -0.868961,
+        -0.002109
+      ],
+      "intoFaceAxisSource": "ring-derived radial-inward (raw plug Z inconsistent)",
+      "toolForwardAxis": [
+        0.014001,
+        0.0104,
+        -0.999848
+      ],
+      "toolForwardAxisSource": "ring-derived drum-axis-forward",
+      "rawPlugZInGlb": [
+        0.013993,
+        0.01043,
+        -0.999848
+      ],
+      "rawPlugZKind": "axial",
+      "stepFrame": {
+        "origin_mm": [
+          -59.1077,
+          185.1984,
+          46.2184
+        ],
+        "zAxis": [
+          -0.0,
+          -0.0,
+          -1.0
+        ],
+        "xAxis": [
+          -1.0,
+          -0.0,
+          0.0
+        ],
+        "yAxis": [
+          -0.0,
+          1.0,
+          -0.0
+        ]
+      }
+    },
+    {
+      "station": 2,
+      "stepOccurrence": "Plug:11",
+      "origin": [
+        26.3948,
+        6.1501,
+        71.3949
+      ],
+      "intoFaceAxis": [
+        0.86329,
+        -0.504662,
+        0.006839
+      ],
+      "intoFaceAxisSource": "ring-derived radial-inward (raw plug Z inconsistent)",
+      "toolForwardAxis": [
+        0.014001,
+        0.0104,
+        -0.999848
+      ],
+      "toolForwardAxisSource": "ring-derived drum-axis-forward",
+      "rawPlugZInGlb": [
+        -0.013993,
+        -0.01043,
+        0.999848
+      ],
+      "rawPlugZKind": "axial",
+      "stepFrame": {
+        "origin_mm": [
+          -147.9992,
+          161.38,
+          46.2184
+        ],
+        "zAxis": [
+          0.0,
+          -0.0,
+          1.0
+        ],
+        "xAxis": [
+          0.866025,
+          0.5,
+          -0.0
+        ],
+        "yAxis": [
+          -0.5,
+          0.866025,
+          0.0
+        ]
+      }
+    },
+    {
+      "station": 3,
+      "stepOccurrence": "Plug:10",
+      "origin": [
+        24.2115,
+        -2.0003,
+        71.2793
+      ],
+      "intoFaceAxis": [
+        0.999897,
+        -0.003406,
+        0.013966
+      ],
+      "intoFaceAxisSource": "ring-derived radial-inward (raw plug Z inconsistent)",
+      "toolForwardAxis": [
+        0.014001,
+        0.0104,
+        -0.999848
+      ],
+      "toolForwardAxisSource": "ring-derived drum-axis-forward",
+      "rawPlugZInGlb": [
+        -0.013993,
+        -0.01043,
+        0.999848
+      ],
+      "rawPlugZKind": "axial",
+      "stepFrame": {
+        "origin_mm": [
+          -213.0723,
+          96.3069,
+          46.2184
+        ],
+        "zAxis": [
+          0.0,
+          -0.0,
+          1.0
+        ],
+        "xAxis": [
+          0.5,
+          0.866025,
+          -0.0
+        ],
+        "yAxis": [
+          -0.866025,
+          0.5,
+          0.0
+        ]
+      }
+    },
+    {
+      "station": 4,
+      "stepOccurrence": "Plug:9",
+      "origin": [
+        26.396,
+        -10.1511,
+        71.2248
+      ],
+      "intoFaceAxis": [
+        0.866109,
+        0.499554,
+        0.017324
+      ],
+      "intoFaceAxisSource": "ring-derived radial-inward (raw plug Z inconsistent)",
+      "toolForwardAxis": [
+        0.014001,
+        0.0104,
+        -0.999848
+      ],
+      "toolForwardAxisSource": "ring-derived drum-axis-forward",
+      "rawPlugZInGlb": [
+        -0.500014,
+        0.866015,
+        0.002036
+      ],
+      "rawPlugZKind": "radial/other",
+      "stepFrame": {
+        "origin_mm": [
+          -236.8907,
+          7.4154,
+          46.2184
+        ],
+        "zAxis": [
+          0.0,
+          1.0,
+          -0.0
+        ],
+        "xAxis": [
+          0.0,
+          -0.0,
+          -1.0
+        ],
+        "yAxis": [
+          -1.0,
+          0.0,
+          -0.0
+        ]
+      }
+    },
+    {
+      "station": 5,
+      "stepOccurrence": "Plug:8",
+      "origin": [
+        32.3628,
+        -16.1181,
+        71.2461
+      ],
+      "intoFaceAxis": [
+        0.497615,
+        0.867251,
+        0.015989
+      ],
+      "intoFaceAxisSource": "ring-derived radial-inward (raw plug Z inconsistent)",
+      "toolForwardAxis": [
+        0.014001,
+        0.0104,
+        -0.999848
+      ],
+      "toolForwardAxisSource": "ring-derived drum-axis-forward",
+      "rawPlugZInGlb": [
+        0.013993,
+        0.01043,
+        -0.999848
+      ],
+      "rawPlugZKind": "axial",
+      "stepFrame": {
+        "origin_mm": [
+          -213.0723,
+          -81.4761,
+          46.2184
+        ],
+        "zAxis": [
+          0.0,
+          0.0,
+          -1.0
+        ],
+        "xAxis": [
+          0.5,
+          -0.866025,
+          0.0
+        ],
+        "yAxis": [
+          -0.866025,
+          -0.5,
+          -0.0
+        ]
+      }
+    },
+    {
+      "station": 6,
+      "stepOccurrence": "Plug:7",
+      "origin": [
+        40.5132,
+        -18.3027,
+        71.3374
+      ],
+      "intoFaceAxis": [
+        -0.005016,
+        0.999934,
+        0.010331
+      ],
+      "intoFaceAxisSource": "ring-derived radial-inward (raw plug Z inconsistent)",
+      "toolForwardAxis": [
+        0.014001,
+        0.0104,
+        -0.999848
+      ],
+      "toolForwardAxisSource": "ring-derived drum-axis-forward",
+      "rawPlugZInGlb": [
+        0.013993,
+        0.01043,
+        -0.999848
+      ],
+      "rawPlugZKind": "axial",
+      "stepFrame": {
+        "origin_mm": [
+          -147.9992,
+          -146.5492,
+          46.2184
+        ],
+        "zAxis": [
+          0.0,
+          0.0,
+          -1.0
+        ],
+        "xAxis": [
+          0.866025,
+          -0.5,
+          0.0
+        ],
+        "yAxis": [
+          -0.5,
+          -0.866025,
+          -0.0
+        ]
+      }
+    },
+    {
+      "station": 7,
+      "stepOccurrence": "Plug:6",
+      "origin": [
+        48.6633,
+        -16.1193,
+        71.4742
+      ],
+      "intoFaceAxis": [
+        -0.505138,
+        0.863036,
+        0.001904
+      ],
+      "intoFaceAxisSource": "ring-derived radial-inward (raw plug Z inconsistent)",
+      "toolForwardAxis": [
+        0.014001,
+        0.0104,
+        -0.999848
+      ],
+      "toolForwardAxisSource": "ring-derived drum-axis-forward",
+      "rawPlugZInGlb": [
+        -0.013993,
+        -0.01043,
+        0.999848
+      ],
+      "rawPlugZKind": "axial",
+      "stepFrame": {
+        "origin_mm": [
+          -59.1077,
+          -170.3676,
+          46.2184
+        ],
+        "zAxis": [
+          -0.0,
+          0.0,
+          1.0
+        ],
+        "xAxis": [
+          -1.0,
+          0.0,
+          -0.0
+        ],
+        "yAxis": [
+          -0.0,
+          -1.0,
+          0.0
+        ]
+      }
+    },
+    {
+      "station": 8,
+      "stepOccurrence": "Plug:5",
+      "origin": [
+        54.6292,
+        -10.1531,
+        71.62
+      ],
+      "intoFaceAxis": [
+        -0.868625,
+        0.495421,
+        -0.00701
+      ],
+      "intoFaceAxisSource": "ring-derived radial-inward (raw plug Z inconsistent)",
+      "toolForwardAxis": [
+        0.014001,
+        0.0104,
+        -0.999848
+      ],
+      "toolForwardAxisSource": "ring-derived drum-axis-forward",
+      "rawPlugZInGlb": [
+        0.013993,
+        0.01043,
+        -0.999848
+      ],
+      "rawPlugZKind": "axial",
+      "stepFrame": {
+        "origin_mm": [
+          29.7838,
+          -146.5492,
+          46.2184
+        ],
+        "zAxis": [
+          -0.0,
+          0.0,
+          -1.0
+        ],
+        "xAxis": [
+          0.866025,
+          0.5,
+          0.0
+        ],
+        "yAxis": [
+          0.5,
+          -0.866025,
+          -0.0
+        ]
+      }
+    },
+    {
+      "station": 9,
+      "stepOccurrence": "Plug:4",
+      "origin": [
+        56.8125,
+        -2.0027,
+        71.7355
+      ],
+      "intoFaceAxis": [
+        -0.999896,
+        -0.003227,
+        -0.014035
+      ],
+      "intoFaceAxisSource": "ring-derived radial-inward (raw plug Z inconsistent)",
+      "toolForwardAxis": [
+        0.014001,
+        0.0104,
+        -0.999848
+      ],
+      "toolForwardAxisSource": "ring-derived drum-axis-forward",
+      "rawPlugZInGlb": [
+        0.013993,
+        0.01043,
+        -0.999848
+      ],
+      "rawPlugZKind": "axial",
+      "stepFrame": {
+        "origin_mm": [
+          94.8569,
+          -81.4761,
+          46.2184
+        ],
+        "zAxis": [
+          -0.0,
+          0.0,
+          -1.0
+        ],
+        "xAxis": [
+          0.5,
+          0.866025,
+          0.0
+        ],
+        "yAxis": [
+          0.866025,
+          -0.5,
+          -0.0
+        ]
+      }
+    },
+    {
+      "station": 10,
+      "stepOccurrence": "Plug:3",
+      "origin": [
+        54.628,
+        6.1481,
+        71.79
+      ],
+      "intoFaceAxis": [
+        -0.865701,
+        -0.500261,
+        -0.017326
+      ],
+      "intoFaceAxisSource": "ring-derived radial-inward (raw plug Z inconsistent)",
+      "toolForwardAxis": [
+        0.014001,
+        0.0104,
+        -0.999848
+      ],
+      "toolForwardAxisSource": "ring-derived drum-axis-forward",
+      "rawPlugZInGlb": [
+        0.500014,
+        -0.866015,
+        -0.002036
+      ],
+      "rawPlugZKind": "radial/other",
+      "stepFrame": {
+        "origin_mm": [
+          118.6753,
+          7.4154,
+          46.2184
+        ],
+        "zAxis": [
+          -0.0,
+          -1.0,
+          -0.0
+        ],
+        "xAxis": [
+          -0.0,
+          0.0,
+          -1.0
+        ],
+        "yAxis": [
+          1.0,
+          -0.0,
+          -0.0
+        ]
+      }
+    },
+    {
+      "station": 11,
+      "stepOccurrence": "Plug:2",
+      "origin": [
+        48.6612,
+        12.1151,
+        71.7687
+      ],
+      "intoFaceAxis": [
+        -0.502134,
+        -0.864641,
+        -0.016025
+      ],
+      "intoFaceAxisSource": "ring-derived radial-inward (raw plug Z inconsistent)",
+      "toolForwardAxis": [
+        0.014001,
+        0.0104,
+        -0.999848
+      ],
+      "toolForwardAxisSource": "ring-derived drum-axis-forward",
+      "rawPlugZInGlb": [
+        -0.013993,
+        -0.01043,
+        0.999848
+      ],
+      "rawPlugZKind": "axial",
+      "stepFrame": {
+        "origin_mm": [
+          94.8569,
+          96.3069,
+          46.2184
+        ],
+        "zAxis": [
+          -0.0,
+          -0.0,
+          1.0
+        ],
+        "xAxis": [
+          0.5,
+          -0.866025,
+          -0.0
+        ],
+        "yAxis": [
+          0.866025,
+          0.5,
+          0.0
+        ]
+      }
+    },
+    {
+      "station": 12,
+      "stepOccurrence": "Plug:1",
+      "origin": [
+        40.5108,
+        14.2997,
+        71.6774
+      ],
+      "intoFaceAxis": [
+        -0.004838,
+        -0.999933,
+        -0.010469
+      ],
+      "intoFaceAxisSource": "ring-derived radial-inward (raw plug Z inconsistent)",
+      "toolForwardAxis": [
+        0.014001,
+        0.0104,
+        -0.999848
+      ],
+      "toolForwardAxisSource": "ring-derived drum-axis-forward",
+      "rawPlugZInGlb": [
+        -0.013993,
+        -0.01043,
+        0.999848
+      ],
+      "rawPlugZKind": "axial",
+      "stepFrame": {
+        "origin_mm": [
+          29.7838,
+          161.38,
+          46.2184
+        ],
+        "zAxis": [
+          -0.0,
+          -0.0,
+          1.0
+        ],
+        "xAxis": [
+          0.866025,
+          -0.5,
+          -0.0
+        ],
+        "yAxis": [
+          0.5,
+          0.866025,
+          0.0
+        ]
+      }
+    }
+  ],
+  "sanity": {
+    "station1AngleRad": -2.088547,
+    "ringStation1Angle": -2.082709,
+    "station1AngleDeltaRad": -0.005838,
+    "stepMeanDegBetweenStations": 30.0,
+    "stepStdDegBetweenStations": 0.1246
+  }
+}

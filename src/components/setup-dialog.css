@@ -1,0 +1,366 @@
+/**
+ * Setup — Fusion's standard command dialog, floating over the canvas.
+ * This is the dark command dialog Fusion floats in the graphics area (draggable
+ * by its title bar), matching how Fusion actually renders Setup. The prototype
+ * makes the Machine row interactive (it feeds the turret); the rest is shown for
+ * fidelity.
+ */
+
+.setupd {
+  /* Palette matches the Tool Library dialog (tool-library-dialog.css) so the
+     two dark dialogs stay visually consistent. */
+  --sd-bg: #2c323c;
+  --sd-panel: #353b48;
+  --sd-header: #2a3039;
+  --sd-border: #3e454f;
+  --sd-border-soft: #343b46;
+  --sd-text: #e8eef5;
+  --sd-muted: #9aa8b8;
+  --sd-faint: #6f7d8d;
+  --sd-accent: #3a9ad9;
+  --sd-field: #252a32;
+  --sd-static: #252a32;
+  --sd-selected: #4a5c71;
+
+  position: fixed;
+  top: 88px;
+  left: 380px;
+  z-index: 10030;
+  display: flex;
+  flex-direction: column;
+  width: 340px;
+  max-width: calc(100vw - 16px);
+  max-height: calc(100vh - 120px);
+  overflow: hidden;
+  border: 1px solid #1f242c;
+  border-radius: 8px;
+  background: var(--sd-bg);
+  color: var(--sd-text);
+  font-family: "Artifakt Element", ArtifaktElement, system-ui, sans-serif;
+  font-size: 11px;
+  box-shadow: 0 24px 64px rgb(0 0 0 / 0.65);
+}
+
+/* Title bar --------------------------------------------------------------- */
+
+.setupd__title-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 30px;
+  padding: 0 8px 0 12px;
+  background: var(--sd-header);
+  border-bottom: 1px solid var(--sd-border);
+  cursor: move;
+  user-select: none;
+}
+
+.setupd__title {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  color: var(--sd-text);
+}
+
+.setupd__title-id {
+  color: var(--sd-muted);
+  font-weight: 400;
+}
+
+.setupd__icon-plain {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: none;
+  border-radius: 2px;
+  background: transparent;
+  color: var(--sd-muted);
+  cursor: pointer;
+}
+
+.setupd__icon-plain:hover {
+  background: rgb(255 255 255 / 0.08);
+  color: var(--sd-text);
+}
+
+/* Tabs (Setup / Stock / Post Process) ------------------------------------ */
+
+.setupd__tabs {
+  display: flex;
+  gap: 2px;
+  padding: 4px 8px 0;
+  background: var(--sd-bg);
+  border-bottom: 1px solid var(--sd-border);
+}
+
+.setupd__tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 24px;
+  padding: 0 10px;
+  border: 1px solid transparent;
+  border-bottom: none;
+  border-radius: 3px 3px 0 0;
+  background: transparent;
+  color: var(--sd-muted);
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.setupd__tab--active {
+  background: var(--sd-panel);
+  border-color: var(--sd-border);
+  color: var(--sd-text);
+}
+
+/* Body -------------------------------------------------------------------- */
+
+.setupd__body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  background: var(--sd-bg);
+  padding-bottom: 8px;
+}
+
+.setupd__section {
+  border-bottom: 1px solid var(--sd-border-soft);
+}
+
+.setupd__section-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 7px 12px;
+  border: none;
+  background: transparent;
+  color: var(--sd-text);
+  font-size: 11px;
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+}
+
+.setupd__chevron {
+  width: 8px;
+  height: 8px;
+  color: var(--sd-muted);
+  transition: transform 0.12s ease;
+}
+
+.setupd__chevron--closed {
+  transform: rotate(-90deg);
+}
+
+.setupd__section-body {
+  padding: 0 12px 8px;
+}
+
+.setupd__row {
+  display: grid;
+  grid-template-columns: 118px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  min-height: 26px;
+  padding: 2px 0;
+}
+
+.setupd__row-label {
+  color: var(--sd-muted);
+}
+
+.setupd__row-label--req::after {
+  content: "";
+}
+
+.setupd__value {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* A Fusion "selection" field: a button that reads Select… then a count. */
+.setupd__select-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 22px;
+  padding: 0 8px;
+  border: 1px solid var(--sd-border);
+  border-radius: 2px;
+  background: var(--sd-field);
+  color: var(--sd-text);
+  font-family: inherit;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.setupd__select-btn:hover {
+  border-color: var(--sd-accent);
+}
+
+.setupd__select-btn--empty {
+  color: var(--sd-faint);
+}
+
+.setupd__dropdown {
+  width: 100%;
+  height: 22px;
+  padding: 0 6px;
+  border: 1px solid var(--sd-border);
+  border-radius: 2px;
+  background: var(--sd-field);
+  color: var(--sd-text);
+  font-family: inherit;
+  font-size: 11px;
+}
+
+.setupd__static {
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 6px;
+  border: 1px solid var(--sd-border-soft);
+  border-radius: 2px;
+  background: var(--sd-static);
+  color: var(--sd-text);
+  min-width: 0;
+}
+
+.setupd__hint {
+  padding: 2px 0 0 126px;
+  color: var(--sd-faint);
+}
+
+/* Machine picker popover */
+.setupd__machine-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  min-width: 0;
+}
+
+/* Machine field truncates to a single line; full name shows in the tooltip. */
+.setupd__select-btn--machine {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.setupd__select-btn--machine svg {
+  flex: 0 0 auto;
+}
+
+.setupd__machine-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.setupd__machine-menu {
+  position: absolute;
+  top: 24px;
+  left: 0;
+  z-index: 5;
+  min-width: 200px;
+  padding: 3px;
+  border: 1px solid var(--sd-border);
+  border-radius: 3px;
+  background: var(--sd-panel);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.22);
+}
+
+.setupd__machine-opt {
+  display: block;
+  width: 100%;
+  padding: 6px 8px;
+  border: none;
+  border-radius: 2px;
+  background: transparent;
+  color: var(--sd-text);
+  font-family: inherit;
+  font-size: 11px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.setupd__machine-opt:hover {
+  background: var(--sd-selected);
+}
+
+.setupd__machine-opt-sub {
+  color: var(--sd-muted);
+}
+
+.setupd__clear {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--sd-muted);
+  cursor: pointer;
+}
+
+.setupd__clear:hover {
+  color: var(--sd-text);
+}
+
+/* Footer ------------------------------------------------------------------ */
+
+.setupd__footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 8px 12px;
+  border-top: 1px solid var(--sd-border);
+  background: var(--sd-header);
+}
+
+.setupd__footer-btn {
+  min-width: 64px;
+  height: 24px;
+  padding: 0 12px;
+  border: 1px solid var(--sd-border);
+  border-radius: 2px;
+  background: #464c5a;
+  color: var(--sd-text);
+  font-family: inherit;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.setupd__footer-btn:hover {
+  background: #525a68;
+}
+
+.setupd__footer-btn:hover {
+  border-color: var(--sd-accent);
+}
+
+.setupd__footer-btn--primary {
+  border-color: var(--sd-accent);
+  background: var(--sd-accent);
+  color: #fff;
+  font-weight: 600;
+}
+
+.setupd__footer-btn--primary:disabled {
+  border-color: var(--sd-border);
+  background: #2f353f;
+  color: #5b6675;
+  cursor: default;
+}

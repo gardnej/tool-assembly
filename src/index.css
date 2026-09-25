@@ -52,6 +52,10 @@
   --weave-body2-leading: 1.33;
 
   --chrome-panel-bg: rgb(52 58 67);
+  /* Browser rows paint Weave's surface tokens, quoted in BrowserNode.cpp for
+     the dark theme; hover is darker than rest, not lighter. */
+  --browser-chip-bg: #3b4453;
+  --browser-chip-hover: #222933;
   --chrome-panel-header: rgb(44 51 60);
   --chrome-panel-border: rgb(32 38 46);
   --chrome-border-subtle: rgb(255 255 255 / 0.06);
@@ -81,11 +85,11 @@
   --ribbon-height: 158px;
   --titlebar-height: 30px;
   --tab-doc-height: 28px;
-  --fusion-sidebar-width: 260px;
+  /* The shell layout gives the browser palette 300px, with a 150px minimum. */
+  --fusion-sidebar-width: 300px;
   --fusion-sidebar-width-compact: 200px;
   --fusion-inspector-width: 280px;
   --fusion-inspector-width-compact: 220px;
-  --fusion-browser-max-height-stacked: 180px;
   --fusion-properties-max-height-stacked: 220px;
   --fusion-shell-min-height: 480px;
 }

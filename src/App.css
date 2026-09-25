@@ -18,41 +18,32 @@
   position: relative;
   z-index: 1;
   flex: 1;
-  display: grid;
-  grid-template-columns: var(--fusion-sidebar-width) 1fr;
+  display: flex;
   min-height: 0;
 }
 
+/* Fusion floats the browser over the canvas rather than docking it beside one,
+   anchored to the left edge with the 4px the shell pads its areas by, and only
+   as tall as the tree it holds. */
 .app-shell__left {
-  min-width: 0;
-  background: var(--chrome-panel-bg);
-  border-color: var(--chrome-panel-border);
-  border-style: solid;
-  border-width: 0;
-  border-right-width: 1px;
+  position: absolute;
+  z-index: 5;
+  top: 4px;
+  left: 4px;
+  display: flex;
+  width: var(--fusion-sidebar-width);
+  max-height: calc(100% - 8px);
 }
 
 .app-shell__center {
+  flex: 1;
   min-width: 0;
   min-height: 0;
   background: var(--fusion-viewport);
 }
 
 @media (max-width: 900px) {
-  .app-shell__body {
-    grid-template-columns: var(--fusion-sidebar-width-compact) 1fr;
-  }
-}
-
-@media (max-width: 640px) {
-  .app-shell__body {
-    grid-template-columns: 1fr;
-    grid-template-rows: auto 1fr;
-  }
-
   .app-shell__left {
-    border-right-width: 0;
-    border-bottom: 1px solid var(--fusion-border);
-    max-height: var(--fusion-browser-max-height-stacked);
+    width: var(--fusion-sidebar-width-compact);
   }
 }

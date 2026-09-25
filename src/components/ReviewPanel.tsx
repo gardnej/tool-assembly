@@ -1,99 +1,116 @@
-import { getComponentById } from "../data/toolComponents";
-import type { AssemblyConfig, AssemblyRow, AssemblySlot, ToolComponent } from "../types";
+import type { AssemblyConfig, AssemblyRow, ValidationStatus } from "../types";
 
 interface ReviewPanelProps {
-  holderRow: AssemblyRow | undefined;
-  slots: AssemblySlot[];
+  rows: AssemblyRow[];
   config: AssemblyConfig;
-  components: ToolComponent[];
+  /** Measured through the joint frames; null when the chain has a gap. */
+  measuredStackUpMm: number | null;
+  /**
+   * Result of the last validation pass.
+   *
+   * When it is ``pass`` the joint-frame warning is suppressed and the panel
+   * appears in its "measurable" style — the assembly is accepted (for example
+   * the 3X Axial libraries that ship without MCS/CSW frames but carry
+   * Fusion's own gauge length), so a warning about missing frames is noise.
+   */
+  validationStatus: ValidationStatus;
 }
 
 export function ReviewPanel({
-  holderRow,
-  slots,
+  rows,
   config,
-  components,
+  measuredStackUpMm,
+  validationStatus,
 }: ReviewPanelProps) {
-  const holder =
-    holderRow !== undefined ? getComponentById(holderRow.componentId) : undefined;
-  const slotComponents = slots
-    .filter((s) => s.componentId !== null)
-    .map((s) => ({
-      slot: s,
-      component: getComponentById(s.componentId as string),
-    }));
-
-  const insert = components.find((c) => c.category === "insert");
+  const chosen = rows.filter((row) => row.toolId !== null);
+  const measurable = measuredStackUpMm !== null;
+  // Treat a passing validation as "measurable enough" for the panel's tone,
+  // so a 3X Axial assembly does not sit under an amber warning after Save.
+  const accepted = measurable || validationStatus === "pass";
 
   return (
-    <section className="rounded-[2px] border border-weave-success/30 bg-weave-success-bg p-3">
+    <section
+      className={[
+        "rounded-[2px] border p-3",
+        accepted
+          ? "border-weave-success/30 bg-weave-success-bg"
+          : "border-weave-warning/30 bg-weave-warning-bg",
+      ].join(" ")}
+    >
       <div className="mb-3 flex items-center gap-2">
-        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-weave-success text-xs font-bold text-white">
-          ✓
+        <span
+          className={[
+            "flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white",
+            accepted ? "bg-weave-success" : "bg-weave-warning",
+          ].join(" ")}
+        >
+          {accepted ? "✓" : "!"}
         </span>
         <div>
           <h3 className="text-sm font-bold text-weave-text">Final assembly review</h3>
           <p className="text-[11px] text-weave-text-placeholder">
-            Turning tool holder assembly is ready to save to the tool library.
+            {measurable
+              ? "Joint chain is complete and the stack-up is measurable."
+              : accepted
+                ? "Assembly is validated and ready to save."
+                : "Stack-up cannot be measured until every component has MCS and CSW frames."}
           </p>
         </div>
       </div>
 
       <div className="mb-3 grid grid-cols-2 gap-2 text-[11px]">
-        <ReviewField label="Tool holder" value={holder?.name ?? "—"} />
-        <ReviewField label="Connection" value={config.toolConnectionType} />
+        <ReviewField
+          label="Measured stack-up"
+          value={measurable ? `${measuredStackUpMm.toFixed(2)} mm` : "Not measurable"}
+        />
+        <ReviewField label="Machine side connection" value={config.machineSideConnectionType} />
         <ReviewField label="Orientation" value={config.orientation} />
-        <ReviewField label="Stick out" value={`${config.stickOut} mm`} />
-        <ReviewField label="Total length" value={`${config.totalLength} mm`} />
-        <ReviewField label="Components" value={`${slotComponents.length + (holder ? 1 : 0)}`} />
+        <ReviewField
+          label="Turret station"
+          value={
+            config.stationNumber !== null
+              ? `${config.stationNumber}${config.halfIndex ? " (half index)" : ""}`
+              : "—"
+          }
+        />
       </div>
 
-      <table className="mb-3 w-full border-collapse text-[11px]">
+      <table className="w-full border-collapse text-[11px]">
         <thead>
           <tr className="bg-weave-surface-300/60 text-left">
-            <th className="border border-weave-divider px-2 py-1 font-semibold">Item</th>
+            <th className="border border-weave-divider px-2 py-1 font-semibold">Component</th>
             <th className="border border-weave-divider px-2 py-1 font-semibold">Type</th>
-            <th className="border border-weave-divider px-2 py-1 font-semibold">Vendor</th>
+            <th className="border border-weave-divider px-2 py-1 font-semibold">Joints</th>
+            <th className="border border-weave-divider px-2 py-1 font-semibold">Span</th>
           </tr>
         </thead>
         <tbody>
-          {holder !== undefined && (
-            <tr>
-              <td className="border border-weave-divider px-2 py-1">{holder.name}</td>
-              <td className="border border-weave-divider px-2 py-1">{holder.type}</td>
-              <td className="border border-weave-divider px-2 py-1">{holder.vendor}</td>
-            </tr>
-          )}
-          {slotComponents.map(({ slot, component }) => (
-            <tr key={slot.id}>
+          {chosen.map((row) => (
+            <tr key={row.id}>
+              <td className="border border-weave-divider px-2 py-1">{row.name}</td>
+              <td className="border border-weave-divider px-2 py-1">{row.type}</td>
               <td className="border border-weave-divider px-2 py-1">
-                {component?.name ?? slot.label}
+                {row.missingFrame === null
+                  ? "MCS + CSW"
+                  : row.missingFrame === "geometry"
+                    ? "No solid"
+                    : `No ${row.missingFrame}`}
               </td>
               <td className="border border-weave-divider px-2 py-1">
-                {component?.type ?? "—"}
-              </td>
-              <td className="border border-weave-divider px-2 py-1">
-                {component?.vendor ?? "—"}
+                {row.spanMm != null ? `${row.spanMm.toFixed(2)} mm` : "—"}
               </td>
             </tr>
           ))}
         </tbody>
       </table>
 
-      {insert?.cuttingParameters !== undefined && (
-        <div className="rounded border border-weave-divider bg-weave-surface-250/80 p-2">
-          <p className="mb-1 text-[10px] font-bold uppercase tracking-wide text-weave-text-placeholder">
-            Recommended cutting parameters
-          </p>
-          <p className="text-[11px] text-weave-text">
-            {insert.cuttingParameters.surfaceSpeed} m/min · feed{" "}
-            {insert.cuttingParameters.feedPerRev} mm/rev · DOC{" "}
-            {insert.cuttingParameters.depthOfCut} mm · {insert.cuttingParameters.material}
-          </p>
-        </div>
+      {chosen.some((row) => row.hasTransformOverride) && (
+        <p className="mt-2 text-[11px] leading-relaxed text-weave-text-placeholder">
+          This assembly positions its block manually through transformOverride, which
+          overrides the joint chain. Fusion's UI writes that value; it is not exposed
+          through the API.
+        </p>
       )}
-
-      {/* Future: persist via Fusion Tool Library API / Neutron document write */}
     </section>
   );
 }

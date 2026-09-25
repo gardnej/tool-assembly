@@ -1,0 +1,17 @@
+<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+<rect x="4" y="7" width="6" height="14" rx="2" fill="#D9D9D9"/>
+<path d="M8.9375 7.2334C9.56948 7.56946 9.99996 8.23431 10 9L4 15V12.1719L8.9375 7.2334Z" fill="#808080"/>
+<path d="M10 14.9995L4.58496 20.4136C4.22346 20.0517 4 19.5514 4 18.9995V18.1714L10 12.1714V14.9995Z" fill="#808080"/>
+<rect x="1" y="2" width="7" height="8" fill="#F3F3F3"/>
+<rect x="8" y="2" width="5" height="8" fill="#D9D9D9"/>
+<rect x="3" y="10" width="8" height="2" fill="#808080"/>
+<rect x="22" y="7" width="6" height="19" rx="2" fill="#D9D9D9"/>
+<path d="M28 14L22 20V17.1719L28 11.1719V14Z" fill="#808080"/>
+<path d="M28 20L22.5859 25.4141C22.2241 25.0521 22 24.5522 22 24V23.1719L28 17.1719V20Z" fill="#808080"/>
+<rect x="19" y="2" width="7" height="8" fill="#F3F3F3"/>
+<rect x="26" y="2" width="5" height="8" fill="#D9D9D9"/>
+<rect x="21" y="10" width="8" height="2" fill="#808080"/>
+<path d="M10 29L6 26.5L10 24L10 29Z" fill="#73C5FF"/>
+<path d="M18 24L22 26.5L18 29L18 24Z" fill="#73C5FF"/>
+<rect x="10" y="26" width="8" height="1" fill="#73C5FF"/>
+</svg>

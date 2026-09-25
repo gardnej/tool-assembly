@@ -9,34 +9,34 @@ export interface WorkflowStepMeta {
 
 export const WORKFLOW_STEPS: WorkflowStepMeta[] = [
   {
-    id: "select-holder",
-    label: "Select tool holder",
-    shortLabel: "Holder",
-    description: "Choose a turning tool block from the component library.",
+    id: "select-block",
+    label: "Select tool block",
+    shortLabel: "Block",
+    description: "Choose a tool block to sit against the turret face.",
   },
   {
-    id: "add-insert",
-    label: "Add compatible insert",
-    shortLabel: "Insert",
-    description: "Assign inserts, clamps, and fasteners to assembly slots.",
+    id: "select-tool",
+    label: "Select cutting tool",
+    shortLabel: "Tool",
+    description: "Choose the cutting tool that will carry the block.",
   },
   {
     id: "configure",
-    label: "Configure orientation & dimensions",
+    label: "Configure block & station",
     shortLabel: "Configure",
-    description: "Set orientation, connection types, and stick-out values.",
+    description: "Set orientation, machine-side connection, and turret station.",
   },
   {
     id: "validate",
-    label: "Validate compatibility",
+    label: "Validate joint chain",
     shortLabel: "Validate",
-    description: "Check geometry, connection, and cutting parameter fit.",
+    description: "Check that every component has MCS and CSW joint frames.",
   },
   {
     id: "review",
     label: "Review assembly",
     shortLabel: "Review",
-    description: "Confirm the completed turning tool holder assembly.",
+    description: "Confirm the measured stack-up before saving.",
   },
 ];
 

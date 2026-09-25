@@ -5,3 +5,9 @@ dist
 .env
 .env.*
 *.tsbuildinfo
+__pycache__/
+*.pyc
+.venv-step/
+.venv/
+.test-build
+.tmp-ingest/

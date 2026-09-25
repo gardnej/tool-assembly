@@ -1,0 +1,674 @@
+/**
+ * Turret Setup — assign tool assemblies to the stations of a machine's turret.
+ *
+ * A Fusion command dialog floating over the canvas in the prototype's dark
+ * theme: it can be dragged by its title bar and resized from either bottom
+ * corner. The station table is exactly `machine.turret.stationCount` rows;
+ * each row's dropdown offers the real saved assemblies plus the seeded demos.
+ * The machine's turret facts (type, mount, position) are shown read-only, since
+ * they belong to the machine chosen in the Setup dialog rather than to the
+ * turret setup.
+ */
+
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
+import type {
+  Machine,
+  ToolAssemblyOption,
+  TurretSetup,
+  TurretStationAssignment,
+} from "../types";
+import { machineLabel } from "../data/turret";
+import { assemblyIsFlippable } from "../data/turretSolids";
+import "./turret-setup-dialog.css";
+
+export type TurretSetupDialogProps = {
+  open: boolean;
+  machine: Machine | null;
+  /** Working setup to edit; committed on Ok. */
+  setup: TurretSetup;
+  /** Tool assemblies offered per station (real saved + demo). */
+  options: ToolAssemblyOption[];
+  /** Existing named turret setups, for the "Turret setup" dropdown. */
+  existingSetups: TurretSetup[];
+  onClose: () => void;
+  onConfirm: (setup: TurretSetup) => void;
+  /**
+   * Fired whenever the in-progress station assignments change, so the canvas
+   * can preview mounts live before the setup is committed on Ok.
+   */
+  onStationsChange?: (stations: TurretStationAssignment[]) => void;
+  /** Open the Setup dialog to choose or change the machine. */
+  onEditMachine: () => void;
+  /** Load a different existing setup into the dialog. */
+  onSelectSetup?: (setupId: string) => void;
+  /** Open the Tool Library as an assembly picker for the given station. */
+  onPickFromLibrary?: (stationNumber: number) => void;
+  /**
+   * An assembly the library picker chose for a station. Applied to the working
+   * table when its `token` changes, so it patches one station without
+   * discarding the rest of the in-progress edits.
+   */
+  pendingAssignment?: {
+    stationNumber: number;
+    toolAssemblyId: string;
+    token: number;
+  } | null;
+};
+
+/** Sentinel option value that opens the library picker instead of assigning. */
+const PICK_FROM_LIBRARY = "__library__";
+
+function IconExpand() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 24 24" aria-hidden>
+      <path fill="none" stroke="currentColor" strokeWidth="1.6" d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5" />
+    </svg>
+  );
+}
+
+function IconChevron({ open }: { open: boolean }) {
+  return (
+    <svg
+      className={open ? "tsd__chevron" : "tsd__chevron tsd__chevron--closed"}
+      viewBox="0 0 12 12"
+      aria-hidden
+    >
+      <path fill="currentColor" d="M2 4l4 4 4-4z" />
+    </svg>
+  );
+}
+
+function IconCursor() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 24 24" aria-hidden>
+      <path fill="currentColor" d="M5 3l14 8-6 1.5L10 20 5 3z" />
+    </svg>
+  );
+}
+
+function IconClose() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 24 24" aria-hidden>
+      <path fill="none" stroke="currentColor" strokeWidth="1.8" d="M6 6l12 12M18 6L6 18" />
+    </svg>
+  );
+}
+
+function IconUp() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden>
+      <path fill="currentColor" d="M12 7l-6 7h12z" />
+    </svg>
+  );
+}
+
+function IconDown() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden>
+      <path fill="currentColor" d="M12 17l6-7H6z" />
+    </svg>
+  );
+}
+
+/** A lightning bolt, for the automatic (auto-arrange) reorder action. */
+function IconAuto() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" aria-hidden fill="currentColor">
+      <path d="M13 2L4 14h6l-1 8 9-12h-6z" />
+    </svg>
+  );
+}
+
+function IconTrash() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" aria-hidden fill="none" stroke="currentColor" strokeWidth="1.4">
+      <path d="M5 7h14M9 7V5h6v2M8 7l1 12h6l1-12" />
+    </svg>
+  );
+}
+
+/** A U-turn / 180° arrow, for flipping an assembly on its seat. */
+function IconFlip() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M7 17V9a4 4 0 0 1 8 0v8" />
+      <path d="M4 14l3 3 3-3" />
+      <path d="M18 7l-3-3-3 3" />
+    </svg>
+  );
+}
+
+export function TurretSetupDialog({
+  open,
+  machine,
+  setup,
+  options,
+  existingSetups,
+  onClose,
+  onConfirm,
+  onStationsChange,
+  onEditMachine,
+  onSelectSetup,
+  onPickFromLibrary,
+  pendingAssignment,
+}: TurretSetupDialogProps) {
+  const titleId = useId();
+  const [machineOpen, setMachineOpen] = useState(true);
+  const [turretOpen, setTurretOpen] = useState(true);
+  const [name, setName] = useState(setup.name);
+  const [stations, setStations] = useState<TurretStationAssignment[]>(setup.stations);
+  const [selectedStation, setSelectedStation] = useState<number | null>(
+    setup.stations[0]?.stationNumber ?? null,
+  );
+
+  // Re-seed the working copy whenever a different setup is opened.
+  useEffect(() => {
+    setName(setup.name);
+    setStations(setup.stations);
+    setSelectedStation(setup.stations[0]?.stationNumber ?? null);
+  }, [setup]);
+
+  // Push the in-progress assignments up so the canvas previews mounts live,
+  // before Ok commits them. Only runs while the dialog is open.
+  useEffect(() => {
+    if (!open) return;
+    onStationsChange?.(stations);
+  }, [open, stations, onStationsChange]);
+
+  const selectedIndex = useMemo(
+    () => stations.findIndex((s) => s.stationNumber === selectedStation),
+    [stations, selectedStation],
+  );
+
+  const assignedCount = useMemo(
+    () => stations.filter((s) => (s.toolAssemblyId ?? "") !== "").length,
+    [stations],
+  );
+
+  const setAssembly = useCallback((stationNumber: number, toolAssemblyId: string | null) => {
+    setStations((prev) =>
+      prev.map((s) =>
+        s.stationNumber === stationNumber
+          ? {
+              ...s,
+              toolAssemblyId,
+              // Clear any stale flip if the new assembly can't be flipped
+              // (e.g. switching to the fixed-orientation 3X block).
+              flipped: assemblyIsFlippable(toolAssemblyId) ? s.flipped : false,
+            }
+          : s,
+      ),
+    );
+  }, []);
+
+  // Apply an assembly the library picker chose, once per pick (tracked by
+  // token) so it patches just that station and leaves other edits intact.
+  const appliedPickToken = useRef<number | null>(null);
+  useEffect(() => {
+    if (!pendingAssignment) return;
+    if (appliedPickToken.current === pendingAssignment.token) return;
+    appliedPickToken.current = pendingAssignment.token;
+    setAssembly(pendingAssignment.stationNumber, pendingAssignment.toolAssemblyId);
+    setSelectedStation(pendingAssignment.stationNumber);
+  }, [pendingAssignment, setAssembly]);
+
+  // Reorder moves the *assembly* between fixed stations (the numbers stay put),
+  // since a BMT turret's station count and numbering are set by the machine.
+  const moveSelected = useCallback(
+    (delta: number) => {
+      if (selectedIndex < 0) return;
+      const next = selectedIndex + delta;
+      if (next < 0 || next >= stations.length) return;
+      setStations((prev) => {
+        const copy = [...prev];
+        const a = copy[selectedIndex];
+        const b = copy[next];
+        copy[selectedIndex] = { ...a, toolAssemblyId: b.toolAssemblyId };
+        copy[next] = { ...b, toolAssemblyId: a.toolAssemblyId };
+        return copy;
+      });
+      setSelectedStation(stations[next].stationNumber);
+    },
+    [selectedIndex, stations],
+  );
+
+  const clearSelected = useCallback(() => {
+    if (selectedStation === null) return;
+    setAssembly(selectedStation, null);
+  }, [selectedStation, setAssembly]);
+
+  /**
+   * Auto-arrange: shuffle the assigned assemblies across the fixed stations.
+   *
+   * A real turret would place tools by machining order / clearance, but for the
+   * prototype this just randomises the layout to demo the automation. The
+   * station numbers stay put (they're the machine's); only the assembly payload
+   * (id + flip state) moves, via a Fisher–Yates permutation over every station
+   * so empty slots participate too.
+   */
+  const shuffleAssemblies = useCallback(() => {
+    setStations((prev) => {
+      const payloads = prev.map((s) => ({
+        toolAssemblyId: s.toolAssemblyId,
+        flipped: s.flipped,
+      }));
+      for (let i = payloads.length - 1; i > 0; i -= 1) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [payloads[i], payloads[j]] = [payloads[j], payloads[i]];
+      }
+      return prev.map((s, idx) => ({
+        ...s,
+        toolAssemblyId: payloads[idx].toolAssemblyId,
+        flipped: payloads[idx].flipped,
+      }));
+    });
+  }, []);
+
+  /** Flip the assembly on a station 180° on its seat. */
+  const toggleFlip = useCallback((stationNumber: number) => {
+    setStations((prev) =>
+      prev.map((s) =>
+        s.stationNumber === stationNumber ? { ...s, flipped: !(s.flipped ?? false) } : s,
+      ),
+    );
+  }, []);
+
+  // Floating position + size. Null until the user drags/resizes, so the CSS
+  // default placement and size are used first; each open resets to default.
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const [pos, setPos] = useState<{ x: number; y: number } | null>(null);
+  const [size, setSize] = useState<{ w: number; h: number } | null>(null);
+  const sessionRef = useRef<
+    | { mode: "move"; sx: number; sy: number; ox: number; oy: number }
+    | {
+        mode: "resize";
+        corner: "bl" | "br";
+        sx: number;
+        sy: number;
+        ox: number;
+        oy: number;
+        ow: number;
+        oh: number;
+      }
+    | null
+  >(null);
+
+  useEffect(() => {
+    if (open) {
+      setPos(null);
+      setSize(null);
+    }
+  }, [open]);
+
+  useEffect(() => {
+    const MIN_W = 300;
+    const MIN_H = 360;
+    function onMove(ev: PointerEvent): void {
+      const s = sessionRef.current;
+      if (s === null) return;
+      if (s.mode === "move") {
+        const w = dialogRef.current?.offsetWidth ?? 332;
+        const x = Math.min(
+          Math.max(s.ox + (ev.clientX - s.sx), 8 - w + 48),
+          window.innerWidth - 48,
+        );
+        const y = Math.min(Math.max(s.oy + (ev.clientY - s.sy), 0), window.innerHeight - 30);
+        setPos({ x, y });
+        return;
+      }
+      // Resize from a bottom corner. The top edge is fixed; the bottom edge
+      // follows the pointer. The bottom-left corner also moves the left edge
+      // while keeping the right edge pinned.
+      const dx = ev.clientX - s.sx;
+      const dy = ev.clientY - s.sy;
+      let newW = Math.max(MIN_W, s.corner === "br" ? s.ow + dx : s.ow - dx);
+      let newX = s.corner === "bl" ? s.ox + (s.ow - newW) : s.ox;
+      let newH = Math.max(MIN_H, s.oh + dy);
+      // Keep the dialog within the viewport.
+      newW = Math.min(newW, window.innerWidth - newX - 8);
+      newH = Math.min(newH, window.innerHeight - s.oy - 8);
+      setPos({ x: newX, y: s.oy });
+      setSize({ w: newW, h: newH });
+    }
+    function onUp(): void {
+      sessionRef.current = null;
+    }
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+    return () => {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+    };
+  }, []);
+
+  const beginMove = useCallback((ev: React.PointerEvent): void => {
+    // Ignore drags starting on a button (e.g. the expand icon).
+    if ((ev.target as HTMLElement).closest("button") !== null) return;
+    const rect = dialogRef.current?.getBoundingClientRect();
+    if (rect === undefined) return;
+    sessionRef.current = {
+      mode: "move",
+      sx: ev.clientX,
+      sy: ev.clientY,
+      ox: rect.left,
+      oy: rect.top,
+    };
+  }, []);
+
+  const beginResize = useCallback(
+    (corner: "bl" | "br") => (ev: React.PointerEvent): void => {
+      ev.preventDefault();
+      ev.stopPropagation();
+      const rect = dialogRef.current?.getBoundingClientRect();
+      if (rect === undefined) return;
+      sessionRef.current = {
+        mode: "resize",
+        corner,
+        sx: ev.clientX,
+        sy: ev.clientY,
+        ox: rect.left,
+        oy: rect.top,
+        ow: rect.width,
+        oh: rect.height,
+      };
+    },
+    [],
+  );
+
+  if (open !== true) return null;
+
+  const turret = machine?.turret ?? null;
+  const setupOptionValue = existingSetups.some((s) => s.id === setup.id) ? setup.id : "new";
+
+  return (
+    <aside
+      ref={dialogRef}
+      className="tsd"
+      role="dialog"
+      aria-modal="false"
+      aria-labelledby={titleId}
+      style={{
+        ...(pos !== null ? { top: pos.y, left: pos.x, right: "auto" } : null),
+        ...(size !== null ? { width: size.w, height: size.h } : null),
+      }}
+    >
+      <header className="tsd__title-bar" onPointerDown={beginMove}>
+        <h2 id={titleId} className="tsd__title">
+          Turret setup
+        </h2>
+        <button type="button" className="tsd__icon-plain" title="Expand" aria-label="Expand dialog">
+          <IconExpand />
+        </button>
+      </header>
+
+      <div className="tsd__body">
+        {/* Machine ---------------------------------------------------------- */}
+        <section className="tsd__section">
+          <button
+            type="button"
+            className="tsd__section-head"
+            aria-expanded={machineOpen}
+            onClick={() => {
+              setMachineOpen((v) => !v);
+            }}
+          >
+            <IconChevron open={machineOpen} />
+            Machine
+          </button>
+          {machineOpen ? (
+            <div className="tsd__section-body">
+              <div className="tsd__row">
+                <span className="tsd__row-label">Machine</span>
+                <span className="tsd__machine-cluster">
+                  {machine !== null ? (
+                    <>
+                      <span className="tsd__chip">
+                        <IconCursor />
+                        1 selected
+                      </span>
+                      <button
+                        type="button"
+                        className="tsd__btn"
+                        onClick={onEditMachine}
+                      >
+                        Edit…
+                      </button>
+                      <button
+                        type="button"
+                        className="tsd__btn tsd__btn--icon"
+                        title="Clear machine"
+                        aria-label="Clear machine"
+                        onClick={onEditMachine}
+                      >
+                        <IconClose />
+                      </button>
+                    </>
+                  ) : (
+                    <button type="button" className="tsd__btn" onClick={onEditMachine}>
+                      Select…
+                    </button>
+                  )}
+                </span>
+              </div>
+              {machine !== null ? (
+                <div className="tsd__row-sub">{machineLabel(machine)}</div>
+              ) : null}
+            </div>
+          ) : null}
+        </section>
+
+        {/* Turret setup ----------------------------------------------------- */}
+        <section className="tsd__section">
+          <button
+            type="button"
+            className="tsd__section-head"
+            aria-expanded={turretOpen}
+            onClick={() => {
+              setTurretOpen((v) => !v);
+            }}
+          >
+            <IconChevron open={turretOpen} />
+            Turret setup
+          </button>
+          {turretOpen ? (
+            <div className="tsd__section-body">
+              <div className="tsd__row">
+                <span className="tsd__row-label">Turret setup</span>
+                <select
+                  className="tsd__select"
+                  value={setupOptionValue}
+                  onChange={(e) => {
+                    if (e.target.value !== "new") onSelectSetup?.(e.target.value);
+                  }}
+                >
+                  <option value="new">Create new turret setup</option>
+                  {existingSetups.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.opNumber !== undefined ? `${s.name} (OP ${s.opNumber})` : s.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="tsd__row">
+                <span className="tsd__row-label">Turret name</span>
+                <input
+                  className="tsd__input"
+                  value={name}
+                  placeholder="Turret name"
+                  onChange={(e) => {
+                    setName(e.target.value);
+                  }}
+                />
+              </div>
+              <div className="tsd__row">
+                <span className="tsd__row-label">Turret type</span>
+                <span className="tsd__row-value">{turret?.coupling ?? "—"}</span>
+              </div>
+              <div className="tsd__row">
+                <span className="tsd__row-label">Mount</span>
+                <span className="tsd__row-value">{turret?.mount ?? "—"}</span>
+              </div>
+              <div className="tsd__row">
+                <span className="tsd__row-label">Position</span>
+                <span className="tsd__row-value">{turret?.position ?? "—"}</span>
+              </div>
+            </div>
+          ) : null}
+        </section>
+
+        {/* Station table ---------------------------------------------------- */}
+        <div className="tsd__table">
+          <div className="tsd__table-head">
+            <span>Station</span>
+            <span>Tool assembly</span>
+          </div>
+          <ul className="tsd__station-list" role="list">
+            {stations.map((row) => {
+              const selected = row.stationNumber === selectedStation;
+              const value = row.toolAssemblyId ?? "";
+              const flippable = value !== "" && assemblyIsFlippable(row.toolAssemblyId);
+              return (
+                <li
+                  key={row.stationNumber}
+                  className={selected ? "tsd__station tsd__station--selected" : "tsd__station"}
+                  onClick={() => {
+                    setSelectedStation(row.stationNumber);
+                  }}
+                >
+                  <span className="tsd__station-num">{row.stationNumber}</span>
+                  <select
+                    className="tsd__station-select"
+                    data-empty={value === "" ? "true" : "false"}
+                    value={value}
+                    aria-label={`Tool assembly for station ${row.stationNumber}`}
+                    onChange={(e) => {
+                      const next = e.target.value;
+                      if (next === PICK_FROM_LIBRARY) {
+                        // Transient: hand off to the library picker; leave the
+                        // stored value untouched so the select reverts.
+                        onPickFromLibrary?.(row.stationNumber);
+                        return;
+                      }
+                      setAssembly(row.stationNumber, next === "" ? null : next);
+                    }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                    }}
+                  >
+                    <option value="">Select tool assembly</option>
+                    {options.map((opt) => (
+                      <option key={opt.id} value={opt.id}>
+                        {opt.label}
+                      </option>
+                    ))}
+                    {onPickFromLibrary ? (
+                      <option value={PICK_FROM_LIBRARY}>Select from library…</option>
+                    ) : null}
+                  </select>
+                  <button
+                    type="button"
+                    className={
+                      row.flipped === true
+                        ? "tsd__flip-btn tsd__flip-btn--active"
+                        : "tsd__flip-btn"
+                    }
+                    title={
+                      value !== "" && !flippable
+                        ? "This assembly can't be flipped"
+                        : row.flipped === true
+                          ? "Unflip assembly (180°)"
+                          : "Flip assembly 180° on seat"
+                    }
+                    aria-label={`Flip assembly on station ${row.stationNumber} by 180 degrees`}
+                    aria-pressed={row.flipped === true}
+                    disabled={!flippable}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleFlip(row.stationNumber);
+                    }}
+                  >
+                    <IconFlip />
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+
+          <div className="tsd__table-toolbar">
+            <button
+              type="button"
+              className="tsd__tool-btn"
+              title="Move assembly up"
+              aria-label="Move assembly up"
+              disabled={selectedIndex <= 0}
+              onClick={() => {
+                moveSelected(-1);
+              }}
+            >
+              <IconUp />
+            </button>
+            <button
+              type="button"
+              className="tsd__tool-btn"
+              title="Move assembly down"
+              aria-label="Move assembly down"
+              disabled={selectedIndex < 0 || selectedIndex >= stations.length - 1}
+              onClick={() => {
+                moveSelected(1);
+              }}
+            >
+              <IconDown />
+            </button>
+            <button
+              type="button"
+              className="tsd__tool-btn"
+              title="Auto-arrange assemblies"
+              aria-label="Auto-arrange tool assemblies across stations"
+              disabled={assignedCount < 2}
+              onClick={shuffleAssemblies}
+            >
+              <IconAuto />
+            </button>
+            <button
+              type="button"
+              className="tsd__tool-btn"
+              title="Clear station"
+              aria-label="Clear station"
+              disabled={selectedStation === null}
+              onClick={clearSelected}
+            >
+              <IconTrash />
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <footer className="tsd__footer">
+        <button
+          type="button"
+          className="tsd__footer-btn tsd__footer-btn--primary"
+          onClick={() => {
+            onConfirm({ ...setup, name: name.trim() || setup.name, stations });
+          }}
+        >
+          Ok
+        </button>
+        <button type="button" className="tsd__footer-btn" onClick={onClose}>
+          Cancel
+        </button>
+      </footer>
+
+      {/* Resize grips on both bottom corners. */}
+      <div
+        className="tsd__resize tsd__resize--bl"
+        onPointerDown={beginResize("bl")}
+        aria-hidden
+      />
+      <div
+        className="tsd__resize tsd__resize--br"
+        onPointerDown={beginResize("br")}
+        aria-hidden
+      />
+    </aside>
+  );
+}

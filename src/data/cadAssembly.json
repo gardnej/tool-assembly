@@ -1,0 +1,42 @@
+{
+  "source": "haas-assembly.glb",
+  "units": "meters",
+  "turretGlb": "turret-cad.glb",
+  "blockGlb": "block-cad.glb",
+  "note": "Turret + block split from the ground-truth seated CAD assembly, same world frame. Block sits on its modelled station at identity; other stations = rotation about drumAxis through drumCenter by (N - baseStation)*30 deg. See scripts/split-assembly-cad.py.",
+  "drumCenter": [
+    0.405203,
+    -0.020034,
+    0.783129
+  ],
+  "drumAxis": [
+    0.0,
+    0.000115,
+    -1.0
+  ],
+  "plugRingRadiusMean": 0.185281,
+  "plugRingRadiusStd": 0.000876,
+  "blockCenter": [
+    0.164668,
+    -0.045232,
+    0.734206
+  ],
+  "blockRadialDir": [
+    -0.994555,
+    -0.104212,
+    -1.2e-05
+  ],
+  "stationStepDeg": 30.0,
+  "turretBounds": {
+    "min": [
+      0.211418,
+      -0.213819,
+      0.728519
+    ],
+    "max": [
+      0.598988,
+      0.173751,
+      0.877871
+    ]
+  }
+}

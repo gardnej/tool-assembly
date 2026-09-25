@@ -1,16 +1,25 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { createPortal } from "react-dom";
+import type { RibbonCommand, RibbonPanel } from "../data/ribbonManufacture";
+import { MANUFACTURE_TABS } from "../data/ribbonManufacture";
 import type { RibbonTabId, RibbonWorkspaceId } from "../ribbonConfig";
 import { ribbonTabsForWorkspace, WORKSPACE_OPTIONS } from "../ribbonConfig";
+import { ManufactureIcon } from "./manufactureIcons";
 import { RibbonIcon } from "./ribbonIcons";
 import "./chrome.css";
+
+/** Matches the max width of `.ribbon__panel-menu`. */
+const MENU_MAX_WIDTH = 360;
+
+const SUBMENU_WIDTH = 208;
 
 type RibbonProps = {
   workspace: RibbonWorkspaceId;
   activeTab: RibbonTabId;
   onWorkspaceChange: (w: RibbonWorkspaceId) => void;
   onTabChange: (t: RibbonTabId) => void;
-  onOpenFeatureManager?: () => void;
-  onOpenToolLibrary?: () => void;
+  /** Invoked with Fusion's own command id, e.g. `IronToolLibrary`. */
+  onCommand?: (commandId: string) => void;
 };
 
 export function Ribbon({
@@ -18,8 +27,7 @@ export function Ribbon({
   activeTab,
   onWorkspaceChange,
   onTabChange,
-  onOpenFeatureManager,
-  onOpenToolLibrary,
+  onCommand,
 }: RibbonProps) {
   const tabs = ribbonTabsForWorkspace(workspace);
   return (
@@ -49,8 +57,7 @@ export function Ribbon({
         workspace={workspace}
         tab={activeTab}
         onWorkspaceChange={onWorkspaceChange}
-        onOpenFeatureManager={onOpenFeatureManager}
-        onOpenToolLibrary={onOpenToolLibrary}
+        onCommand={onCommand}
       />
     </div>
   );
@@ -146,14 +153,12 @@ function RibbonToolbar({
   workspace,
   tab,
   onWorkspaceChange,
-  onOpenFeatureManager,
-  onOpenToolLibrary,
+  onCommand,
 }: {
   workspace: RibbonWorkspaceId;
   tab: RibbonTabId;
   onWorkspaceChange: (w: RibbonWorkspaceId) => void;
-  onOpenFeatureManager?: () => void;
-  onOpenToolLibrary?: () => void;
+  onCommand?: (commandId: string) => void;
 }) {
   let panel: ReactNode;
   switch (workspace) {
@@ -161,13 +166,7 @@ function RibbonToolbar({
       panel = <DesignRibbonTools tab={tab} />;
       break;
     case "manufacturing":
-      panel = (
-        <ManufacturingRibbonTools
-          tab={tab}
-          onOpenFeatureManager={onOpenFeatureManager}
-          onOpenToolLibrary={onOpenToolLibrary}
-        />
-      );
+      panel = <ManufacturePanels tab={tab} onCommand={onCommand} />;
       break;
     case "render":
       panel = <RenderRibbonTools tab={tab} />;
@@ -416,224 +415,277 @@ function DesignRibbonTools({ tab }: { tab: RibbonTabId }) {
   }
 }
 
-function ManufacturingFeaturesRibbonGroup({
-  onOpenFeatureManager,
-}: {
-  onOpenFeatureManager?: () => void;
-}) {
-  if (typeof onOpenFeatureManager !== "function") {
-    return null;
-  }
-  return (
-    <RibbonGroup label="Features">
-      <button
-        type="button"
-        className="ribbon__icon-btn"
-        title="Feature Manager"
-        aria-label="Open Feature Manager"
-        onClick={() => {
-          onOpenFeatureManager();
-        }}
-      >
-        <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden>
-          <rect
-            x="4"
-            y="5"
-            width="14"
-            height="12"
-            rx="1.5"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.5"
-          />
-          <path d="M7 15 H17 M12 13 V17" stroke="currentColor" strokeWidth="1.25" />
-          <circle cx="8" cy="9" r="1.2" fill="currentColor" />
-          <circle cx="13" cy="9" r="1.2" fill="currentColor" />
-          <circle cx="16" cy="11" r="1" fill="currentColor" />
-        </svg>
-      </button>
-    </RibbonGroup>
-  );
-}
-
-function ManufacturingToolLibraryGroup({
-  onOpenToolLibrary,
-}: {
-  onOpenToolLibrary?: () => void;
-}) {
-  if (typeof onOpenToolLibrary !== "function") {
-    return null;
-  }
-  return (
-    <RibbonGroup label="Libraries">
-      <IconBox label="Tool library" accent onClick={onOpenToolLibrary} />
-    </RibbonGroup>
-  );
-}
-
-function ManufacturingRibbonTools({
+/**
+ * The Manufacture tabs, laid out as the product lays them out: promoted
+ * commands on the bar, the rest behind the panel caption's chevron.
+ */
+function ManufacturePanels({
   tab,
-  onOpenFeatureManager,
-  onOpenToolLibrary,
+  onCommand,
 }: {
   tab: RibbonTabId;
-  onOpenFeatureManager?: () => void;
-  onOpenToolLibrary?: () => void;
+  onCommand?: (commandId: string) => void;
 }) {
-  switch (tab) {
-    case "mfg_milling":
-      return (
-        <>
-          <RibbonGroup label="Setup">
-            <IconBox label="New setup" accent />
-            <IconBox label="NC program / setup sheet" />
-          </RibbonGroup>
-          <RibbonGroup label="2D">
-            <IconBox label="2D Adaptive" accent />
-            <IconBox label="2D Roughing" />
-            <IconBox label="2D Morph" />
-          </RibbonGroup>
-          <RibbonGroup label="3D">
-            <IconBox label="Adaptive clearing" accent />
-            <IconBox label="Parallel" />
-            <IconBox label="Contour finishing" />
-            <IconBox label="Flow" />
-            <IconBox label="Pencil" />
-            <IconBox label="Rough" />
-            <IconBox label="Rest machining" />
-          </RibbonGroup>
-          <RibbonGroup label="Drilling">
-            <IconBox label="Drill" accent />
-            <IconBox label="Circular pattern" />
-            <IconBox label="Tapping" />
-            <IconBox label="Boring" />
-          </RibbonGroup>
-          <RibbonGroup label="Multi-axis">
-            <IconBox label="Swarf" accent />
-            <IconBox label="Morph 3+2" />
-          </RibbonGroup>
-          <RibbonGroup label="Templates">
-            <IconBox label="Template library" accent />
-          </RibbonGroup>
-          <ManufacturingToolLibraryGroup onOpenToolLibrary={onOpenToolLibrary} />
-          <ManufacturingFeaturesRibbonGroup onOpenFeatureManager={onOpenFeatureManager} />
-        </>
-      );
-    case "mfg_turning":
-      return (
-        <>
-          <RibbonGroup label="Turning Roughing">
-            <IconBox label="Rough" accent />
-            <IconBox label="Face" />
-            <IconBox label="Profile" />
-            <IconBox label="Groove" />
-          </RibbonGroup>
-          <RibbonGroup label="Turning Finish">
-            <IconBox label="Contour" />
-            <IconBox label="Turning chamfer" title="Chamfer" />
-            <IconBox label="Bore finishing" />
-            <IconBox label="Groove finishing" />
-          </RibbonGroup>
-          <RibbonGroup label="Groove Cycle">
-            <IconBox label="Groove / thread" />
-            <IconBox label="Part-off" />
-            <IconBox label="Centre drill" />
-          </RibbonGroup>
-          <ManufacturingToolLibraryGroup onOpenToolLibrary={onOpenToolLibrary} />
-          <ManufacturingFeaturesRibbonGroup onOpenFeatureManager={onOpenFeatureManager} />
-        </>
-      );
-    case "mfg_additive":
-      return (
-        <>
-          <RibbonGroup label="Print setup">
-            <IconBox label="Additive setup" accent />
-            <IconBox label="Machine library" />
-            <IconBox label="Material / process" />
-          </RibbonGroup>
-          <RibbonGroup label="Orient & arrange">
-            <IconBox label="Orient part" accent />
-            <IconBox label="Arrange duplicates" />
-            <IconBox label="Nest preview" />
-          </RibbonGroup>
-          <RibbonGroup label="Support & slice">
-            <IconBox label="Generate supports" />
-            <IconBox label="Inspect slice" accent />
-          </RibbonGroup>
-          <ManufacturingToolLibraryGroup onOpenToolLibrary={onOpenToolLibrary} />
-          <ManufacturingFeaturesRibbonGroup onOpenFeatureManager={onOpenFeatureManager} />
-        </>
-      );
-    case "mfg_inspection":
-      return (
-        <>
-          <RibbonGroup label="Inspection">
-            <IconBox label="Probe setup" accent />
-            <IconBox label="Inspection path" />
-            <IconBox label="Deviation report" />
-            <IconBox label="Inspection template" />
-          </RibbonGroup>
-          <RibbonGroup label="Analysis">
-            <IconBox label="Compare to CAD" accent />
-            <IconBox label="Report export" />
-          </RibbonGroup>
-          <ManufacturingToolLibraryGroup onOpenToolLibrary={onOpenToolLibrary} />
-          <ManufacturingFeaturesRibbonGroup onOpenFeatureManager={onOpenFeatureManager} />
-        </>
-      );
-    case "mfg_fabrication":
-      return (
-        <>
-          <RibbonGroup label="Fabrication setup">
-            <IconBox label="Job setup" accent />
-            <IconBox label="Tool / machine" />
-            <IconBox label="Post library" />
-          </RibbonGroup>
-          <RibbonGroup label="CAM output">
-            <IconBox label="Post process" accent />
-            <IconBox label="Edit NC program" />
-            <IconBox label="Compare setups" />
-          </RibbonGroup>
-          <RibbonGroup label="Simulation">
-            <IconBox label="Animate" accent />
-            <IconBox label="Analyze" />
-          </RibbonGroup>
-          <ManufacturingToolLibraryGroup onOpenToolLibrary={onOpenToolLibrary} />
-          <ManufacturingFeaturesRibbonGroup onOpenFeatureManager={onOpenFeatureManager} />
-        </>
-      );
-    case "mfg_utilities":
-      return (
-        <>
-          <RibbonGroup label="Libraries">
-            <IconBox label="Tool library" accent onClick={onOpenToolLibrary} />
-            <IconBox label="Feeds & speeds" />
-            <IconBox label="Template library" />
-          </RibbonGroup>
-          <RibbonGroup label="Stock & axes">
-            <IconBox label="Stock from solid" accent />
-            <IconBox label="Axes & origin" />
-            <IconBox label="Preview stock" />
-          </RibbonGroup>
-          <RibbonGroup label="Utilities">
-            <IconBox label="Machine definitions" accent />
-            <IconBox label="Calculator" />
-            <IconBox label="Export setups" />
-          </RibbonGroup>
-          <ManufacturingFeaturesRibbonGroup onOpenFeatureManager={onOpenFeatureManager} />
-        </>
-      );
-    default:
-      return (
-        <>
-          <RibbonGroup label="">
-            <span className="ribbon__placeholder">Select a Manufacturing tab.</span>
-          </RibbonGroup>
-          <ManufacturingToolLibraryGroup onOpenToolLibrary={onOpenToolLibrary} />
-          <ManufacturingFeaturesRibbonGroup onOpenFeatureManager={onOpenFeatureManager} />
-        </>
-      );
+  const config = MANUFACTURE_TABS.find((candidate) => candidate.id === tab);
+  if (config === undefined) {
+    return (
+      <RibbonGroup label="">
+        <span className="ribbon__placeholder">Select a Manufacture tab.</span>
+      </RibbonGroup>
+    );
   }
+
+  return (
+    <>
+      {config.panels.map((panel) => (
+        <ManufacturePanel key={panel.id} panel={panel} onCommand={onCommand} />
+      ))}
+    </>
+  );
+}
+
+function ManufacturePanel({
+  panel,
+  onCommand,
+}: {
+  panel: RibbonPanel;
+  onCommand?: (commandId: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const [anchor, setAnchor] = useState({ left: 0, top: 0 });
+
+  useEffect(() => {
+    if (open === false) {
+      return undefined;
+    }
+    function onPointerDown(ev: MouseEvent): void {
+      const target = ev.target;
+      if (!(target instanceof Node)) {
+        return;
+      }
+      // The submenu is a portal of its own, so containment is not enough.
+      const insideAMenu =
+        target instanceof Element &&
+        target.closest(".ribbon__panel-menu, .ribbon__submenu") !== null;
+      if (
+        insideAMenu ||
+        wrapRef.current?.contains(target) === true ||
+        menuRef.current?.contains(target) === true
+      ) {
+        return;
+      }
+      setOpen(false);
+    }
+    window.addEventListener("pointerdown", onPointerDown, true);
+    return () => {
+      window.removeEventListener("pointerdown", onPointerDown, true);
+    };
+  }, [open]);
+
+  // The toolbar scrolls horizontally and so clips its children; the menu is
+  // taken out to the body and positioned against the panel instead.
+  const toggle = useCallback(() => {
+    const rect = wrapRef.current?.getBoundingClientRect();
+    if (rect !== undefined) {
+      // Panels at the end of the ribbon would otherwise hang off the window.
+      const maxLeft = Math.max(8, window.innerWidth - MENU_MAX_WIDTH - 8);
+      setAnchor({ left: Math.min(rect.left, maxLeft), top: rect.bottom });
+    }
+    setOpen((x) => !x);
+  }, []);
+
+  const run = useCallback(
+    (commandId: string) => {
+      setOpen(false);
+      onCommand?.(commandId);
+    },
+    [onCommand],
+  );
+
+  const hasOverflow = panel.overflow.length > 0;
+
+  return (
+    <div className="ribbon__group" ref={wrapRef}>
+      <div className="ribbon__icons">
+        {panel.promoted.map((command) => (
+          <button
+            key={command.id}
+            type="button"
+            className="ribbon__icon-btn"
+            title={command.label}
+            aria-label={command.label}
+            onClick={() => {
+              run(command.id);
+            }}
+          >
+            <ManufactureIcon icon={command.icon} />
+          </button>
+        ))}
+      </div>
+
+      {hasOverflow ? (
+        <button
+          type="button"
+          className={
+            open === true
+              ? "ribbon__group-label ribbon__group-label--menu ribbon__group-label--open"
+              : "ribbon__group-label ribbon__group-label--menu"
+          }
+          aria-expanded={open}
+          aria-haspopup="menu"
+          onClick={toggle}
+        >
+          {panel.label}
+          <span className="ribbon__group-chevron" aria-hidden>
+            ▾
+          </span>
+        </button>
+      ) : (
+        <span className="ribbon__group-label">
+          {panel.label === "" ? "\u00a0" : panel.label}
+        </span>
+      )}
+
+      {open === true
+        ? createPortal(
+            <div
+              className="ribbon__panel-menu"
+              role="menu"
+              ref={menuRef}
+              style={{ left: anchor.left, top: anchor.top }}
+            >
+              {panel.overflow.map((command) => (
+                <ManufactureMenuItem key={command.id} command={command} onRun={run} />
+              ))}
+            </div>,
+            document.body,
+          )
+        : null}
+    </div>
+  );
+}
+
+/** A command in a panel's dropdown, or a split button opening a submenu. */
+function ManufactureMenuItem({
+  command,
+  onRun,
+}: {
+  command: RibbonCommand;
+  onRun: (commandId: string) => void;
+}) {
+  const [submenu, setSubmenu] = useState<{ left: number; top: number } | null>(null);
+  const splitRef = useRef<HTMLDivElement>(null);
+  const closeTimer = useRef<number | undefined>(undefined);
+  const children = command.items;
+
+  const hold = useCallback(() => {
+    window.clearTimeout(closeTimer.current);
+  }, []);
+
+  // The dropdown scrolls, so the submenu is placed against the split button
+  // and taken out to the body rather than nested inside and clipped.
+  const openSubmenu = useCallback(() => {
+    hold();
+    const rect = splitRef.current?.getBoundingClientRect();
+    if (rect === undefined) {
+      return;
+    }
+    const wouldOverflow = rect.right + SUBMENU_WIDTH > window.innerWidth;
+    setSubmenu({
+      left: wouldOverflow ? rect.left - SUBMENU_WIDTH : rect.right,
+      top: rect.top - 4,
+    });
+  }, [hold]);
+
+  // A grace period, so the pointer can cross the gap into the submenu.
+  const closeSubmenu = useCallback(() => {
+    window.clearTimeout(closeTimer.current);
+    closeTimer.current = window.setTimeout(() => {
+      setSubmenu(null);
+    }, 160);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      window.clearTimeout(closeTimer.current);
+    };
+  }, []);
+
+  if (children === undefined || children.length === 0) {
+    return (
+      <button
+        type="button"
+        role="menuitem"
+        className="ribbon__menu-item"
+        onClick={() => {
+          onRun(command.id);
+        }}
+      >
+        <ManufactureIcon icon={command.icon} size={16} />
+        <span className="ribbon__menu-label">{command.label}</span>
+      </button>
+    );
+  }
+
+  return (
+    <div
+      className="ribbon__menu-split"
+      ref={splitRef}
+      onMouseEnter={openSubmenu}
+      onMouseLeave={closeSubmenu}
+    >
+      <button
+        type="button"
+        role="menuitem"
+        className="ribbon__menu-item"
+        aria-expanded={submenu !== null}
+        aria-haspopup="menu"
+        onClick={() => {
+          if (submenu === null) {
+            openSubmenu();
+          } else {
+            setSubmenu(null);
+          }
+        }}
+      >
+        <ManufactureIcon icon={command.icon} size={16} />
+        <span className="ribbon__menu-label">{command.label}</span>
+        <span className="ribbon__menu-arrow" aria-hidden>
+          ▸
+        </span>
+      </button>
+      {submenu !== null
+        ? createPortal(
+            <div
+              className="ribbon__submenu"
+              role="menu"
+              style={{ left: submenu.left, top: submenu.top, width: SUBMENU_WIDTH }}
+              onMouseEnter={hold}
+              onMouseLeave={closeSubmenu}
+            >
+              {children.map((child) => (
+                <button
+                  key={child.id}
+                  type="button"
+                  role="menuitem"
+                  className="ribbon__menu-item"
+                  onClick={() => {
+                    setSubmenu(null);
+                    onRun(child.id);
+                  }}
+                >
+                  <ManufactureIcon icon={child.icon} size={16} />
+                  <span className="ribbon__menu-label">{child.label}</span>
+                </button>
+              ))}
+            </div>,
+            document.body,
+          )
+        : null}
+    </div>
+  );
 }
 
 function RenderRibbonTools({ tab }: { tab: RibbonTabId }) {

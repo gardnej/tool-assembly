@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Seated Assembly Preview</title>
+    <script
+      type="module"
+      src="https://ajax.googleapis.com/ajax/libs/model-viewer/4.0.0/model-viewer.min.js"
+    ></script>
+    <style>
+      html, body { margin: 0; height: 100%; background: #5d6778; }
+      model-viewer { width: 100vw; height: 100vh; }
+      .bar { position: fixed; top: 8px; left: 8px; z-index: 10; font-family: system-ui, sans-serif;
+             color: #fff; font-size: 12px; background: rgba(0,0,0,.35); padding: 6px 8px; border-radius: 4px; }
+      button { font-size: 12px; margin-right: 4px; }
+    </style>
+  </head>
+  <body>
+    <div class="bar">
+      Seated assembly (BMT65 + 3X Spot-Drill-Tap) —
+      <button onclick="setView('90deg 90deg 110%')">side</button>
+      <button onclick="setView('0deg 90deg 110%')">front</button>
+      <button onclick="setView('90deg 20deg 110%')">top</button>
+      <button onclick="setView('60deg 70deg 100%')">iso</button>
+    </div>
+    <model-viewer
+      id="mv"
+      src="/turret-assembly-clean.glb"
+      alt="Seated turret assembly"
+      camera-controls
+      interaction-prompt="none"
+      camera-orbit="60deg 70deg 100%"
+      shadow-intensity="0.5"
+      exposure="1.05"
+    ></model-viewer>
+    <script>
+      function setView(orbit) {
+        document.getElementById('mv').setAttribute('camera-orbit', orbit);
+      }
+    </script>
+  </body>
+</html>

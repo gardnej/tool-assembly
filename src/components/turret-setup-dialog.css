@@ -1,0 +1,453 @@
+/**
+ * Turret Setup — Fusion command dialog floating over the canvas. Dark theme,
+ * matching the tool-library / tool-assembly dialogues in this prototype (Fusion
+ * Dark Blue, Artifakt Element). Draggable by its title bar and resizable from
+ * either bottom corner.
+ */
+
+.tsd {
+  --tsd-bg: #2c323c;
+  --tsd-panel: #252a32;
+  --tsd-panel-2: #2f3640;
+  --tsd-border: #3e454f;
+  --tsd-border-soft: #363d47;
+  --tsd-text: #e8eef5;
+  --tsd-muted: #9aa8b8;
+  --tsd-faint: #7c8896;
+  --tsd-accent: #3a9ad9;
+  --tsd-accent-soft: rgb(58 154 217 / 0.28);
+  --tsd-row-hover: rgb(255 255 255 / 0.04);
+  --tsd-selected: rgb(58 154 217 / 0.22);
+  --tsd-selected-border: #3a9ad9;
+  --tsd-field: #20252d;
+
+  position: fixed;
+  top: 64px;
+  left: 360px;
+  z-index: 10040;
+  display: flex;
+  flex-direction: column;
+  width: 332px;
+  height: 600px;
+  min-width: 300px;
+  min-height: 360px;
+  max-width: calc(100vw - 16px);
+  max-height: calc(100vh - 16px);
+  overflow: hidden;
+  border: 1px solid #1d222a;
+  border-radius: 6px;
+  background: var(--tsd-bg);
+  color: var(--tsd-text);
+  font-family: "Artifakt Element", ArtifaktElement, system-ui, sans-serif;
+  font-size: 11px;
+  box-shadow: 0 24px 64px rgb(0 0 0 / 0.55), 0 2px 8px rgb(0 0 0 / 0.4);
+}
+
+/* Title bar --------------------------------------------------------------- */
+
+.tsd__title-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 30px;
+  padding: 0 8px 0 12px;
+  background: linear-gradient(180deg, #343b46 0%, var(--tsd-bg) 100%);
+  border-bottom: 1px solid var(--tsd-border);
+  cursor: move;
+  user-select: none;
+}
+
+.tsd__title {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--tsd-text);
+}
+
+.tsd__icon-plain {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: none;
+  border-radius: 2px;
+  background: transparent;
+  color: var(--tsd-muted);
+  cursor: pointer;
+}
+
+.tsd__icon-plain:hover {
+  background: var(--tsd-row-hover);
+  color: var(--tsd-text);
+}
+
+/* Body -------------------------------------------------------------------- */
+
+.tsd__body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 4px 0 8px;
+}
+
+.tsd__section {
+  border-bottom: 1px solid var(--tsd-border-soft);
+}
+
+.tsd__section-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 7px 12px;
+  border: none;
+  background: transparent;
+  color: var(--tsd-text);
+  font-size: 11px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+
+.tsd__chevron {
+  width: 8px;
+  height: 8px;
+  color: var(--tsd-muted);
+  transition: transform 0.12s ease;
+}
+
+.tsd__chevron--closed {
+  transform: rotate(-90deg);
+}
+
+.tsd__section-body {
+  padding: 2px 12px 10px;
+}
+
+/* Field rows -------------------------------------------------------------- */
+
+.tsd__row {
+  display: grid;
+  grid-template-columns: 92px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  min-height: 24px;
+  padding: 3px 0;
+}
+
+.tsd__row-label {
+  color: var(--tsd-muted);
+  font-size: 11px;
+}
+
+.tsd__row-value {
+  color: var(--tsd-text);
+  font-size: 11px;
+}
+
+.tsd__row-sub {
+  padding: 0 0 4px 100px;
+  color: var(--tsd-faint);
+  font-size: 11px;
+}
+
+/* Machine selector cluster */
+.tsd__machine-cluster {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.tsd__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 22px;
+  padding: 0 8px;
+  border: 1px solid var(--tsd-border);
+  border-radius: 2px;
+  background: var(--tsd-panel-2);
+  color: var(--tsd-text);
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.tsd__btn {
+  height: 22px;
+  padding: 0 8px;
+  border: 1px solid var(--tsd-border);
+  border-radius: 2px;
+  background: var(--tsd-panel-2);
+  color: var(--tsd-text);
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.tsd__btn:hover {
+  border-color: var(--tsd-accent);
+}
+
+.tsd__btn--icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  padding: 0;
+  color: var(--tsd-muted);
+}
+
+.tsd__select,
+.tsd__input {
+  width: 100%;
+  height: 22px;
+  padding: 0 6px;
+  border: 1px solid var(--tsd-border);
+  border-radius: 2px;
+  background: var(--tsd-field);
+  color: var(--tsd-text);
+  font-family: inherit;
+  font-size: 11px;
+}
+
+.tsd__select:focus,
+.tsd__input:focus {
+  outline: none;
+  border-color: var(--tsd-accent);
+}
+
+.tsd__input::placeholder {
+  color: var(--tsd-faint);
+}
+
+/* Station table ----------------------------------------------------------- */
+
+.tsd__table {
+  padding: 4px 12px 0;
+}
+
+.tsd__table-head {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr);
+  gap: 8px;
+  padding: 4px 0 5px;
+  border-bottom: 1px solid var(--tsd-border);
+  color: var(--tsd-muted);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.tsd__station-list {
+  margin: 0;
+  padding: 2px 0 0;
+  list-style: none;
+}
+
+.tsd__station {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  padding: 2px 4px;
+  margin: 1px 0;
+  border: 1px solid transparent;
+  border-radius: 2px;
+  cursor: pointer;
+}
+
+.tsd__station:hover {
+  background: var(--tsd-row-hover);
+}
+
+.tsd__station--selected {
+  background: var(--tsd-selected);
+  border-color: var(--tsd-selected-border);
+}
+
+.tsd__station-num {
+  padding-left: 6px;
+  color: var(--tsd-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.tsd__station-select {
+  width: 100%;
+  height: 22px;
+  padding: 0 6px;
+  border: 1px solid var(--tsd-border);
+  border-radius: 2px;
+  background: var(--tsd-field);
+  color: var(--tsd-text);
+  font-family: inherit;
+  font-size: 11px;
+}
+
+.tsd__station-select:focus {
+  outline: none;
+  border-color: var(--tsd-accent);
+}
+
+/* An empty station reads as placeholder text until something is chosen. */
+.tsd__station-select[data-empty="true"] {
+  color: var(--tsd-faint);
+}
+
+/* Flip-on-seat button, at the end of each station's dropdown. */
+.tsd__flip-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 1px solid var(--tsd-border);
+  border-radius: 2px;
+  background: var(--tsd-field);
+  color: var(--tsd-muted);
+  cursor: pointer;
+}
+
+.tsd__flip-btn:hover:not(:disabled) {
+  color: var(--tsd-text);
+  border-color: var(--tsd-accent);
+}
+
+.tsd__flip-btn--active {
+  color: #fff;
+  background: var(--tsd-accent);
+  border-color: var(--tsd-accent);
+}
+
+.tsd__flip-btn:disabled {
+  color: #4c5560;
+  cursor: default;
+  opacity: 0.6;
+}
+
+/* Table toolbar ----------------------------------------------------------- */
+
+.tsd__table-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  gap: 2px;
+  padding: 8px 0 2px;
+}
+
+.tsd__tool-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 24px;
+  padding: 0;
+  border: none;
+  border-radius: 2px;
+  background: transparent;
+  color: var(--tsd-muted);
+  cursor: pointer;
+}
+
+.tsd__tool-btn:hover:not(:disabled) {
+  background: var(--tsd-row-hover);
+  color: var(--tsd-text);
+}
+
+.tsd__tool-btn:disabled {
+  color: #4c5560;
+  cursor: default;
+}
+
+/* Footer ------------------------------------------------------------------ */
+
+.tsd__footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 8px 12px;
+  border-top: 1px solid var(--tsd-border);
+  background: var(--tsd-panel);
+}
+
+.tsd__footer-btn {
+  min-width: 64px;
+  height: 24px;
+  padding: 0 12px;
+  border: 1px solid var(--tsd-border);
+  border-radius: 2px;
+  background: var(--tsd-panel-2);
+  color: var(--tsd-text);
+  font-family: inherit;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.tsd__footer-btn:hover {
+  border-color: var(--tsd-accent);
+}
+
+.tsd__footer-btn--primary {
+  border-color: var(--tsd-accent);
+  background: var(--tsd-accent);
+  color: #fff;
+  font-weight: 600;
+}
+
+.tsd__footer-btn--primary:hover {
+  background: #4aa8e6;
+}
+
+/* Resize grips ------------------------------------------------------------ */
+
+.tsd__resize {
+  position: absolute;
+  bottom: 0;
+  width: 16px;
+  height: 16px;
+  z-index: 3;
+}
+
+.tsd__resize--br {
+  right: 0;
+  cursor: nwse-resize;
+}
+
+.tsd__resize--bl {
+  left: 0;
+  cursor: nesw-resize;
+}
+
+/* Faint diagonal grip lines so the corners read as draggable. */
+.tsd__resize::after {
+  content: "";
+  position: absolute;
+  bottom: 3px;
+  width: 8px;
+  height: 8px;
+  opacity: 0.5;
+}
+
+.tsd__resize--br::after {
+  right: 3px;
+  background: repeating-linear-gradient(
+    -45deg,
+    var(--tsd-faint) 0 1px,
+    transparent 1px 3px
+  );
+}
+
+.tsd__resize--bl::after {
+  left: 3px;
+  background: repeating-linear-gradient(
+    45deg,
+    var(--tsd-faint) 0 1px,
+    transparent 1px 3px
+  );
+}
+
+.tsd__resize:hover::after {
+  opacity: 0.9;
+}
